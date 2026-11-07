@@ -17,3 +17,6 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni-Mix](Aisuni-Mix/) — recombina fragmentos específicos para crear composiciones gráficas.
   - Formato de proyectos: v1
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Mix/
+- [Aisuni Máscaras](Aisuni-mascaras/) — genera máscaras 3D con variaciones de forma y acabado.
+  - Versión: 3.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-mascaras/
