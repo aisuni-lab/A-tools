@@ -3,6 +3,7 @@
 Herramientas generativas de AISUNI. Exploraciones con código.
 
 - [Aisuni Image Lab](Aisuni-image-lab/) — generative collage made with custom images within multiple grids.
+  - Versión: 2.3
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-image-lab/
 - [Aisuni Blend Lab](Aisuni-blend-lab/) — combina imágenes en composiciones visuales y explora variaciones con capas editables.
   - Versión: 1.1.0
