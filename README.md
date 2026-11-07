@@ -1,6 +1,6 @@
 # A-tools
 
-Herramientas creativas de AISUNI.
+Herramientas generativas de AISUNI. Exploraciones con código.
 
 - [Aisuni Image Lab](Aisuni-image-lab/) — generative collage made with custom images within multiple grids.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-image-lab/
