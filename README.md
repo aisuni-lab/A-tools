@@ -7,3 +7,6 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni Blend Lab](Aisuni-blend-lab/) — combina imágenes en composiciones visuales y explora variaciones con capas editables.
   - Versión: 1.1.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-blend-lab/
+- [Aisuni Collage](Aisuni-collage/) — fragmenta imágenes y PDF y reorganiza las piezas para crear collages.
+  - Versión: 1.1
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-collage/
