@@ -1,4 +1,4 @@
 # A-tools
 Aisuni Tools
 
-- [Aisuni Image Lab](Aisuni-image-lab/) — static tool copied from grafitat.com/aisuni.
+- [Aisuni Image Lab](Aisuni-image-lab/) — generative collage made with custom images within multiple grids
