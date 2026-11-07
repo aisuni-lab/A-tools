@@ -11,3 +11,6 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni Collage](Aisuni-collage/) — fragmenta imágenes y PDF y reorganiza las piezas para crear collages.
   - Versión: 1.1
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-collage/
+- [Aisuni-Combinus](Aisuni-Combinus/) — fragmenta imágenes y combina el collage con efectos reordenables.
+  - Versión: 1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Combinus/
