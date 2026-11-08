@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimalist Circle Fusion Logo — Color Variation Studio</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .multiply-blend {
+      mix-blend-mode: multiply;
+    }
+    /* Transparent checkerboard */
+    .checkerboard {
+      background-size: 16px 16px;
+      background-position: 0 0, 8px 0, 8px -8px, 0px 8px;
+    }
+    .checkerboard-light {
+      background-image: 
+        linear-gradient(45deg, #f0f0f2 25%, transparent 25%), 
+        linear-gradient(-45deg, #f0f0f2 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #f0f0f2 75%), 
+        linear-gradient(-45deg, transparent 75%, #f0f0f2 75%);
+    }
+    .checkerboard-dark {
+      background-image: 
+        linear-gradient(45deg, #22252a 25%, transparent 25%), 
+        linear-gradient(-45deg, #22252a 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #22252a 75%), 
+        linear-gradient(-45deg, transparent 75%, #22252a 75%);
+    }
+    /* Custom scrollbar for history reel */
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.04);
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.18);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans bg-stone-100 text-stone-900 selection:bg-amber-200 transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="border-b border-stone-200/90 bg-white/90 backdrop-blur sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex w-3 h-3 rounded-full bg-rose-500 ring-4 ring-rose-100"></span>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-stone-900 flex items-center gap-2">
+            Laboratorio Cromático SVG • Fusión Concéntrica
+          </h1>
+          <p class="text-xs text-stone-500 font-mono">Geometría exacta: Eje concéntrico Y=175 | Centros: L(148) • R(315)</p>
+        </div>
+      </div>
+      
+      <!-- Quick Actions Header -->
+      <div class="flex items-center gap-2">
+        <button id="btn-invert-header" onclick="swapSides()" title="Intercambiar paleta Izquierda / Derecha" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          <span class="hidden sm:inline">Invertir Lados</span>
+        </button>
+        <button onclick="randomizeRadii()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition flex items-center gap-1.5 active:scale-95" title="Variar solo los radios concéntricos">
+          <span>📐 Mutar Tamaños</span>
+        </button>
+        <button id="btn-random-header" onclick="generateHarmonicPalette()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5 active:scale-95" title="Variar solo la paleta de colores">
+          <span>🎨 Color</span>
+        </button>
+        <button onclick="mutateEverything()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-stone-900 shadow-xs transition flex items-center gap-1.5 active:scale-95" title="Mutar simultáneamente color y radios">
+          <span>⚡ Variación Total</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-stone-900 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2 flex items-center space-x-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <span id="toast-text">Acción completada con éxito</span>
+  </div>
+
+  <!-- Studio Workspace -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- Top Grid: Interactive Stage + Control Deck -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Stage & Preview Bench (Col 7) -->
+      <section class="lg:col-span-7 bg-white rounded-2xl border border-stone-200/90 shadow-sm p-6 flex flex-col gap-6">
+        
+        <!-- Stage Controls Bar -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Lienzo Principal</span>
+            <span id="current-palette-name" class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">Risograph Original</span>
+          </div>
+
+          <!-- Stage Background Toggle -->
+          <div class="flex items-center bg-stone-100 p-1 rounded-lg border border-stone-200/60 text-xs text-stone-600">
+            <button onclick="setStageBg('white')" id="bg-btn-white" class="px-2.5 py-1 rounded-md bg-white shadow-xs font-medium text-stone-900">Blanco</button>
+            <button onclick="setStageBg('check')" id="bg-btn-check" class="px-2.5 py-1 rounded-md font-medium hover:text-stone-900">Transparente</button>
+            <button onclick="setStageBg('dark')" id="bg-btn-dark" class="px-2.5 py-1 rounded-md font-medium hover:text-stone-900">Oscuro</button>
+          </div>
+        </div>
+
+        <!-- Master Viewport (Clean 460x350 Aspect Canvas) -->
+        <div id="stage-canvas-container" class="w-full bg-[#FFFFFF] rounded-2xl border border-stone-200/80 p-6 sm:p-10 flex items-center justify-center transition-colors relative overflow-hidden min-h-[300px]">
+          <div id="master-svg-target" class="w-full max-w-[440px] aspect-[460/350] flex items-center justify-center drop-shadow-sm transition-transform duration-200">
+            <!-- Dynamic SVG injected here -->
+          </div>
+        </div>
+
+        <!-- Export Action Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onclick="downloadSvgCurrent()" class="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-stone-900 hover:bg-black text-white shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Descargar SVG (.svg)
+          </button>
+          <button onclick="downloadPngCurrent()" class="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-stone-800 hover:bg-stone-900 text-white shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Descargar PNG (2000px)
+          </button>
+          <button onclick="copyCurrentSvgCode()" class="w-full py-2.5 px-3 rounded-xl text-xs font-medium bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition flex items-center justify-center gap-2 active:scale-95">
+            <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Copiar Código SVG
+          </button>
+        </div>
+
+        <!-- Real-time Multi-Scale Reductions & Contrast Testbench -->
+        <div class="border-t border-stone-100 pt-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-600">Comprobación de Escala &amp; Favicon</h2>
+              <p class="text-[11px] text-stone-400">Verificación de legibilidad en reducciones extremas y fondo claro / oscuro</p>
+            </div>
+            <span class="text-[10px] font-mono bg-stone-100 text-stone-500 px-2 py-0.5 rounded">Pixel Grid Proof</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Light BG Bench -->
+            <div class="bg-white p-3 rounded-xl border border-stone-200/80 flex items-center justify-around">
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-light-64" class="w-16 h-12 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">64px</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-light-32" class="w-8 h-8 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">32px</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-light-16" class="w-5 h-5 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">16px</span>
+              </div>
+            </div>
+
+            <!-- Dark BG Bench -->
+            <div class="bg-stone-900 p-3 rounded-xl border border-stone-800 flex items-center justify-around">
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-dark-64" class="w-16 h-12 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">64px</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-dark-32" class="w-8 h-8 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">32px</span>
+              </div>
+              <div class="flex flex-col items-center gap-1">
+                <div id="mini-dark-16" class="w-5 h-5 flex items-center justify-center"></div>
+                <span class="text-[9px] font-mono text-stone-400">16px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Color Generator & Precision Tuning Deck (Col 5) -->
+      <section class="lg:col-span-5 bg-white rounded-2xl border border-stone-200/90 shadow-sm p-6 flex flex-col gap-6">
+        
+        <!-- Generator Controls -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-600">Generador de Armonías</h2>
+            <span class="text-[11px] text-indigo-600 font-medium">Algoritmo cromático</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <select id="harmony-mode-select" class="col-span-2 text-xs font-medium bg-stone-50 border border-stone-200 rounded-lg p-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="analogous">Armonía Análoga Vibrante</option>
+              <option value="triadic">Triádica de Alto Contraste</option>
+              <option value="split">Split-Complementaria Litográfica</option>
+              <option value="bauhaus">Tonos Bauhaus &amp; Tierra</option>
+              <option value="editorial">Pasteles Editoriales Modernos</option>
+              <option value="monochrome">Monocromo con Acento Neón</option>
+              <option value="acid">Vanguardia Ácida / Fluorescente</option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button onclick="generateHarmonicPalette()" class="flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center justify-center gap-1.5 active:scale-98">
+              <span>🎨 Color Aleatorio</span>
+            </button>
+            <button onclick="randomizeRadii()" class="flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition flex items-center justify-center gap-1.5 active:scale-98">
+              <span>📐 Radios Aleatorios</span>
+            </button>
+            <button onclick="mutateEverything()" class="w-full py-2.5 px-3 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-stone-900 shadow-xs transition flex items-center justify-center gap-1.5 active:scale-98">
+              <span>⚡ Mutar Todo (Color + Radios)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Geometric Radii Customization Deck -->
+        <div class="border-t border-stone-100 pt-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-600">Geometría &amp; Radios Concéntricos</h2>
+              <p class="text-[11px] text-stone-400">Centrado axial estricto: X_izq=148, X_der=315, Y=175</p>
+            </div>
+            <button onclick="resetRadiiToDefault()" class="text-[11px] text-stone-400 hover:text-stone-700 underline">Reset Radios</button>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <!-- Left System Radii -->
+            <div class="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2.5">
+              <div class="text-[10px] font-semibold tracking-wider uppercase text-indigo-700 flex justify-between">
+                <span>Radios Sistema Izquierdo</span>
+                <span class="font-mono text-stone-400">Eje (148, 175)</span>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Halo Base Exterior (R)</span>
+                  <span id="label-r-leftHalo" class="font-mono font-medium text-stone-800">142</span>
+                </div>
+                <input type="range" id="range-r-leftHalo" min="120" max="155" value="142" oninput="updateRadius('leftHalo', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Círculo Mayor (R)</span>
+                  <span id="label-r-leftOuter" class="font-mono font-medium text-stone-800">132</span>
+                </div>
+                <input type="range" id="range-r-leftOuter" min="100" max="145" value="132" oninput="updateRadius('leftOuter', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Anillo Intermedio (R)</span>
+                  <span id="label-r-leftMid" class="font-mono font-medium text-stone-800">77</span>
+                </div>
+                <input type="range" id="range-r-leftMid" min="45" max="110" value="77" oninput="updateRadius('leftMid', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Núcleo Concéntrico (R)</span>
+                  <span id="label-r-leftCore" class="font-mono font-medium text-stone-800">41</span>
+                </div>
+                <input type="range" id="range-r-leftCore" min="15" max="65" value="41" oninput="updateRadius('leftCore', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+              </div>
+            </div>
+
+            <!-- Right System Radii -->
+            <div class="p-3 rounded-xl bg-stone-50 border border-stone-200/80 space-y-2.5">
+              <div class="text-[10px] font-semibold tracking-wider uppercase text-rose-700 flex justify-between">
+                <span>Radios Sistema Derecho (Superpuesto)</span>
+                <span class="font-mono text-stone-400">Eje (315, 175)</span>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Gran Lente Translúcida (R)</span>
+                  <span id="label-r-rightHalo" class="font-mono font-medium text-stone-800">136</span>
+                </div>
+                <input type="range" id="range-r-rightHalo" min="100" max="150" value="136" oninput="updateRadius('rightHalo', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Diana Exterior (R)</span>
+                  <span id="label-r-rightOuter" class="font-mono font-medium text-stone-800">58</span>
+                </div>
+                <input type="range" id="range-r-rightOuter" min="42" max="95" value="58" oninput="updateRadius('rightOuter', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Anillo Concéntrico (R)</span>
+                  <span id="label-r-rightMid" class="font-mono font-medium text-stone-800">40</span>
+                </div>
+                <input type="range" id="range-r-rightMid" min="25" max="65" value="40" oninput="updateRadius('rightMid', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-600" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[11px] text-stone-600 mb-1">
+                  <span>Núcleo Diana (R)</span>
+                  <span id="label-r-rightCore" class="font-mono font-medium text-stone-800">23</span>
+                </div>
+                <input type="range" id="range-r-rightCore" min="8" max="38" value="23" oninput="updateRadius('rightCore', this.value)" class="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-rose-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets Selection Grid -->
+        <div class="border-t border-stone-100 pt-5">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2.5">
+            Presets Temáticos Clásicos
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="applyPreset('risograph-1989')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Risograph 1989</div>
+              <div class="text-[10px] text-stone-500">Azul, fucsia, amarillo &amp; rojo</div>
+            </button>
+            <button onclick="applyPreset('bauhaus')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Bauhaus / De Stijl</div>
+              <div class="text-[10px] text-stone-500">Primarios puros alemanes</div>
+            </button>
+            <button onclick="applyPreset('swiss-modern')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Swiss Graphic 50s</div>
+              <div class="text-[10px] text-stone-500">Rojo bermellón y cian helio</div>
+            </button>
+            <button onclick="applyPreset('terracotta-warm')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Ocre &amp; Terracota</div>
+              <div class="text-[10px] text-stone-500">Arcillas, oliva y siena</div>
+            </button>
+            <button onclick="applyPreset('deep-space')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Deep Space / Cyber</div>
+              <div class="text-[10px] text-stone-500">Violeta cósmico y ácido</div>
+            </button>
+            <button onclick="applyPreset('monochrome-minimal')" class="text-left p-2 rounded-lg border border-stone-200 hover:border-indigo-400 bg-stone-50/70 hover:bg-white text-xs transition">
+              <div class="font-medium text-stone-800">Monolito Grafito</div>
+              <div class="text-[10px] text-stone-500">Grises tonales y negro humo</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Manual Color Precision Sliders/Pickers -->
+        <div class="border-t border-stone-100 pt-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-600">Ajuste Manual por Capa</h2>
+            <button onclick="resetToDefault()" class="text-[11px] text-stone-400 hover:text-stone-700 underline">Restaurar Original</button>
+          </div>
+
+          <!-- Color Elements List -->
+          <div class="space-y-2 text-xs font-mono">
+            <!-- Left System -->
+            <div class="text-[10px] font-semibold tracking-wider uppercase text-indigo-700 pt-1">Sistema Izquierdo [Eje X: 148]</div>
+            
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Halo Base (R:142)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-leftHalo" onchange="updateFromHexInput('leftHalo', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-leftHalo" oninput="updateFromPicker('leftHalo', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Círculo Mayor (R:132)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-leftOuter" onchange="updateFromHexInput('leftOuter', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-leftOuter" oninput="updateFromPicker('leftOuter', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Anillo Medio (R:77)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-leftMid" onchange="updateFromHexInput('leftMid', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-leftMid" oninput="updateFromPicker('leftMid', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Núcleo Izquierdo (R:41)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-leftCore" onchange="updateFromHexInput('leftCore', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-leftCore" oninput="updateFromPicker('leftCore', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <!-- Right System -->
+            <div class="text-[10px] font-semibold tracking-wider uppercase text-rose-700 pt-3">Sistema Derecho [Eje X: 315 • Multiply]</div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Gran Lente Superpuesta (R:136)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-rightHalo" onchange="updateFromHexInput('rightHalo', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-rightHalo" oninput="updateFromPicker('rightHalo', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Círculo Medio Diana (R:58)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-rightOuter" onchange="updateFromHexInput('rightOuter', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-rightOuter" oninput="updateFromPicker('rightOuter', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Anillo Concéntrico (R:40)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-rightMid" onchange="updateFromHexInput('rightMid', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-rightMid" oninput="updateFromPicker('rightMid', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 border border-stone-200/70">
+              <span class="text-stone-700 font-sans text-xs">Núcleo Central Diana (R:23)</span>
+              <div class="flex items-center gap-2">
+                <input type="text" id="hex-rightCore" onchange="updateFromHexInput('rightCore', this.value)" class="w-16 px-1.5 py-0.5 text-xs bg-white border border-stone-200 rounded text-center uppercase" />
+                <input type="color" id="picker-rightCore" oninput="updateFromPicker('rightCore', this.value)" class="w-7 h-7 rounded border-0 cursor-pointer p-0 bg-transparent" />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- History Reel Section -->
+    <section class="bg-white rounded-2xl border border-stone-200/90 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-stone-600">Historial de Variaciones Generadas</h2>
+          <p class="text-xs text-stone-400">Haz clic en cualquier versión anterior para recuperarla o descargarla</p>
+        </div>
+        <button onclick="clearHistory()" class="text-xs text-stone-400 hover:text-stone-700">Limpiar Historial</button>
+      </div>
+
+      <div id="history-container" class="flex gap-4 overflow-x-auto pb-3 custom-scroll">
+        <!-- History items dynamically populated -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-stone-200 bg-white py-6 mt-12 text-center text-xs text-stone-400">
+    Fusión Concéntrica Vectorial Minimalista • Generador SVG Limpio &amp; Escalable
+  </footer>
+
+  <script>
+    // Exact Master Colors (Default Risograph 1989)
+    const DEFAULT_COLORS = {
+      leftHalo: "#FDE047",      // Amarillo base exterior
+      leftOuter: "#0272BD",     // Azul vibrante grande
+      leftMid: "#99CEE7",       // Celeste claro intermedio
+      leftCore: "#E4007F",      // Magenta intenso centro
+      rightHalo: "#ED5E93",     // Rosa translúcido multiply
+      rightOuter: "#E11D25",    // Rojo concéntrico diana
+      rightMid: "#E96A12",      // Naranja diana
+      rightCore: "#FAD814"      // Amarillo centro diana
+    };
+
+    // Default Exact Radii (Option O / Image 5)
+    const DEFAULT_RADII = {
+      leftHalo: 142,
+      leftOuter: 132,
+      leftMid: 77,
+      leftCore: 41,
+      rightHalo: 136,
+      rightOuter: 58,
+      rightMid: 40,
+      rightCore: 23
+    };
+
+    // Current State
+    let activeColors = { ...DEFAULT_COLORS };
+    let activeRadii = { ...DEFAULT_RADII };
+    let currentPaletteTitle = "Risograph 1989";
+    let historyStack = [];
+
+    // Presets Library
+    const presetsLib = {
+      'risograph-1989': {
+        name: "Risograph 1989",
+        colors: { ...DEFAULT_COLORS }
+      },
+      'bauhaus': {
+        name: "Bauhaus / De Stijl",
+        colors: {
+          leftHalo: "#F3F4F6",
+          leftOuter: "#1A3A8A",
+          leftMid: "#E5E7EB",
+          leftCore: "#E02424",
+          rightHalo: "#F59E0B",
+          rightOuter: "#111827",
+          rightMid: "#DC2626",
+          rightCore: "#FBBF24"
+        }
+      },
+      'swiss-modern': {
+        name: "Swiss Graphic 50s",
+        colors: {
+          leftHalo: "#E2E8F0",
+          leftOuter: "#0F172A",
+          leftMid: "#38BDF8",
+          leftCore: "#F43F5E",
+          rightHalo: "#FB7185",
+          rightOuter: "#E11D48",
+          rightMid: "#0284C7",
+          rightCore: "#FFFFFF"
+        }
+      },
+      'terracotta-warm': {
+        name: "Ocre & Terracota",
+        colors: {
+          leftHalo: "#D8C78B",
+          leftOuter: "#2B4B3D",
+          leftMid: "#83A98B",
+          leftCore: "#B4533C",
+          rightHalo: "#DE9985",
+          rightOuter: "#9D3E29",
+          rightMid: "#C5683F",
+          rightCore: "#E2AD52"
+        }
+      },
+      'deep-space': {
+        name: "Deep Space / Cyber",
+        colors: {
+          leftHalo: "#4C1D95",
+          leftOuter: "#1E1B4B",
+          leftMid: "#818CF8",
+          leftCore: "#06B6D4",
+          rightHalo: "#F43F5E",
+          rightOuter: "#7C3AED",
+          rightMid: "#EC4899",
+          rightCore: "#A3E635"
+        }
+      },
+      'monochrome-minimal': {
+        name: "Monolito Grafito",
+        colors: {
+          leftHalo: "#F3F4F6",
+          leftOuter: "#111827",
+          leftMid: "#9CA3AF",
+          leftCore: "#374151",
+          rightHalo: "#6B7280",
+          rightOuter: "#1F2937",
+          rightMid: "#4B5563",
+          rightCore: "#F9FAFB"
+        }
+      }
+    };
+
+    /**
+     * Exact geometry builder with dynamic radii:
+     * Left Center: cx=148, cy=175
+     * Right Center: cx=315, cy=175
+     * Coincident horizontal axis Y=175.
+     * All right side circles concentric to (315, 175).
+     * All left side circles concentric to (148, 175).
+     */
+    function buildSvgMarkup(c, r = activeRadii, width = "100%", height = "100%", standalone = false) {
+      const xmlnsAttr = standalone ? 'xmlns="http://www.w3.org/2000/svg"' : '';
+      return `<svg ${xmlnsAttr} viewBox="0 0 460 350" width="${width}" height="${height}" fill="none">
+  <!-- Grupo Izquierdo Concéntrico en (148, 175) -->
+  <g class="left-system">
+    <circle cx="148" cy="175" r="${r.leftHalo}" fill="${c.leftHalo}" />
+    <circle cx="148" cy="175" r="${r.leftOuter}" fill="${c.leftOuter}" />
+    <circle cx="148" cy="175" r="${r.leftMid}" fill="${c.leftMid}" />
+    <circle cx="148" cy="175" r="${r.leftCore}" fill="${c.leftCore}" />
+  </g>
+
+  <!-- Grupo Derecho Concéntrico en (315, 175) con modo multiply -->
+  <g class="right-system" style="mix-blend-mode: multiply;">
+    <circle cx="315" cy="175" r="${r.rightHalo}" fill="${c.rightHalo}" fill-opacity="0.92" />
+    <circle cx="315" cy="175" r="${r.rightOuter}" fill="${c.rightOuter}" />
+    <circle cx="315" cy="175" r="${r.rightMid}" fill="${c.rightMid}" />
+    <circle cx="315" cy="175" r="${r.rightCore}" fill="${c.rightCore}" />
+  </g>
+</svg>`;
+    }
+
+    // Refresh UI with current colors and radii
+    function updateUi() {
+      // 1. Update Master Viewport
+      const masterContainer = document.getElementById('master-svg-target');
+      masterContainer.innerHTML = buildSvgMarkup(activeColors, activeRadii);
+
+      // 2. Update Multi-scale Test Benches
+      document.getElementById('mini-light-64').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+      document.getElementById('mini-light-32').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+      document.getElementById('mini-light-16').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+      
+      document.getElementById('mini-dark-64').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+      document.getElementById('mini-dark-32').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+      document.getElementById('mini-dark-16').innerHTML = buildSvgMarkup(activeColors, activeRadii, '100%', '100%');
+
+      // 3. Update Color Inputs & Pickers
+      for (const [key, val] of Object.entries(activeColors)) {
+        const picker = document.getElementById(`picker-${key}`);
+        const hexInput = document.getElementById(`hex-${key}`);
+        if (picker) picker.value = normalizeHex(val);
+        if (hexInput) hexInput.value = normalizeHex(val).toUpperCase();
+      }
+
+      // 4. Update Radii Sliders & Labels
+      for (const [key, val] of Object.entries(activeRadii)) {
+        const slider = document.getElementById(`range-r-${key}`);
+        const label = document.getElementById(`label-r-${key}`);
+        if (slider) slider.value = val;
+        if (label) label.textContent = val;
+      }
+
+      // 5. Update Header Badge
+      document.getElementById('current-palette-name').textContent = currentPaletteTitle;
+    }
+
+    function updateRadius(key, val) {
+      val = parseInt(val, 10);
+      activeRadii[key] = val;
+
+      // Ensure concentric hierarchy constraints
+      if (key === 'leftHalo' && activeRadii.leftOuter >= val) activeRadii.leftOuter = val - 4;
+      if (key === 'leftOuter') {
+        if (val >= activeRadii.leftHalo) activeRadii.leftHalo = val + 4;
+        if (val <= activeRadii.leftMid) activeRadii.leftMid = val - 10;
+      }
+      if (key === 'leftMid') {
+        if (val >= activeRadii.leftOuter) activeRadii.leftOuter = val + 10;
+        if (val <= activeRadii.leftCore) activeRadii.leftCore = val - 10;
+      }
+      if (key === 'leftCore' && val >= activeRadii.leftMid) activeRadii.leftMid = val + 10;
+
+      if (key === 'rightHalo' && activeRadii.rightOuter >= val) activeRadii.rightOuter = val - 10;
+      if (key === 'rightOuter') {
+        if (val >= activeRadii.rightHalo) activeRadii.rightHalo = val + 10;
+        if (val <= activeRadii.rightMid) activeRadii.rightMid = val - 8;
+      }
+      if (key === 'rightMid') {
+        if (val >= activeRadii.rightOuter) activeRadii.rightOuter = val + 8;
+        if (val <= activeRadii.rightCore) activeRadii.rightCore = val - 8;
+      }
+      if (key === 'rightCore' && val >= activeRadii.rightMid) activeRadii.rightMid = val + 8;
+
+      updateUi();
+    }
+
+    function resetRadiiToDefault() {
+      activeRadii = { ...DEFAULT_RADII };
+      updateUi();
+      showToast("Radios restablecidos a proporciones originales");
+    }
+
+    // Randomize only radii while preserving concentric geometry and balance
+    function randomizeRadii(silent = false) {
+      // Generate left system radii hierarchically
+      const lHalo = Math.floor(136 + Math.random() * 18);
+      const lOuter = Math.floor(lHalo - (6 + Math.random() * 14));
+      const lMid = Math.floor(52 + Math.random() * 45);
+      const lCore = Math.floor(22 + Math.random() * (lMid - 28));
+
+      // Generate right system radii hierarchically
+      const rHalo = Math.floor(120 + Math.random() * 26);
+      const rOuter = Math.floor(48 + Math.random() * 38);
+      const rMid = Math.floor(rOuter - (10 + Math.random() * 14));
+      const rCore = Math.floor(12 + Math.random() * (rMid - 16));
+
+      activeRadii = {
+        leftHalo: lHalo,
+        leftOuter: lOuter,
+        leftMid: lMid,
+        leftCore: Math.max(16, lCore),
+        rightHalo: rHalo,
+        rightOuter: rOuter,
+        rightMid: Math.max(22, rMid),
+        rightCore: Math.max(10, rCore)
+      };
+
+      currentPaletteTitle = currentPaletteTitle.includes("Mutación") ? currentPaletteTitle : `${currentPaletteTitle} (Geometría)`;
+      addToHistory(currentPaletteTitle, activeColors, activeRadii);
+      updateUi();
+      if (!silent) showToast("Radios concéntricos mutados aleatoriamente");
+    }
+
+    // Mutate both colors and radii in one click
+    function mutateEverything() {
+      generateHarmonicPalette(true);
+      randomizeRadii(true);
+      currentPaletteTitle = "Mutación Total";
+      addToHistory(currentPaletteTitle, activeColors, activeRadii);
+      updateUi();
+      showToast("⚡ Variación total (Color + Geometría) generada");
+    }
+
+    function normalizeHex(colorStr) {
+      if (!colorStr.startsWith('#')) return '#000000';
+      if (colorStr.length === 4) {
+        return '#' + colorStr[1] + colorStr[1] + colorStr[2] + colorStr[2] + colorStr[3] + colorStr[3];
+      }
+      return colorStr.slice(0, 7);
+    }
+
+    // Manual Input handlers
+    function updateFromPicker(key, hexVal) {
+      activeColors[key] = hexVal;
+      currentPaletteTitle = "Personalizado";
+      updateUi();
+    }
+
+    function updateFromHexInput(key, hexVal) {
+      if (!hexVal.startsWith('#')) hexVal = '#' + hexVal;
+      if (/^#[0-9A-Fa-f]{6}$/.test(hexVal)) {
+        activeColors[key] = hexVal;
+        currentPaletteTitle = "Personalizado";
+        updateUi();
+      }
+    }
+
+    function applyPreset(presetKey) {
+      const preset = presetsLib[presetKey];
+      if (!preset) return;
+      activeColors = { ...preset.colors };
+      currentPaletteTitle = preset.name;
+      addToHistory(currentPaletteTitle, activeColors, activeRadii);
+      updateUi();
+      showToast(`Preset "${preset.name}" aplicado`);
+    }
+
+    function resetToDefault() {
+      activeColors = { ...DEFAULT_COLORS };
+      activeRadii = { ...DEFAULT_RADII };
+      currentPaletteTitle = "Risograph 1989";
+      updateUi();
+      showToast("Restaurado a la geometría y color original de 1989");
+    }
+
+    function swapSides() {
+      const tempLeft = {
+        leftHalo: activeColors.rightHalo,
+        leftOuter: activeColors.rightOuter,
+        leftMid: activeColors.rightMid,
+        leftCore: activeColors.rightCore
+      };
+      activeColors.rightHalo = activeColors.leftHalo;
+      activeColors.rightOuter = activeColors.leftOuter;
+      activeColors.rightMid = activeColors.leftMid;
+      activeColors.rightCore = activeColors.leftCore;
+
+      activeColors.leftHalo = tempLeft.leftHalo;
+      activeColors.leftOuter = tempLeft.leftOuter;
+      activeColors.leftMid = tempLeft.leftMid;
+      activeColors.leftCore = tempLeft.leftCore;
+
+      currentPaletteTitle = "Inversión L/R";
+      addToHistory(currentPaletteTitle, activeColors, activeRadii);
+      updateUi();
+      showToast("Lados invertidos (swap L/R)");
+    }
+
+    // Color Theory Helper Functions (HSL conversions)
+    function hslToHex(h, s, l) {
+      h = (h % 360 + 360) % 360;
+      s /= 100;
+      l /= 100;
+      let c = (1 - Math.abs(2 * l - 1)) * s;
+      let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      let m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+      else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+      else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+      else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+      else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+      else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+      r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+      g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+      b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+      return `#${r}${g}${b}`;
+    }
+
+    // Central Generative Color Algorithm
+    function generateHarmonicPalette(silent = false) {
+      const mode = document.getElementById('harmony-mode-select').value;
+      const baseHue = Math.floor(Math.random() * 360);
+      let newColors = {};
+      let title = "Variación Armónica";
+
+      switch (mode) {
+        case 'analogous':
+          title = "Análoga Dinámica";
+          newColors = {
+            leftHalo: hslToHex(baseHue - 30, 80, 85),
+            leftOuter: hslToHex(baseHue, 85, 45),
+            leftMid: hslToHex(baseHue + 20, 75, 75),
+            leftCore: hslToHex(baseHue + 45, 90, 52),
+            rightHalo: hslToHex(baseHue + 60, 80, 68),
+            rightOuter: hslToHex(baseHue + 80, 85, 48),
+            rightMid: hslToHex(baseHue + 100, 90, 55),
+            rightCore: hslToHex(baseHue - 15, 95, 60)
+          };
+          break;
+
+        case 'triadic':
+          title = "Triádica de Alto Impacto";
+          const h2 = (baseHue + 120) % 360;
+          const h3 = (baseHue + 240) % 360;
+          newColors = {
+            leftHalo: hslToHex(baseHue, 60, 90),
+            leftOuter: hslToHex(baseHue, 85, 44),
+            leftMid: hslToHex(baseHue, 70, 78),
+            leftCore: hslToHex(h2, 90, 50),
+            rightHalo: hslToHex(h3, 85, 65),
+            rightOuter: hslToHex(h2, 85, 45),
+            rightMid: hslToHex(h3, 90, 55),
+            rightCore: hslToHex(baseHue, 95, 55)
+          };
+          break;
+
+        case 'split':
+          title = "Split Complementaria";
+          const s1 = (baseHue + 150) % 360;
+          const s2 = (baseHue + 210) % 360;
+          newColors = {
+            leftHalo: hslToHex(baseHue, 75, 88),
+            leftOuter: hslToHex(baseHue, 82, 42),
+            leftMid: hslToHex(s1, 65, 75),
+            leftCore: hslToHex(s2, 88, 52),
+            rightHalo: hslToHex(s1, 85, 68),
+            rightOuter: hslToHex(s2, 85, 46),
+            rightMid: hslToHex(baseHue, 88, 56),
+            rightCore: hslToHex(s1, 95, 55)
+          };
+          break;
+
+        case 'bauhaus':
+          title = "Tonos Bauhaus / Tierra";
+          const earths = [
+            hslToHex(baseHue, 35, 40),
+            hslToHex(baseHue + 35, 45, 55),
+            hslToHex(baseHue - 30, 60, 30),
+            hslToHex(baseHue + 180, 70, 48),
+            hslToHex(baseHue + 40, 75, 50),
+            hslToHex(baseHue - 15, 25, 85)
+          ];
+          newColors = {
+            leftHalo: hslToHex(baseHue + 20, 30, 88),
+            leftOuter: earths[0],
+            leftMid: earths[1],
+            leftCore: earths[3],
+            rightHalo: hslToHex(baseHue + 180, 50, 70),
+            rightOuter: earths[2],
+            rightMid: earths[4],
+            rightCore: hslToHex(baseHue + 45, 80, 60)
+          };
+          break;
+
+        case 'editorial':
+          title = "Pastel Editorial";
+          newColors = {
+            leftHalo: hslToHex(baseHue, 40, 92),
+            leftOuter: hslToHex(baseHue, 55, 62),
+            leftMid: hslToHex(baseHue + 40, 50, 82),
+            leftCore: hslToHex(baseHue + 180, 65, 60),
+            rightHalo: hslToHex(baseHue + 160, 55, 78),
+            rightOuter: hslToHex(baseHue + 200, 60, 58),
+            rightMid: hslToHex(baseHue + 80, 65, 70),
+            rightCore: hslToHex(baseHue + 20, 80, 72)
+          };
+          break;
+
+        case 'monochrome':
+          title = "Monocromo con Acento";
+          const accentHue = (baseHue + 180) % 360;
+          newColors = {
+            leftHalo: "#F3F4F6",
+            leftOuter: hslToHex(baseHue, 15, 20),
+            leftMid: hslToHex(baseHue, 10, 65),
+            leftCore: hslToHex(accentHue, 95, 50),
+            rightHalo: hslToHex(baseHue, 10, 45),
+            rightOuter: hslToHex(baseHue, 15, 28),
+            rightMid: hslToHex(baseHue, 10, 50),
+            rightCore: hslToHex(accentHue, 95, 60)
+          };
+          break;
+
+        case 'acid':
+        default:
+          title = "Fluorescente / Ácido";
+          newColors = {
+            leftHalo: hslToHex(baseHue, 95, 85),
+            leftOuter: hslToHex(baseHue, 95, 48),
+            leftMid: hslToHex((baseHue + 40) % 360, 95, 70),
+            leftCore: hslToHex((baseHue + 160) % 360, 100, 50),
+            rightHalo: hslToHex((baseHue + 180) % 360, 95, 65),
+            rightOuter: hslToHex((baseHue + 220) % 360, 95, 50),
+            rightMid: hslToHex((baseHue + 280) % 360, 95, 55),
+            rightCore: hslToHex((baseHue + 60) % 360, 100, 50)
+          };
+          break;
+      }
+
+      activeColors = newColors;
+      currentPaletteTitle = title;
+      if (!silent) {
+        addToHistory(title, newColors, activeRadii);
+        updateUi();
+        showToast(`Generada: ${title}`);
+      }
+    }
+
+    // History Manager with full color + radii snapshots
+    function addToHistory(name, colorsObj, radiiObj) {
+      historyStack.unshift({
+        id: Date.now(),
+        name,
+        colors: { ...colorsObj },
+        radii: { ...radiiObj }
+      });
+      if (historyStack.length > 12) historyStack.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('history-container');
+      if (historyStack.length === 0) {
+        container.innerHTML = '<div class="text-xs text-stone-400 py-4 italic">No hay variaciones previas generadas aún.</div>';
+        return;
+      }
+
+      container.innerHTML = historyStack.map((item, idx) => `
+        <div onclick="restoreHistoryItem(${item.id})" class="flex-shrink-0 cursor-pointer group bg-stone-50 hover:bg-stone-100 border border-stone-200/80 rounded-xl p-2.5 transition flex flex-col items-center gap-1.5 w-32 text-center">
+          <div class="w-24 h-18 aspect-[460/350] flex items-center justify-center bg-white rounded-lg shadow-xs overflow-hidden">
+            ${buildSvgMarkup(item.colors, item.radii, '100%', '100%')}
+          </div>
+          <span class="text-[11px] font-medium text-stone-800 truncate w-full group-hover:text-indigo-600">${item.name}</span>
+          <span class="text-[9px] text-stone-400 font-mono">#0${idx + 1}</span>
+        </div>
+      `).join('');
+    }
+
+    function restoreHistoryItem(id) {
+      const found = historyStack.find(x => x.id === id);
+      if (!found) return;
+      activeColors = { ...found.colors };
+      activeRadii = { ...found.radii };
+      currentPaletteTitle = found.name;
+      updateUi();
+      showToast(`Restaurada: ${found.name}`);
+    }
+
+    function clearHistory() {
+      historyStack = [];
+      renderHistory();
+      showToast("Historial vaciado");
+    }
+
+    // Viewport background controller
+    function setStageBg(type) {
+      const stage = document.getElementById('stage-canvas-container');
+      const bWhite = document.getElementById('bg-btn-white');
+      const bCheck = document.getElementById('bg-btn-check');
+      const bDark = document.getElementById('bg-btn-dark');
+
+      stage.classList.remove('bg-white', 'bg-stone-900', 'checkerboard', 'checkerboard-light');
+      [bWhite, bCheck, bDark].forEach(btn => btn.classList.remove('bg-white', 'shadow-xs', 'text-stone-900'));
+
+      if (type === 'white') {
+        stage.classList.add('bg-white');
+        bWhite.classList.add('bg-white', 'shadow-xs', 'text-stone-900');
+      } else if (type === 'check') {
+        stage.classList.add('checkerboard', 'checkerboard-light');
+        bCheck.classList.add('bg-white', 'shadow-xs', 'text-stone-900');
+      } else if (type === 'dark') {
+        stage.classList.add('bg-stone-900');
+        bDark.classList.add('bg-white', 'shadow-xs', 'text-stone-900');
+      }
+    }
+
+    // Toast Utility
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      toastText.textContent = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+      }, 2500);
+    }
+
+    // Export: Copy Clean SVG Code
+    function copyCurrentSvgCode() {
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 460, 350, true);
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = rawSvg;
+      tempTextArea.style.position = "fixed";
+      tempTextArea.style.left = "-9999px";
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      try {
+        document.execCommand("copy");
+        showToast("Código SVG copiado al portapapeles");
+      } catch (err) {
+        showToast("Error al copiar");
+      }
+      document.body.removeChild(tempTextArea);
+    }
+
+    // Export: Download SVG
+    function downloadSvgCurrent() {
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 460, 350, true);
+      const blob = new Blob([rawSvg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const cleanSlug = currentPaletteTitle.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      link.href = url;
+      link.download = `logo-concentric-${cleanSlug}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("Descargando archivo SVG vectorial");
+    }
+
+    // Export: High-Res Transparent PNG Render (2000px wide)
+    function downloadPngCurrent() {
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 2000, 1521, true);
+      const blob = new Blob([rawSvg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+
+      img.onload = function() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 2000;
+        canvas.height = 1521;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+
+        const pngUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        const cleanSlug = currentPaletteTitle.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        link.href = pngUrl;
+        link.download = `logo-concentric-${cleanSlug}-2000px.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast("Descargando PNG en Alta Resolución (2000px)");
+      };
+
+      img.src = url;
+    }
+
+    // Startup Initialization
+    window.onload = function() {
+      addToHistory("Risograph 1989 Original", activeColors, activeRadii);
+      updateUi();
+    };
+  </script>
+</body>
+</html>

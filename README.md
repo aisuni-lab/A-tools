@@ -32,5 +32,7 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni-Type-Synth](Aisuni-Type-Synth/) — convierte palabras y glifos en composiciones tipográficas cinéticas; exporta PNG y SVG.
   - Versión: 6.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Synth/
+- [Aisuni-Symbol](Aisuni-Symbol/) — genera variaciones del símbolo AISUNI ajustando proporciones geométricas y color, con exportación SVG y PNG.
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Symbol/
 - [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
