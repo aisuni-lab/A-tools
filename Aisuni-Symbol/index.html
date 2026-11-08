@@ -45,6 +45,10 @@
         linear-gradient(45deg, transparent 75%, #22252a 75%), 
         linear-gradient(-45deg, transparent 75%, #22252a 75%);
     }
+    /* Prevent SVG clipping */
+    svg.logo-svg {
+      overflow: visible;
+    }
     /* Custom scrollbar for history reel */
     .custom-scroll::-webkit-scrollbar {
       height: 6px;
@@ -124,8 +128,8 @@
         </div>
 
         <!-- Master Viewport (Clean 460x350 Aspect Canvas) -->
-        <div id="stage-canvas-container" class="w-full bg-[#FFFFFF] rounded-2xl border border-stone-200/80 p-6 sm:p-10 flex items-center justify-center transition-colors relative overflow-hidden min-h-[300px]">
-          <div id="master-svg-target" class="w-full max-w-[440px] aspect-[460/350] flex items-center justify-center drop-shadow-sm transition-transform duration-200">
+        <div id="stage-canvas-container" class="w-full bg-[#FFFFFF] rounded-2xl border border-stone-200/80 p-6 sm:p-8 flex items-center justify-center transition-colors relative min-h-[320px]">
+          <div id="master-svg-target" class="w-full max-w-[460px] h-[280px] sm:h-[310px] flex items-center justify-center drop-shadow-sm transition-transform duration-200 overflow-visible">
             <!-- Dynamic SVG injected here -->
           </div>
         </div>
@@ -573,10 +577,28 @@
      * Coincident horizontal axis Y=175.
      * All right side circles concentric to (315, 175).
      * All left side circles concentric to (148, 175).
+     * 
+     * Computes dynamic bounding box so outer circles never touch canvas boundaries.
      */
+    function computeViewBox(r = activeRadii, padding = 28) {
+      const leftExtent = 148 - Math.max(r.leftHalo, r.leftOuter);
+      const rightExtent = 315 + Math.max(r.rightHalo, r.rightOuter);
+      const topExtent = 175 - Math.max(r.leftHalo, r.leftOuter, r.rightHalo, r.rightOuter);
+      const bottomExtent = 175 + Math.max(r.leftHalo, r.leftOuter, r.rightHalo, r.rightOuter);
+
+      const minX = Math.floor(leftExtent - padding);
+      const minY = Math.floor(topExtent - padding);
+      const width = Math.ceil((rightExtent + padding) - minX);
+      const height = Math.ceil((bottomExtent + padding) - minY);
+
+      return { minX, minY, width, height, viewBoxStr: `${minX} ${minY} ${width} ${height}` };
+    }
+
     function buildSvgMarkup(c, r = activeRadii, width = "100%", height = "100%", standalone = false) {
       const xmlnsAttr = standalone ? 'xmlns="http://www.w3.org/2000/svg"' : '';
-      return `<svg ${xmlnsAttr} viewBox="0 0 460 350" width="${width}" height="${height}" fill="none">
+      const { viewBoxStr } = computeViewBox(r);
+
+      return `<svg class="logo-svg" ${xmlnsAttr} viewBox="${viewBoxStr}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" fill="none">
   <!-- Grupo Izquierdo Concéntrico en (148, 175) -->
   <g class="left-system">
     <circle cx="148" cy="175" r="${r.leftHalo}" fill="${c.leftHalo}" />
@@ -1004,7 +1026,8 @@
 
     // Export: Copy Clean SVG Code
     function copyCurrentSvgCode() {
-      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 460, 350, true);
+      const vb = computeViewBox(activeRadii);
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, vb.width, vb.height, true);
       const tempTextArea = document.createElement("textarea");
       tempTextArea.value = rawSvg;
       tempTextArea.style.position = "fixed";
@@ -1022,7 +1045,8 @@
 
     // Export: Download SVG
     function downloadSvgCurrent() {
-      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 460, 350, true);
+      const vb = computeViewBox(activeRadii);
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, vb.width, vb.height, true);
       const blob = new Blob([rawSvg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -1033,20 +1057,23 @@
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      showToast("Descargando archivo SVG vectorial");
+      showToast("Descargando archivo SVG vectorial sin recortes");
     }
 
     // Export: High-Res Transparent PNG Render (2000px wide)
     function downloadPngCurrent() {
-      const rawSvg = buildSvgMarkup(activeColors, activeRadii, 2000, 1521, true);
+      const vb = computeViewBox(activeRadii);
+      const targetWidth = 2000;
+      const targetHeight = Math.round((vb.height / vb.width) * targetWidth);
+      const rawSvg = buildSvgMarkup(activeColors, activeRadii, targetWidth, targetHeight, true);
       const blob = new Blob([rawSvg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const img = new Image();
 
       img.onload = function() {
         const canvas = document.createElement("canvas");
-        canvas.width = 2000;
-        canvas.height = 1521;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
