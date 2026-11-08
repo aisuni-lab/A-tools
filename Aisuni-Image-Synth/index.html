@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI — Image Synth v2.0</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5500',
+              dark: '#0A0B0C',
+              panel: '#121316',
+              border: '#23252A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0A0B0C;
+      color: #F3F4F6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    .pixelated-canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #23252A;
+      height: 5px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FF5500;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #121316;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2E3138;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-orange selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-brand-border bg-brand-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold tracking-tight text-base sm:text-lg uppercase">AISUNI <span class="text-brand-orange">✷</span></span>
+          <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-brand-orange/15 border border-brand-orange/30 text-brand-orange font-semibold">Image Synth v2.0</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher, Resolution Selector & PNG / SVG Export Actions -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center bg-black/50 p-1 rounded-lg border border-brand-border font-mono text-xs">
+          <button id="btn-mode-single" class="px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all">
+            Lienzo Único
+          </button>
+          <button id="btn-mode-batch" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all">
+            Mosaico ×9 Variaciones
+          </button>
+        </div>
+
+        <button id="btn-randomize" class="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-brand-orange hover:text-white font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Nueva Semilla [Espacio]</span>
+        </button>
+
+        <!-- Export Scale 1x..6x + PNG & SVG Buttons -->
+        <div class="flex items-center rounded-lg bg-black/60 border border-brand-border p-0.5 gap-1">
+          <label for="select-export-scale" class="sr-only">Escala de Exportación</label>
+          <select id="select-export-scale" class="bg-transparent text-white font-mono text-xs px-2 py-1 focus:outline-none cursor-pointer" title="Seleccionar resolución y tamaño de exportación (1x a 6x)">
+            <option value="1" class="bg-brand-panel text-white">1x · 800×1000 px</option>
+            <option value="2" selected class="bg-brand-panel text-white">2x · 1600×2000 px</option>
+            <option value="3" class="bg-brand-panel text-white">3x · 2400×3000 px</option>
+            <option value="4" class="bg-brand-panel text-white">4x · 3200×4000 px</option>
+            <option value="5" class="bg-brand-panel text-white">5x · 4000×5000 px</option>
+            <option value="6" class="bg-brand-panel text-white">6x · 4800×6000 px</option>
+          </select>
+          <button id="btn-export-png" class="px-2.5 py-1 rounded-md bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-colors flex items-center gap-1 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Exportar Textura PNG</span>
+          </button>
+          <button id="btn-export-svg" class="px-2.5 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-500 font-mono text-xs font-semibold transition-colors flex items-center gap-1 shadow-sm" title="Descargar reinterpretación como archivo vectorial SVG editable">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+            <span>Exportar SVG</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE (Aligned to top via items-start) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 items-start gap-6 p-4 sm:p-6">
+
+    <!-- LEFT SIDEBAR: IMAGE INPUT, HYBRID ARCHETYPES & REINTERPRETATION PARAMETERS -->
+    <aside class="lg:col-span-4 space-y-4 custom-scroll">
+
+      <!-- 1. IMAGE INPUT & REINTERPRETATION ENGINE (PRIMARY CORE) -->
+      <div class="p-4 rounded-xl bg-brand-panel border-2 border-brand-orange/60 space-y-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-brand-orange font-bold">1. Imagen a Reinterpretar</h2>
+          <span id="seed-badge" class="font-mono text-[11px] text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded border border-brand-orange/20">SEED #90412</span>
+        </div>
+
+        <!-- Upload Dropzone & Preset Selector -->
+        <div id="image-analyzer-box" class="space-y-3">
+          <div class="flex items-center gap-2">
+            <label for="input-upload-image" class="flex-1 cursor-pointer py-2.5 px-3 rounded-lg bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold text-center transition-colors shadow-sm flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>Subir Imagen (JPG / PNG / WebP)</span>
+            </label>
+            <input id="input-upload-image" type="file" accept="image/*" class="hidden">
+          </div>
+
+          <!-- Built-in Test Presets -->
+          <div class="space-y-1">
+            <span class="text-[10px] font-mono text-neutral-400 uppercase">O prueba con una figura base (formato adaptativo):</span>
+            <div class="grid grid-cols-4 gap-1.5 font-mono text-[10px]">
+              <button id="btn-demo-image" data-preset="portrait" class="preset-btn py-1.5 px-1.5 rounded bg-white/10 hover:bg-white/20 border border-brand-orange text-white font-medium text-center" title="Cargar Retrato Sintético (4:5)">Demo</button>
+              <button data-preset="skull" class="preset-btn py-1.5 px-1.5 rounded bg-black/40 hover:bg-white/10 border border-brand-border text-neutral-300 text-center" title="Cargar Cráneo (3:4)">
+                Cráneo
+              </button>
+              <button data-preset="arch" class="preset-btn py-1.5 px-1.5 rounded bg-black/40 hover:bg-white/10 border border-brand-border text-neutral-300 text-center" title="Cargar Edificio Horizontal (16:10)">
+                Edificio
+              </button>
+              <button data-preset="poster" class="preset-btn py-1.5 px-1.5 rounded bg-black/40 hover:bg-white/10 border border-brand-border text-neutral-300 text-center" title="Cargar Símbolo Cuadrado (1:1)">
+                Símbolo
+              </button>
+            </div>
+          </div>
+
+          <!-- Source Image Preview & Telemetry (Top-aligned with items-start) -->
+          <div class="p-2.5 rounded-lg bg-black/60 border border-brand-border space-y-2.5">
+            <div class="flex items-start gap-3">
+              <div class="relative w-16 rounded-md overflow-hidden border border-neutral-700 bg-black flex-shrink-0 self-start">
+                <canvas id="source-thumb-canvas" width="160" height="200" class="w-full h-auto block object-contain"></canvas>
+                <span class="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] font-mono text-center text-neutral-300 py-0.5">ORIGINAL</span>
+              </div>
+              <div class="flex-1 min-w-0 font-mono text-[10px] space-y-1 pt-0.5">
+                <div class="flex justify-between"><span class="text-neutral-400">Formato Lienzo:</span><span id="metric-aspect" class="text-brand-orange font-semibold">800×1000 px</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Contraste RMS:</span><span id="metric-contrast" class="text-white">78.4%</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Vectores Borde:</span><span id="metric-edges" class="text-emerald-400">Alta Definición</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Foco Visual:</span><span id="metric-center" class="text-neutral-300">X:0.50 Y:0.48</span></div>
+              </div>
+            </div>
+
+            <!-- Image Structural Fidelity Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-white font-medium">Fidelidad a la Silueta de la Imagen</span>
+                <span id="label-img-influence" class="text-brand-orange font-bold">90%</span>
+              </div>
+              <input id="slider-img-influence" type="range" min="15" max="100" value="90" class="w-full">
+              <p class="text-[10px] font-mono text-neutral-400 mt-1">Alta = patrones esculpen la imagen con exactitud · Baja = más libre.</p>
+            </div>
+
+            <!-- Luminance Threshold / Contrast Boost -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-neutral-300">Umbral de Sombra / Contraste</span>
+                <span id="val-threshold" class="text-brand-orange">50%</span>
+              </div>
+              <input id="slider-threshold" type="range" min="15" max="85" value="50" class="w-full">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode Toggle: Image Reinterpretation vs Free Procedural -->
+        <div class="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1">
+          <button id="btn-source-image" class="py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all">
+            Guiado por Imagen
+          </button>
+          <button id="btn-source-random" class="py-1.5 px-2 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all">
+            100% Algorítmico
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. HYBRID MUTANT & 7 REFERENCE FAMILIES -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-2.5">
+        <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">2. Estilo de Patrones (Híbrido / 7 Refs)</h2>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="archetype-selector">
+          <button data-arch="hybrid_all" class="arch-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left">
+            <span>✷ Híbrido Mutante (Cruza las 7 Referencias)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-orange text-white">Auto-Mix</span>
+          </button>
+          <button data-arch="ref1_sh6" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 1 · Cyber-Typo & Peines (SH6 / Rojo)</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF1414]"></span>
+          </button>
+          <button data-arch="ref2_city" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 2 · Pixel City & Tarjetas Perforadas</span>
+            <span class="w-3 h-3 rounded-sm bg-[#00E600]"></span>
+          </button>
+          <button data-arch="ref3_tartan" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 3 · Malla Tartán, Diagonal & Skyline</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF007F]"></span>
+          </button>
+          <button data-arch="ref4_blueprint" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 4 · Brutalist Blueprint & Stickers Cian</span>
+            <span class="w-3 h-3 rounded-sm bg-[#00E5FF]"></span>
+          </button>
+          <button data-arch="ref5_slash" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 5 · Corte Diagonal V & Fotocopia</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FFE600]"></span>
+          </button>
+          <button data-arch="ref6_brick" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 6 · Ladrillo Rosa & Vectores K Borde Blanco</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF0066]"></span>
+          </button>
+          <button data-arch="ref7_giant_glyph" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 7 · Macro Glifos Fileteados (3.G / Scanline)</span>
+            <span class="w-3 h-3 rounded-sm bg-[#D900FF]"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. REINTERPRETATION & COLLAGE PARAMETERS -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3.5">
+        <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">3. Afinación de Capas y Textura</h2>
+
+        <!-- Crisp Native Pixel / Object Scale (1px = fine detail, 6px = large macro objects) -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-white font-medium">Escala de Píxel / Tamaño de Objetos</span>
+            <span id="val-pixel-scale" class="text-brand-orange font-bold">2 px</span>
+          </div>
+          <input id="slider-pixel-scale" type="range" min="1" max="6" step="1" value="2" class="w-full">
+          <p class="text-[10px] font-mono text-neutral-400 mt-1">1px = micro-detalle fino · 6px = objetos y ladrillos gigantes en HD.</p>
+        </div>
+
+        <!-- NEW: Rule-Breaking Random Shape Mutation Slider -->
+        <div class="p-2.5 rounded-lg bg-brand-orange/10 border border-brand-orange/30">
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-brand-orange font-semibold">Mutación Caótica de Formas (Rompe-Reglas)</span>
+            <span id="val-chaos" class="text-white font-bold">25%</span>
+          </div>
+          <input id="slider-chaos" type="range" min="0" max="100" value="25" class="w-full">
+          <p class="text-[10px] font-mono text-neutral-400 mt-1">Deforma, inclina y fractura las geometrías sin perder la figura de tu imagen.</p>
+        </div>
+
+        <!-- Adaptive Resolution / Elastic Detail Subdivision -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Adaptación de Escala al Detalle</span>
+            <span id="val-complexity" class="text-brand-orange">8</span>
+          </div>
+          <input id="slider-complexity" type="range" min="3" max="10" value="8" class="w-full">
+        </div>
+
+        <!-- Waffle Grids, Bricks & Perforated Windows -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Densidad de Ladrillos, Tartán y Perforado</span>
+            <span id="val-dither" class="text-brand-orange">85%</span>
+          </div>
+          <input id="slider-dither" type="range" min="15" max="100" value="85" class="w-full">
+        </div>
+
+        <!-- Edge-Following Vectors, Comb Bars & Contours -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Trazos Fileteados y Peines en Bordes</span>
+            <span id="val-bands" class="text-brand-orange">80%</span>
+          </div>
+          <input id="slider-bands" type="range" min="0" max="100" value="80" class="w-full">
+        </div>
+
+        <!-- Random-Sized Multi-Scale Glyphs & Symbols -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Trama de Glifos y Símbolos (Escala Random)</span>
+            <span id="val-glyphs" class="text-brand-orange">70%</span>
+          </div>
+          <input id="slider-glyphs" type="range" min="0" max="100" value="70" class="w-full">
+        </div>
+
+        <!-- Seamless Interlocking Fusion & Glitch -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Fusión de Capas, Glitch y Stickers</span>
+            <span id="val-fusion" class="text-brand-orange">70%</span>
+          </div>
+          <input id="slider-fusion" type="range" min="0" max="100" value="70" class="w-full">
+        </div>
+      </div>
+
+      <!-- 4. PALETTE SYSTEM (INCLUDING IMAGE COLOR EXTRACTION) -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">4. Sistema de Color</h2>
+          <button id="btn-shuffle-palette" class="text-[11px] font-mono text-brand-orange hover:underline">Rotar colores ↻</button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="palette-selector">
+          <button data-palette="hoodie_ref" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left">
+            <span>Hoodie Original (RGB/CMYK)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#00FF00]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF0000]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0000FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF007F]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="image_hybrid" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Fusión con Colores de tu Imagen</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-emerald-400">Auto-Color</span>
+          </button>
+
+          <button data-palette="aisuni_lab" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>AISUNI Acid Minimal</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FF5500]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#00E5FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#10B981]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#F8F9FA]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0C0D0E] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="mono_1bit" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>1-Bit Puro (Serigrafía B&W)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="thermal_synth" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Espectro Térmico</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFE600]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF2A6D]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#7700FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#05D9E8]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#050508] border border-white/20"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. AUTO-MUTATION GENERATOR -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-white">Ráfaga de Interpretaciones</p>
+          <p class="text-[11px] font-mono text-neutral-400">Itera versiones sobre la imagen</p>
+        </div>
+        <button id="btn-toggle-stream" class="px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors">
+          ▶ Iniciar
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT WORKSPACE: TOP-ALIGNED ADAPTIVE CANVAS VIEWER & BATCH VARIATIONS -->
+    <section class="lg:col-span-8 flex flex-col self-start space-y-4">
+
+      <!-- SINGLE HIGH-RES CANVAS VIEW (Top-aligned: justify-start) -->
+      <div id="view-single-container" class="flex flex-col items-center justify-start p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border relative">
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-3 font-mono text-xs text-neutral-400">
+          <span id="active-archetype-title" class="text-white font-semibold">REINTERPRETACIÓN: HÍBRIDO MUTANTE · AUTO-MIX</span>
+          <span id="canvas-res-label">800 × 1000 px Adaptativo · Exportación PNG (1x–6x) & SVG Vectorial</span>
+        </div>
+
+        <!-- Adaptive Canvas Frame (adjusts dynamically to uploaded image proportions) -->
+        <div id="canvas-frame-wrapper" class="relative w-full flex items-center justify-center">
+          <div class="relative rounded-lg overflow-hidden shadow-2xl border border-white/15 bg-black inline-flex items-center justify-center max-w-full">
+            <canvas id="main-pattern-canvas" width="800" height="1000" class="block max-w-full max-h-[76vh] w-auto h-auto object-contain pixelated-canvas cursor-pointer" title="Haz clic para generar una nueva reinterpretación de la imagen"></canvas>
+          </div>
+        </div>
+
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-brand-border text-[11px] font-mono text-neutral-400">
+          <span>El lienzo adopta automáticamente la proporción de tu imagen. Pulsa <strong class="text-white">[Espacio]</strong> para otra variación.</span>
+          <span id="active-modules-summary" class="text-brand-orange">Lienzo Adaptativo + Escala de Objetos 1px–6px + Mutación Caótica</span>
+        </div>
+      </div>
+
+      <!-- 3x3 BATCH GRID VIEW -->
+      <div id="view-batch-container" class="hidden flex flex-col justify-start p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-neutral-300">EXPLORADOR DE LOTES · 9 REINTERPRETACIONES DE LA IMAGEN</span>
+          <button id="btn-regenerate-batch" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors">
+            Generar 9 Nuevas Variaciones ↻
+          </button>
+        </div>
+
+        <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 items-start">
+          <!-- 9 mini canvases injected via JS -->
+        </div>
+
+        <p class="text-[11px] font-mono text-neutral-400 text-center">
+          Haz clic en cualquiera de las 9 interpretaciones para abrirla en el lienzo principal y exportarla en PNG o SVG.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT ADAPTIVE IMAGE-TO-PATTERN SYNTHESIZER & DUAL CANVAS/SVG ENGINE -->
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG (MULBERRY32) & SHUFFLE / NOISE HELPERS
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = seed >>> 0;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffleArray(arr, rand) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const temp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = temp;
+      }
+      return copy;
+    }
+
+    function spatialClusterValue(nx, ny, seed, freq = 3.2) {
+      const s1 = Math.sin(nx * freq * 6.283 + seed * 0.13) * Math.cos(ny * freq * 6.283 - seed * 0.07);
+      const s2 = Math.sin((nx + ny) * freq * 4.5 + seed * 0.29);
+      const s3 = Math.cos((nx * 1.7 - ny * 2.3) * freq * 3.1 - seed * 0.19);
+      return (s1 + s2 * 0.6 + s3 * 0.4 + 2.0) / 4.0;
+    }
+
+    // =========================================================================
+    // 2. MACRO & MICRO BRUTALIST BLOCK-FONT MATRICES (24 DISTINCT CHARACTERS)
+    // =========================================================================
+    const MACRO_GLYPHS = {
+      'S': ["1111111","1111111","1100000","1111111","1111111","0000011","0000011","1111111","1111111"],
+      'H': ["1100011","1100011","1100011","1111111","1111111","1100011","1100011","1100011","1100011"],
+      '6': ["1111111","1111111","1100000","1111111","1111111","1100011","1100011","1111111","1111111"],
+      '3': ["1111111","1111111","0000011","0111111","0111111","0000011","0000011","1111111","1111111"],
+      'G': ["1111111","1111111","1100000","1101111","1101111","1100011","1100011","1111111","1111111"],
+      'T': ["1111111","1111111","0011100","0011100","0011100","0011100","0011100","0011100","0011100"],
+      'U': ["1100011","1100011","1100011","1100011","1100011","1100011","1100011","1111111","1111111"],
+      'N': ["1110011","1111011","1111011","1101111","1101111","1100111","1100111","1100011","1100011"],
+      'K': ["1100011","1100110","1101100","1111000","1111000","1101100","1100110","1100011","1100011"],
+      '2': ["1111111","1111111","0000011","1111111","1111111","1100000","1100000","1111111","1111111"],
+      '7': ["1111111","1111111","0000111","0001110","0011100","0011100","0111000","0111000","0111000"],
+      'F': ["1111111","1111111","1100000","1111110","1111110","1100000","1100000","1100000","1100000"],
+      'A': ["0111110","1111111","1100011","1111111","1111111","1100011","1100011","1100011","1100011"],
+      'E': ["1111111","1111111","1100000","1111110","1111110","1100000","1100000","1111111","1111111"],
+      'X': ["1100011","1110111","0111110","0011100","0011100","0111110","1110111","1100011","1100011"],
+      'Z': ["1111111","1111111","0000111","0001110","0011100","0111000","1110000","1111111","1111111"],
+      '4': ["1100011","1100011","1100011","1111111","1111111","0000011","0000011","0000011","0000011"],
+      '8': ["1111111","1100011","1100011","1111111","1111111","1100011","1100011","1111111","1111111"],
+      '9': ["1111111","1100011","1100011","1111111","1111111","0000011","0000011","1111111","1111111"],
+      'M': ["1100011","1110111","1111111","1101011","1100011","1100011","1100011","1100011","1100011"],
+      'R': ["1111110","1100011","1100011","1111110","1111100","1101110","1100111","1100011","1100011"],
+      'P': ["1111110","1111111","1100011","1111111","1111110","1100000","1100000","1100000","1100000"],
+      'Y': ["1100011","1100011","0110110","0011100","0011100","0011100","0011100","0011100","0011100"],
+      'W': ["1100011","1100011","1100011","1101011","1111111","1110111","1100011","1100011","1100011"]
+    };
+    const GLYPH_KEYS = Object.keys(MACRO_GLYPHS);
+
+    // 5x5 Compact Micro-Glyphs & Symbols
+    const MICRO_GLYPHS_5X5 = [
+      ["11111","10000","11111","00001","11111"], // S
+      ["10001","10001","11111","10001","10001"], // H
+      ["11111","10000","11111","10001","11111"], // 6
+      ["11111","00001","01111","00001","11111"], // 3
+      ["11111","10000","10111","10001","11111"], // G
+      ["01110","10101","11111","10101","01110"], // Target
+      ["10101","01110","11111","01110","10101"], // Star
+      ["11111","10001","10101","10001","11111"], // Box-Dot
+      ["00100","00100","11111","00100","00100"], // Cross +
+      ["11111","10001","10111","10000","11111"]  // Labyrinth C
+    ];
+
+    // =========================================================================
+    // 3. ARCHETYPE PALETTES EXTRACTED FROM THE 7 REFERENCE IMAGES
+    // =========================================================================
+    const ARCHETYPE_PALETTES = {
+      ref1_sh6: {
+        bg: '#0B0B0D',
+        primary: '#FF1414',
+        secondary: '#EC008C',
+        accent1: '#00FF00',
+        accent2: '#00D4D4',
+        accent3: '#1822D6',
+        neutral: '#D4C8BE',
+        white: '#FFFFFF',
+        dark: '#09090B'
+      },
+      ref2_city: {
+        bg: '#0E0E12',
+        primary: '#FF1E1E',
+        secondary: '#00E600',
+        accent1: '#FFE600',
+        accent2: '#D900FF',
+        accent3: '#0033FF',
+        neutral: '#8A8C90',
+        white: '#F5F5F7',
+        dark: '#0A0A0D'
+      },
+      ref3_tartan: {
+        bg: '#0D0D10',
+        primary: '#FF007F',
+        secondary: '#00FF1E',
+        accent1: '#FF8800',
+        accent2: '#FFEE00',
+        accent3: '#00E5FF',
+        neutral: '#EFE6E6',
+        white: '#FFFFFF',
+        dark: '#09090C'
+      },
+      ref4_blueprint: {
+        bg: '#121318',
+        primary: '#00E5FF',
+        secondary: '#D4FF00',
+        accent1: '#FF00A0',
+        accent2: '#E8E6E1',
+        accent3: '#1E22E8',
+        neutral: '#9498A1',
+        white: '#FFFFFF',
+        dark: '#0B0C10'
+      },
+      ref5_slash: {
+        bg: '#111114',
+        primary: '#FF00B8',
+        secondary: '#FFE600',
+        accent1: '#00E5FF',
+        accent2: '#E6E6EA',
+        accent3: '#FF2A00',
+        neutral: '#8C8E96',
+        white: '#FFFFFF',
+        dark: '#09090B'
+      },
+      ref6_brick: {
+        bg: '#140F12',
+        primary: '#FF0066',
+        secondary: '#FFB8D9',
+        accent1: '#FFE600',
+        accent2: '#00FF66',
+        accent3: '#00E5FF',
+        neutral: '#C8B8C0',
+        white: '#FFFFFF',
+        dark: '#0D090B'
+      },
+      ref7_giant_glyph: {
+        bg: '#0F0D12',
+        primary: '#D900FF',
+        secondary: '#00E5FF',
+        accent1: '#FFE600',
+        accent2: '#FF0066',
+        accent3: '#00FF66',
+        neutral: '#D8D0E0',
+        white: '#FFFFFF',
+        dark: '#08070A'
+      }
+    };
+
+    const ARCHETYPE_KEYS = Object.keys(ARCHETYPE_PALETTES);
+    const ARCHETYPE_NAMES = {
+      hybrid_all: 'REINTERPRETACIÓN HÍBRIDO MUTANTE (7 REFS)',
+      ref1_sh6: 'REF 1 · CYBER-TYPO & PEINES (SH6)',
+      ref2_city: 'REF 2 · PIXEL CITY & TARJETAS PERFORADAS',
+      ref3_tartan: 'REF 3 · MALLA TARTÁN, DIAGONAL & SKYLINE',
+      ref4_blueprint: 'REF 4 · BRUTALIST BLUEPRINT & STICKERS CIAN',
+      ref5_slash: 'REF 5 · CORTE DIAGONAL V & FOTOCOPIA',
+      ref6_brick: 'REF 6 · LADRILLO ROSA & VECTORES K FILETEADOS',
+      ref7_giant_glyph: 'REF 7 · MACRO GLIFOS FILETEADOS (3.G)'
+    };
+
+    // =========================================================================
+    // 4. APPLICATION STATE (ADAPTIVE ASPECT RATIO & GLOBAL OBJECT SCALING)
+    // =========================================================================
+    const MAX_GRID_SIDE = 220; // High-precision adaptive analysis grid
+    const state = {
+      seed: 90412,
+      archetype: 'hybrid_all',
+      viewMode: 'single',
+      sourceMode: 'image',
+      presetName: 'portrait',
+      paletteKey: 'hoodie_ref',
+      paletteRotation: 0,
+      fusionLevel: 70,
+      complexity: 8,
+      pixelScale: 2,           // 1px = fine micro-objects, 6px = large macro-objects
+      chaosLevel: 25,          // Rule-breaking random shape mutation (0..100%)
+      bandsRatio: 80,
+      ditherDensity: 85,
+      glyphsRatio: 70,
+      imgInfluence: 90,
+      lumThreshold: 50,
+      exportScale: 2,
+      baseW: 800,              // Dynamic canvas width at 1x (adapts to uploaded image)
+      baseH: 1000,             // Dynamic canvas height at 1x (adapts to uploaded image)
+      gridW: 176,              // Dynamic analysis grid width
+      gridH: 220,              // Dynamic analysis grid height
+      hasSourceImage: false,
+      sourceLumGrid: null,
+      sourceEdgeGrid: null,
+      sourceAngleGrid: null,
+      sourceColorGrid: null,
+      extractedPalette: [],
+      contourChains: [],
+      backgroundSpots: [],
+      streamInterval: null,
+      mutationCounter: 0
+    };
+
+    // Non-linear object size multiplier so 1px -> 6px visibly scales all pattern objects!
+    const OBJECT_SCALE_MAP = {
+      1: 0.48,  // Ultra-fine detailed objects
+      2: 0.82,  // Sharp detailed objects
+      3: 1.25,  // Medium graphic objects
+      4: 1.80,  // Bold objects
+      5: 2.50,  // Large brutalist blocks
+      6: 3.45   // Giant macro objects rendered at crisp native resolution
+    };
+
+    const mainCanvas = document.getElementById('main-pattern-canvas');
+    const seedBadge = document.getElementById('seed-badge');
+    const batchGrid = document.getElementById('batch-grid');
+    const thumbCanvas = document.getElementById('source-thumb-canvas');
+    const thumbCtx = thumbCanvas.getContext('2d');
+    const selectExportScale = document.getElementById('select-export-scale');
+
+    // =========================================================================
+    // 5. ADAPTIVE IMAGE ANALYZER (SETS CANVAS SIZE FROM UPLOADED IMAGE)
+    // =========================================================================
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+    }
+
+    function updateExportResolutionLabels() {
+      const options = selectExportScale.querySelectorAll('option');
+      options.forEach(opt => {
+        const m = parseInt(opt.value, 10) || 1;
+        opt.textContent = `${m}x · ${state.baseW * m}×${state.baseH * m} px`;
+      });
+    }
+
+    function analyzeImageComposition(imgSource) {
+      const srcW = imgSource.naturalWidth || imgSource.width || 1000;
+      const srcH = imgSource.naturalHeight || imgSource.height || 1000;
+
+      // Clamp extreme aspect ratios gently (between 1:3 and 3:1) and set longest side to 1000px at 1x
+      const aspect = Math.max(0.33, Math.min(3.0, srcW / srcH));
+      if (aspect >= 1.0) {
+        state.baseW = 1000;
+        state.baseH = Math.max(340, Math.round(1000 / aspect));
+        state.gridW = MAX_GRID_SIDE;
+        state.gridH = Math.max(72, Math.round(MAX_GRID_SIDE / aspect));
+      } else {
+        state.baseH = 1000;
+        state.baseW = Math.max(340, Math.round(1000 * aspect));
+        state.gridH = MAX_GRID_SIDE;
+        state.gridW = Math.max(72, Math.round(MAX_GRID_SIDE * aspect));
+      }
+
+      // Resize main canvas & export options to match the image's exact proportions
+      mainCanvas.width = state.baseW;
+      mainCanvas.height = state.baseH;
+      updateExportResolutionLabels();
+
+      const W = state.gridW, H = state.gridH;
+      thumbCanvas.width = W;
+      thumbCanvas.height = H;
+      thumbCtx.fillStyle = '#0A0A0C';
+      thumbCtx.fillRect(0, 0, W, H);
+      thumbCtx.drawImage(imgSource, 0, 0, W, H);
+
+      const imgData = thumbCtx.getImageData(0, 0, W, H).data;
+
+      const rawLum = new Float32Array(W * H);
+      const lum = new Float32Array(W * H);
+      const edges = new Float32Array(W * H);
+      const angles = new Float32Array(W * H);
+      const colors = new Array(W * H);
+
+      let minL = 1.0, maxL = 0.0, sumLum = 0;
+      let weightedX = 0, weightedY = 0, totalWeight = 0;
+      const colorBuckets = {};
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const idx = (y * W + x) * 4;
+          const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+          const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          rawLum[y * W + x] = l;
+          if (l < minL) minL = l;
+          if (l > maxL) maxL = l;
+          sumLum += l;
+
+          const qr = Math.round(r / 28) * 28;
+          const qg = Math.round(g / 28) * 28;
+          const qb = Math.round(b / 28) * 28;
+          colors[y * W + x] = rgbToHex(r, g, b);
+
+          const sat = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+          if (l > 0.10 && l < 0.94) {
+            const bKey = rgbToHex(qr, qg, qb);
+            colorBuckets[bKey] = (colorBuckets[bKey] || 0) + (1 + sat * 3.5);
+          }
+
+          const weight = Math.abs(l - 0.5) + 0.1;
+          weightedX += x * weight;
+          weightedY += y * weight;
+          totalWeight += weight;
+        }
+      }
+
+      const rangeL = Math.max(0.15, maxL - minL);
+      for (let i = 0; i < W * H; i++) {
+        lum[i] = Math.max(0, Math.min(1, (rawLum[i] - minL) / rangeL));
+      }
+
+      const meanLum = sumLum / (W * H);
+      let varianceSum = 0;
+      let edgeSum = 0;
+      const contourCandidates = [];
+      const bgCandidates = [];
+
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+          const l = lum[y * W + x];
+          varianceSum += (l - meanLum) * (l - meanLum);
+
+          const gx = (
+            -lum[(y - 1) * W + (x - 1)] + lum[(y - 1) * W + (x + 1)] +
+            -2 * lum[y * W + (x - 1)]   + 2 * lum[y * W + (x + 1)] +
+            -lum[(y + 1) * W + (x - 1)] + lum[(y + 1) * W + (x + 1)]
+          );
+          const gy = (
+            -lum[(y - 1) * W + (x - 1)] - 2 * lum[(y - 1) * W + x] - lum[(y - 1) * W + (x + 1)] +
+             lum[(y + 1) * W + (x - 1)] + 2 * lum[(y + 1) * W + x] + lum[(y + 1) * W + (x + 1)]
+          );
+          const mag = Math.min(1, Math.sqrt(gx * gx + gy * gy) * 0.85);
+          edges[y * W + x] = mag;
+          angles[y * W + x] = Math.atan2(gy, gx) + Math.PI * 0.5;
+          edgeSum += mag;
+
+          if (x % 3 === 0 && y % 3 === 0 && mag > 0.25) {
+            contourCandidates.push({
+              nx: x / W,
+              ny: y / H,
+              mag,
+              tangent: angles[y * W + x],
+              lum: l
+            });
+          } else if (x % 10 === 0 && y % 10 === 0) {
+            bgCandidates.push({ nx: x / W, ny: y / H, lum: l, edge: mag });
+          }
+        }
+      }
+
+      contourCandidates.sort((a, b) => b.mag - a.mag);
+      state.contourChains = contourCandidates.slice(0, 240);
+      state.backgroundSpots = bgCandidates;
+
+      const sortedColors = Object.entries(colorBuckets).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+      state.extractedPalette = sortedColors.slice(0, 6);
+      while (state.extractedPalette.length < 5) {
+        state.extractedPalette.push('#FF007F', '#00FF00', '#00E5FF', '#FFE600', '#FFFFFF');
+      }
+
+      const rmsContrast = Math.sqrt(varianceSum / (W * H));
+      const avgEdge = edgeSum / ((W - 2) * (H - 2));
+      const cmX = (weightedX / totalWeight / W).toFixed(2);
+      const cmY = (weightedY / totalWeight / H).toFixed(2);
+
+      state.sourceLumGrid = lum;
+      state.sourceEdgeGrid = edges;
+      state.sourceAngleGrid = angles;
+      state.sourceColorGrid = colors;
+      state.hasSourceImage = true;
+
+      document.getElementById('metric-aspect').textContent = `${state.baseW}×${state.baseH} px`;
+      document.getElementById('metric-contrast').textContent = `${Math.min(99.9, (rmsContrast * 100 * 2.4)).toFixed(1)}%`;
+      document.getElementById('metric-edges').textContent = avgEdge > 0.12 ? `Alta (${W}×${H})` : `Media (${W}×${H})`;
+      document.getElementById('metric-center').textContent = `X:${cmX} Y:${cmY}`;
+    }
+
+    // 4 Figurative Presets with distinct natural aspect ratios (4:5 portrait, 3:4 skull, 16:10 building, 1:1 symbol)
+    function generatePresetImage(presetType) {
+      const temp = document.createElement('canvas');
+      let ctx;
+
+      if (presetType === 'portrait') {
+        temp.width = 200;
+        temp.height = 250; // 4:5 Portrait aspect ratio
+        ctx = temp.getContext('2d');
+
+        ctx.fillStyle = '#090A0F';
+        ctx.fillRect(0, 0, 200, 250);
+
+        ctx.fillStyle = '#2A1235';
+        ctx.beginPath();
+        ctx.arc(100, 105, 82, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Shoulders & Jacket Collar
+        ctx.fillStyle = '#CBD5E1';
+        ctx.beginPath();
+        ctx.moveTo(8, 250);
+        ctx.lineTo(36, 178);
+        ctx.lineTo(164, 178);
+        ctx.lineTo(192, 250);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#1E293B';
+        ctx.beginPath();
+        ctx.moveTo(36, 178);
+        ctx.lineTo(80, 250);
+        ctx.lineTo(40, 250);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(164, 178);
+        ctx.lineTo(120, 250);
+        ctx.lineTo(160, 250);
+        ctx.closePath();
+        ctx.fill();
+
+        // Neck & chin shadow
+        ctx.fillStyle = '#94A3B8';
+        ctx.fillRect(76, 148, 48, 44);
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.ellipse(100, 160, 28, 14, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Head
+        ctx.fillStyle = '#F8FAFC';
+        ctx.beginPath();
+        ctx.ellipse(100, 98, 46, 62, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hair
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(100, 78, 49, Math.PI * 0.92, Math.PI * 2.08);
+        ctx.lineTo(144, 58);
+        ctx.lineTo(120, 48);
+        ctx.lineTo(96, 56);
+        ctx.lineTo(72, 48);
+        ctx.closePath();
+        ctx.fill();
+
+        // Side-face shadow
+        ctx.fillStyle = '#475569';
+        ctx.beginPath();
+        ctx.ellipse(116, 100, 30, 56, 0, -Math.PI * 0.48, Math.PI * 0.48);
+        ctx.fill();
+
+        // Cheekbone highlight
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.ellipse(76, 106, 15, 20, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyebrows & Eyes
+        ctx.fillStyle = '#090A0F';
+        ctx.fillRect(64, 76, 26, 6);
+        ctx.fillRect(110, 76, 26, 6);
+
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.ellipse(77, 88, 12, 7.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(123, 88, 12, 7.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.ellipse(77, 88, 9, 4.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(123, 88, 9, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#090A0F';
+        ctx.beginPath();
+        ctx.arc(77, 88, 4, 0, Math.PI * 2);
+        ctx.arc(123, 88, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Nose
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.moveTo(100, 84);
+        ctx.lineTo(108, 116);
+        ctx.lineTo(93, 119);
+        ctx.closePath();
+        ctx.fill();
+
+        // Lips
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.moveTo(80, 134);
+        ctx.lineTo(100, 130);
+        ctx.lineTo(120, 134);
+        ctx.lineTo(100, 138);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.beginPath();
+        ctx.ellipse(100, 140, 14, 5, 0, 0, Math.PI);
+        ctx.fill();
+
+      } else if (presetType === 'skull') {
+        temp.width = 195;
+        temp.height = 260; // 3:4 Vertical Poster
+        ctx = temp.getContext('2d');
+
+        ctx.fillStyle = '#08080A';
+        ctx.fillRect(0, 0, 195, 260);
+
+        ctx.fillStyle = '#F1F5F9';
+        ctx.beginPath();
+        ctx.arc(97, 104, 68, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#64748B';
+        ctx.beginPath();
+        ctx.arc(97, 104, 68, -0.4, 0.6);
+        ctx.lineTo(132, 138);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#E2E8F0';
+        ctx.beginPath();
+        ctx.moveTo(45, 132);
+        ctx.lineTo(149, 132);
+        ctx.lineTo(134, 222);
+        ctx.lineTo(60, 222);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.ellipse(90, 68, 38, 22, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#08080A';
+        ctx.beginPath();
+        ctx.ellipse(70, 116, 20, 19, 0.12, 0, Math.PI * 2);
+        ctx.ellipse(125, 116, 20, 19, -0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(97, 126);
+        ctx.lineTo(83, 162);
+        ctx.lineTo(97, 156);
+        ctx.lineTo(111, 162);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#08080A';
+        ctx.fillRect(62, 188, 70, 6);
+        for (let tx = 68; tx <= 128; tx += 10) {
+          ctx.fillRect(tx, 174, 4, 36);
+        }
+
+      } else if (presetType === 'arch') {
+        temp.width = 280;
+        temp.height = 175; // 16:10 Wide Landscape Architecture
+        ctx = temp.getContext('2d');
+
+        ctx.fillStyle = '#0B0F17';
+        ctx.fillRect(0, 0, 280, 175);
+
+        ctx.fillStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(280, 0);
+        ctx.lineTo(280, 95);
+        ctx.lineTo(0, 145);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(32, 22, 92, 153);
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.fillRect(124, 42, 72, 133);
+
+        ctx.fillStyle = '#CBD5E1';
+        ctx.fillRect(196, 64, 56, 111);
+
+        ctx.fillStyle = '#0B0F17';
+        for (let wy = 36; wy < 165; wy += 24) {
+          ctx.fillRect(46, wy, 26, 14);
+          ctx.fillRect(84, wy, 26, 14);
+          if (wy >= 56) ctx.fillRect(138, wy, 44, 12);
+          if (wy >= 76) ctx.fillRect(210, wy, 28, 12);
+        }
+      } else {
+        temp.width = 240;
+        temp.height = 240; // 1:1 Square Symbol
+        ctx = temp.getContext('2d');
+
+        ctx.fillStyle = '#090A0D';
+        ctx.fillRect(0, 0, 240, 240);
+
+        ctx.fillStyle = '#F8FAFC';
+        ctx.beginPath();
+        ctx.arc(120, 120, 96, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#090A0D';
+        ctx.beginPath();
+        ctx.arc(120, 120, 64, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.beginPath();
+        ctx.arc(120, 120, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(104, 12, 32, 216);
+        ctx.fillRect(12, 104, 216, 32);
+
+        ctx.fillStyle = '#090A0D';
+        ctx.beginPath();
+        ctx.arc(120, 120, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      analyzeImageComposition(temp);
+    }
+
+    // Fast samplers at any canvas coordinate (px, py) using adaptive gridW x gridH
+    function samplePoint(px, py, W, H) {
+      if (!state.hasSourceImage || !state.sourceLumGrid) {
+        return { lum: 0.5, edge: 0.1, angle: 0, color: '#FF007F' };
+      }
+      const gW = state.gridW, gH = state.gridH;
+      const gx = Math.max(0, Math.min(gW - 1, Math.floor((px / W) * gW)));
+      const gy = Math.max(0, Math.min(gH - 1, Math.floor((py / H) * gH)));
+      const idx = gy * gW + gx;
+      const threshShift = (50 - state.lumThreshold) / 100;
+      const l = Math.max(0, Math.min(1, state.sourceLumGrid[idx] + threshShift));
+      return {
+        lum: l,
+        edge: state.sourceEdgeGrid[idx],
+        angle: state.sourceAngleGrid[idx],
+        color: state.sourceColorGrid[idx] || '#FF007F'
+      };
+    }
+
+    function sampleRegionStats(x, y, w, h, W, H) {
+      if (!state.hasSourceImage || !state.sourceLumGrid) {
+        return { lum: 0.5, edge: 0.15, maxEdge: 0.2, spanL: 0.1, angle: 0, variance: 0.05, color: '#FF007F' };
+      }
+      const gW = state.gridW, gH = state.gridH;
+      const x0 = Math.max(0, Math.min(gW - 1, Math.floor((x / W) * gW)));
+      const y0 = Math.max(0, Math.min(gH - 1, Math.floor((y / H) * gH)));
+      const x1 = Math.max(x0 + 1, Math.min(gW, Math.ceil(((x + w) / W) * gW)));
+      const y1 = Math.max(y0 + 1, Math.min(gH, Math.ceil(((y + h) / H) * gH)));
+
+      let sumL = 0, sumL2 = 0, sumE = 0, maxE = 0, sumSin = 0, sumCos = 0, count = 0;
+      let minL = 1, maxL = 0;
+
+      for (let py = y0; py < y1; py++) {
+        for (let px = x0; px < x1; px++) {
+          const idx = py * gW + px;
+          const l = state.sourceLumGrid[idx];
+          const e = state.sourceEdgeGrid[idx];
+          const a = state.sourceAngleGrid[idx];
+          sumL += l;
+          sumL2 += l * l;
+          if (l < minL) minL = l;
+          if (l > maxL) maxL = l;
+          sumE += e;
+          if (e > maxE) maxE = e;
+          sumSin += Math.sin(a) * (e + 0.01);
+          sumCos += Math.cos(a) * (e + 0.01);
+          count++;
+        }
+      }
+      count = Math.max(1, count);
+      const meanL = sumL / count;
+      const variance = Math.sqrt(Math.max(0, (sumL2 / count) - (meanL * meanL)));
+      const cx = Math.min(gW - 1, Math.floor(((x + w * 0.5) / W) * gW));
+      const cy = Math.min(gH - 1, Math.floor(((y + h * 0.5) / H) * gH));
+
+      const threshShift = (50 - state.lumThreshold) / 100;
+      const adjustedLum = Math.max(0, Math.min(1, meanL + threshShift));
+
+      return {
+        lum: adjustedLum,
+        edge: sumE / count,
+        maxEdge: maxE,
+        spanL: maxL - minL,
+        angle: Math.atan2(sumSin, sumCos),
+        variance,
+        color: state.sourceColorGrid[cy * gW + cx] || '#FF007F'
+      };
+    }
+
+    // =========================================================================
+    // 6. PALETTE RESOLVER
+    // =========================================================================
+    function resolvePalette(archKey, rand) {
+      let base = ARCHETYPE_PALETTES[archKey] || ARCHETYPE_PALETTES.ref1_sh6;
+      if (state.paletteKey === 'image_hybrid' && state.extractedPalette.length >= 4) {
+        base = {
+          bg: '#090A0C',
+          primary: state.extractedPalette[0],
+          secondary: state.extractedPalette[1],
+          accent1: state.extractedPalette[2],
+          accent2: '#FF007F',
+          accent3: state.extractedPalette[3],
+          neutral: state.extractedPalette[4] || '#D4C8BE',
+          white: '#FFFFFF',
+          dark: '#07080A'
+        };
+      } else if (state.paletteKey === 'aisuni_lab') {
+        base = {
+          bg: '#0A0B0D',
+          primary: '#FF5500',
+          secondary: '#00E5FF',
+          accent1: '#10B981',
+          accent2: '#F8F9FA',
+          accent3: '#7828FF',
+          neutral: '#94A3B8',
+          white: '#FFFFFF',
+          dark: '#070809'
+        };
+      } else if (state.paletteKey === 'mono_1bit') {
+        base = {
+          bg: '#08080A',
+          primary: '#FFFFFF',
+          secondary: '#D4D4D8',
+          accent1: '#FFFFFF',
+          accent2: '#A1A1AA',
+          accent3: '#E4E4E7',
+          neutral: '#71717A',
+          white: '#FFFFFF',
+          dark: '#000000'
+        };
+      } else if (state.paletteKey === 'thermal_synth') {
+        base = {
+          bg: '#07050E',
+          primary: '#FF2A6D',
+          secondary: '#FFE600',
+          accent1: '#05D9E8',
+          accent2: '#7700FF',
+          accent3: '#FFFFFF',
+          neutral: '#9D4EDD',
+          white: '#FFFFFF',
+          dark: '#05040A'
+        };
+      }
+
+      const midColors = [base.primary, base.secondary, base.accent1, base.accent2, base.accent3];
+      const seedOffset = Math.floor(rand() * midColors.length);
+      const rot = (state.paletteRotation + seedOffset) % midColors.length;
+      const rotated = midColors.map((_, i) => midColors[(i + rot) % midColors.length]);
+
+      return {
+        bg: base.bg,
+        dark: base.dark,
+        white: base.white,
+        neutral: base.neutral,
+        c0: rotated[0],
+        c1: rotated[1],
+        c2: rotated[2],
+        c3: rotated[3],
+        c4: rotated[4],
+        all: rotated
+      };
+    }
+
+    function getTonalColor(lum, pal, useImgColor, rawHex) {
+      if (useImgColor && rawHex && lum > 0.16 && lum < 0.88) return rawHex;
+      if (lum > 0.80) return pal.white;
+      if (lum > 0.62) return pal.c0;
+      if (lum > 0.44) return pal.c1;
+      if (lum > 0.26) return pal.c2;
+      if (lum > 0.14) return pal.c3;
+      return pal.dark;
+    }
+
+    // =========================================================================
+    // 7. DUAL CANVAS + SVG VECTOR SCENE GRAPH PAINTER
+    //    Includes Rule-Breaking Chaos Mutation (`shapeRect`) that can shear, tilt,
+    //    notch, or fracture rectangles into polygons while keeping exact image tones!
+    // =========================================================================
+    function createDualPainter(ctx, W, H, collectSvg = false) {
+      const svgNodes = [];
+      let clipIdCounter = 0;
+      let activeClipId = null;
+
+      const painter = {
+        rect(x, y, w, h, fill) {
+          if (w <= 0 || h <= 0) return;
+          const rx = Math.round(x), ry = Math.round(y), rw = Math.round(w), rh = Math.round(h);
+          if (ctx) {
+            ctx.fillStyle = fill;
+            ctx.fillRect(rx, ry, rw, rh);
+          }
+          if (collectSvg) {
+            const clipAttr = activeClipId ? ` clip-path="url(#${activeClipId})"` : '';
+            svgNodes.push(`<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${fill}"${clipAttr}/>`);
+          }
+        },
+        polygon(points, fill, stroke = null, strokeW = 0) {
+          if (!points || points.length < 3) return;
+          if (ctx) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+            ctx.closePath();
+            if (fill) {
+              ctx.fillStyle = fill;
+              ctx.fill();
+            }
+            if (stroke && strokeW > 0) {
+              ctx.lineWidth = strokeW;
+              ctx.strokeStyle = stroke;
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+          if (collectSvg) {
+            const pts = points.map(p => `${Math.round(p[0])},${Math.round(p[1])}`).join(' ');
+            const strokeAttr = (stroke && strokeW > 0) ? ` stroke="${stroke}" stroke-width="${Math.round(strokeW)}"` : '';
+            const clipAttr = activeClipId ? ` clip-path="url(#${activeClipId})"` : '';
+            svgNodes.push(`<polygon points="${pts}" fill="${fill || 'none'}"${strokeAttr}${clipAttr}/>`);
+          }
+        },
+        // Mutates a standard rectangle into rule-breaking brutalist shards/polygons when chaosProb > 0
+        mutatedShape(x, y, w, h, fill, chaosProb, angle, rand) {
+          if (w <= 0 || h <= 0) return;
+          if (chaosProb <= 0.02 || rand() > chaosProb * 0.85 || (w < 4 && h < 4)) {
+            this.rect(x, y, w, h, fill);
+            return;
+          }
+          const mode = Math.floor(rand() * 5);
+          const amp = chaosProb * 0.55;
+          if (mode === 0) {
+            // Parallelogram / Diagonal Shear following local contour or random tilt
+            const shearX = (rand() - 0.5) * w * amp * 1.3;
+            this.polygon([
+              [x + shearX, y],
+              [x + w + shearX, y],
+              [x + w - shearX, y + h],
+              [x - shearX, y + h]
+            ], fill);
+          } else if (mode === 1) {
+            // Brutalist Beveled / Chamfered Shard (Pentagon/Hexagon cut)
+            const cutX = w * (0.25 + rand() * 0.35 * amp);
+            const cutY = h * (0.25 + rand() * 0.35 * amp);
+            this.polygon([
+              [x + cutX, y],
+              [x + w, y],
+              [x + w, y + h - cutY],
+              [x + w - cutX, y + h],
+              [x, y + h],
+              [x, y + cutY]
+            ], fill);
+          } else if (mode === 2) {
+            // Stepped L-Notch or Double-Split Block
+            const nw = Math.max(1, Math.round(w * (0.45 + rand() * 0.3)));
+            const nh = Math.max(1, Math.round(h * (0.45 + rand() * 0.3)));
+            this.rect(x, y, w, nh, fill);
+            this.rect(rand() < 0.5 ? x : x + w - nw, y + nh, nw, h - nh, fill);
+          } else if (mode === 3) {
+            // Rotated / Angled Bar aligned with image contour tangent + chaos jitter
+            const cx = x + w * 0.5, cy = y + h * 0.5;
+            const rot = angle + (rand() - 0.5) * chaosProb * 1.4;
+            const cos = Math.cos(rot), sin = Math.sin(rot);
+            const hw = w * (0.48 + rand() * 0.25 * amp);
+            const hh = h * (0.48 + rand() * 0.25 * amp);
+            this.polygon([
+              [cx - hw * cos + hh * sin, cy - hw * sin - hh * cos],
+              [cx + hw * cos + hh * sin, cy + hw * sin - hh * cos],
+              [cx + hw * cos - hh * sin, cy + hw * sin + hh * cos],
+              [cx - hw * cos - hh * sin, cy - hw * sin + hh * cos]
+            ], fill);
+          } else {
+            // Jagged Sawtooth / Triangular Wedge
+            const flip = rand() < 0.5;
+            this.polygon(flip ? [
+              [x, y],
+              [x + w, y + h * 0.2],
+              [x + w * 0.85, y + h],
+              [x, y + h * 0.8]
+            ] : [
+              [x + w * 0.15, y],
+              [x + w, y],
+              [x + w, y + h],
+              [x, y + h * 0.65]
+            ], fill);
+          }
+        },
+        pushClipRect(x, y, w, h) {
+          if (ctx) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+            ctx.clip();
+          }
+          if (collectSvg) {
+            clipIdCounter++;
+            activeClipId = `clip_${clipIdCounter}`;
+            svgNodes.push(`<defs><clipPath id="${activeClipId}"><rect x="${Math.round(x)}" y="${Math.round(y)}" width="${Math.round(w)}" height="${Math.round(h)}"/></clipPath></defs>`);
+          }
+        },
+        popClip() {
+          if (ctx) ctx.restore();
+          if (collectSvg) activeClipId = null;
+        },
+        toSVGString() {
+          return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" shape-rendering="crispEdges">\n${svgNodes.join('\n')}\n</svg>`;
+        }
+      };
+      return painter;
+    }
+
+    function snap(val, step) {
+      return Math.max(step, Math.round(val / step) * step);
+    }
+
+    // =========================================================================
+    // 8. ELASTIC, SCALE-RESPONSIVE & CHAOS-MUTABLE PATTERN PRIMITIVES
+    //    Notice how `scaleMult` (driven by 1px..6px) directly scales the general
+    //    size of all bricks, tartan grids, combs, punch-cards, and glyphs, while
+    //    `chaosProb` breaks orthogonal rules without losing the image representation!
+    // =========================================================================
+
+    // 1. ELASTIC BRICK MATRIX (Ref 6)
+    function renderElasticBricks(P, cell, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand) {
+      P.rect(cell.x, cell.y, cell.w, cell.h, pal.dark);
+
+      const detailFactor = Math.max(0.42, 1.0 - cell.stats.maxEdge * 0.60);
+      const baseBrickW = S * 0.018 * scaleMult * detailFactor;
+      const brickW = Math.max(grain * 2, snap(baseBrickW, grain));
+      const brickH = Math.max(grain * 2, snap(brickW * 0.48, grain));
+      const mortar = Math.max(1, Math.round(brickH * 0.18));
+
+      let row = 0;
+      for (let py = cell.y; py < cell.y + cell.h; py += brickH) {
+        const stagger = (row & 1) ? Math.floor(brickW * (0.5 + (rand() - 0.5) * chaosProb * 0.4)) : 0;
+        for (let px = cell.x - stagger; px < cell.x + cell.w; px += brickW) {
+          // Chaos can randomly stretch or split individual bricks
+          const jitterW = chaosProb > 0 ? brickW * (1 + (rand() - 0.5) * chaosProb * 0.45) : brickW;
+          const bx = Math.max(cell.x, px);
+          const bw = Math.min(cell.x + cell.w, px + jitterW - mortar) - bx;
+          const bh = Math.min(cell.y + cell.h - py, brickH - mortar);
+          if (bw <= 0 || bh <= 0) continue;
+
+          const pt = samplePoint(bx + bw * 0.5, py + bh * 0.5, W, H);
+          const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + (0.4 + rand() * 0.4) * (1 - imgInf)) : (0.3 + rand() * 0.6);
+
+          if (effL < 0.14) continue;
+
+          const fillRatio = Math.min(1.0, Math.max(0.24, effL * (0.72 + density * 0.42)));
+          const elasticH = Math.max(1, Math.round(bh * fillRatio));
+          const yOff = Math.floor((bh - elasticH) * 0.5);
+          const col = getTonalColor(effL, pal, useImgCol, pt.color);
+
+          P.mutatedShape(bx, py + yOff, bw, elasticH, col, chaosProb, pt.angle, rand);
+
+          if (pt.edge > 0.35 && bw >= grain * 2) {
+            P.rect(bx, py + yOff, Math.max(1, Math.round(grain * 0.8)), elasticH, pal.white);
+          }
+        }
+        row++;
+      }
+    }
+
+    // 2. ELASTIC TARTAN / WAFFLE WEAVE (Ref 3)
+    function renderElasticTartan(P, cell, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand) {
+      P.rect(cell.x, cell.y, cell.w, cell.h, pal.dark);
+
+      const detailFactor = Math.max(0.45, 1.0 - cell.stats.maxEdge * 0.55);
+      const step = Math.max(grain * 2, snap(S * 0.013 * scaleMult * detailFactor, grain));
+
+      for (let py = cell.y; py < cell.y + cell.h; py += step) {
+        for (let px = cell.x; px < cell.x + cell.w; px += step) {
+          const cw = Math.min(step, cell.x + cell.w - px);
+          const ch = Math.min(step, cell.y + cell.h - py);
+          const pt = samplePoint(px + cw * 0.5, py + ch * 0.5, W, H);
+          const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + (0.35 + rand() * 0.5) * (1 - imgInf)) : (0.25 + rand() * 0.65);
+
+          if (effL < 0.12) continue;
+
+          const col = getTonalColor(effL, pal, useImgCol, pt.color);
+          const threadThick = Math.max(1, Math.round(Math.min(cw, ch) * Math.max(0.24, effL * 0.55)));
+
+          P.mutatedShape(px, py + Math.floor((ch - threadThick) * 0.5), cw, threadThick, col, chaosProb * 0.7, pt.angle, rand);
+          P.mutatedShape(px + Math.floor((cw - threadThick) * 0.5), py, threadThick, ch, col, chaosProb * 0.7, pt.angle + 1.57, rand);
+
+          if (effL > 0.54) {
+            const beamW = Math.max(1, Math.round(cw * Math.min(0.9, effL * 0.88)));
+            const beamH = Math.max(1, Math.round(ch * Math.min(0.9, effL * 0.88)));
+            const padX = Math.floor((cw - beamW) * 0.5);
+            const padY = Math.floor((ch - beamH) * 0.5);
+            P.mutatedShape(px + padX, py + padY, beamW, beamH, effL > 0.78 ? pal.white : pal.c0, chaosProb, pt.angle, rand);
+          }
+        }
+      }
+    }
+
+    // 3. ELASTIC CYBER-COMB & DIRECTIONAL ENGRAVING BARS (Ref 1 & Ref 5)
+    function renderElasticCombEngraving(P, cell, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand) {
+      P.rect(cell.x, cell.y, cell.w, cell.h, pal.dark);
+
+      // Chaos can flip or angle the comb direction randomly per zone
+      const angle = cell.stats.angle + (rand() - 0.5) * chaosProb * 1.8;
+      const horiz = Math.abs(Math.cos(angle)) >= Math.abs(Math.sin(angle));
+      const pitch = Math.max(grain * 2, snap(S * 0.009 * scaleMult, grain));
+      const sampleStep = Math.max(grain * 2, Math.floor(pitch * 0.85));
+
+      if (horiz) {
+        for (let py = cell.y; py < cell.y + cell.h; py += pitch) {
+          for (let px = cell.x; px < cell.x + cell.w; px += sampleStep) {
+            const segW = Math.min(sampleStep, cell.x + cell.w - px);
+            const pt = samplePoint(px + segW * 0.5, py + pitch * 0.5, W, H);
+            const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + 0.5 * (1 - imgInf)) : (0.3 + rand() * 0.6);
+            if (effL < 0.14) continue;
+
+            const strokeH = Math.max(1, Math.min(pitch, Math.round(pitch * effL * (0.65 + density * 0.35))));
+            const yOff = Math.floor((pitch - strokeH) * 0.5);
+            const col = getTonalColor(effL, pal, useImgCol, pt.color);
+            P.mutatedShape(px, py + yOff, segW, strokeH, col, chaosProb * 0.8, pt.angle, rand);
+          }
+        }
+      } else {
+        for (let px = cell.x; px < cell.x + cell.w; px += pitch) {
+          for (let py = cell.y; py < cell.y + cell.h; py += sampleStep) {
+            const segH = Math.min(sampleStep, cell.y + cell.h - py);
+            const pt = samplePoint(px + pitch * 0.5, py + segH * 0.5, W, H);
+            const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + 0.5 * (1 - imgInf)) : (0.3 + rand() * 0.6);
+            if (effL < 0.14) continue;
+
+            const strokeW = Math.max(1, Math.min(pitch, Math.round(pitch * effL * (0.65 + density * 0.35))));
+            const xOff = Math.floor((pitch - strokeW) * 0.5);
+            const col = getTonalColor(effL, pal, useImgCol, pt.color);
+            P.mutatedShape(px + xOff, py, strokeW, segH, col, chaosProb * 0.8, pt.angle, rand);
+          }
+        }
+      }
+    }
+
+    // 4. ELASTIC PUNCH-CARD & PIXEL CITY WINDOWS (Ref 2 & Ref 4)
+    function renderElasticPunchCard(P, cell, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand) {
+      const step = Math.max(grain * 2, snap(S * 0.0125 * scaleMult, grain));
+
+      for (let py = cell.y; py < cell.y + cell.h; py += step) {
+        for (let px = cell.x; px < cell.x + cell.w; px += step) {
+          const cw = Math.min(step, cell.x + cell.w - px);
+          const ch = Math.min(step, cell.y + cell.h - py);
+          const pt = samplePoint(px + cw * 0.5, py + ch * 0.5, W, H);
+          const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + 0.55 * (1 - imgInf)) : (0.35 + rand() * 0.55);
+
+          const bgCol = getTonalColor(effL, pal, useImgCol, pt.color);
+          P.mutatedShape(px, py, cw, ch, bgCol, chaosProb * 0.65, pt.angle, rand);
+
+          const shadow = 1.0 - effL;
+          if (shadow > 0.18 && cw >= 3 && ch >= 3) {
+            const holeW = Math.max(1, Math.round(cw * Math.min(0.84, shadow * 0.9)));
+            const holeH = Math.max(1, Math.round(ch * Math.min(0.84, shadow * 0.9)));
+            const hx = px + Math.floor((cw - holeW) * 0.5);
+            const hy = py + Math.floor((ch - holeH) * 0.5);
+            P.mutatedShape(hx, hy, holeW, holeH, pal.dark, chaosProb * 0.85, pt.angle, rand);
+          }
+        }
+      }
+    }
+
+    // 5. MULTI-SCALE RANDOM-SIZED GLYPH & SYMBOL WEAVE (Ref 1 & Ref 7)
+    //    Adapts glyphs & symbols to RANDOM sizes (micro, small, medium, large) across the image
+    //    while modulating color & density by the exact local image tone!
+    function renderMultiScaleGlyphMosaic(P, cell, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, useImgCol, rand) {
+      P.rect(cell.x, cell.y, cell.w, cell.h, pal.dark);
+
+      // Each cell picks a random glyph scale multiplier (from micro 0.55x to bold 2.1x)
+      // AND inside the cell individual glyphs can also vary in size!
+      const cellRandomScale = 0.55 + rand() * 1.45;
+      const baseStep = Math.max(grain * 4, snap(S * 0.015 * scaleMult * cellRandomScale, grain));
+
+      for (let py = cell.y; py < cell.y + cell.h; py += baseStep) {
+        for (let px = cell.x; px < cell.x + cell.w; px += baseStep) {
+          const pt = samplePoint(px + baseStep * 0.5, py + baseStep * 0.5, W, H);
+          const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + 0.5 * (1 - imgInf)) : rand();
+          if (effL < 0.14) continue;
+
+          const col = getTonalColor(effL, pal, useImgCol, pt.color);
+          // Randomize individual glyph size inside its slot (from 50% micro-symbol to 100% full slot)
+          const itemScale = 0.55 + rand() * 0.45;
+          const useMacro7x9 = (baseStep * itemScale >= 14 && rand() < 0.45);
+
+          if (useMacro7x9) {
+            const charKey = GLYPH_KEYS[Math.floor(rand() * GLYPH_KEYS.length)];
+            const mat = MACRO_GLYPHS[charKey];
+            const pixW = Math.max(1, Math.floor((baseStep * itemScale) / 8));
+            const pixH = Math.max(1, Math.floor((baseStep * itemScale) / 10));
+            const ox = px + Math.floor((baseStep - pixW * 7) * 0.5);
+            const oy = py + Math.floor((baseStep - pixH * 9) * 0.5);
+            for (let r = 0; r < 9; r++) {
+              for (let c = 0; c < 7; c++) {
+                if (mat[r][c] === '1') {
+                  const gx = ox + c * pixW;
+                  const gy = oy + r * pixH;
+                  if (gx + pixW <= cell.x + cell.w && gy + pixH <= cell.y + cell.h) {
+                    P.mutatedShape(gx, gy, pixW, pixH, col, chaosProb * 0.5, pt.angle, rand);
+                  }
+                }
+              }
+            }
+          } else {
+            const glyphIdx = Math.min(MICRO_GLYPHS_5X5.length - 1, Math.floor(((effL * 0.6 + rand() * 0.4)) * MICRO_GLYPHS_5X5.length));
+            const mat = MICRO_GLYPHS_5X5[glyphIdx];
+            const pix = Math.max(1, Math.floor((baseStep * itemScale) / 6));
+            const ox = px + Math.floor((baseStep - pix * 5) * 0.5);
+            const oy = py + Math.floor((baseStep - pix * 5) * 0.5);
+            for (let r = 0; r < 5; r++) {
+              for (let c = 0; c < 5; c++) {
+                if (mat[r][c] === '1') {
+                  const gx = ox + c * pix;
+                  const gy = oy + r * pix;
+                  if (gx + pix <= cell.x + cell.w && gy + pix <= cell.y + cell.h) {
+                    P.mutatedShape(gx, gy, pix, pix, col, chaosProb * 0.5, pt.angle, rand);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // 9. MULTI-SCALE RANDOM-SIZED SCATTERED GLYPHS & CONTOUR VECTORS
+    // =========================================================================
+
+    // Draws a brutalist glyph (S,H,6,3,G, etc.) Where EACH block of the glyph checks
+    // the underlying image luminance so even medium/large glyphs sculpt the image rather than hiding it!
+    function paintImageAwareGlyph(P, charKey, gx, gy, blockW, blockH, W, H, pal, useImgCol, imgInf, chaosProb, rand) {
+      const matrix = MACRO_GLYPHS[charKey] || MACRO_GLYPHS['S'];
+      const pad = Math.max(1, Math.round(blockW * 0.14));
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 7; c++) {
+          if (matrix[r][c] === '1') {
+            const bx = gx + c * blockW;
+            const by = gy + r * blockH;
+            if (bx < 0 || by < 0 || bx + blockW > W || by + blockH > H) continue;
+
+            const pt = samplePoint(bx + blockW * 0.5, by + blockH * 0.5, W, H);
+            const effL = state.sourceMode === 'image' ? (pt.lum * imgInf + 0.55 * (1 - imgInf)) : 0.7;
+
+            // Tonal integration: if the image at this block is in deep shadow, invert or thin the glyph block
+            const fillCol = getTonalColor(effL, pal, useImgCol, pt.color);
+            const keyCol = effL > 0.35 ? pal.dark : pal.white;
+
+            P.rect(bx - pad, by - pad, blockW + pad * 2, blockH + pad * 2, keyCol);
+            P.mutatedShape(bx, by, blockW, blockH, fillCol, chaosProb * 0.6, pt.angle, rand);
+          }
+        }
+      }
+    }
+
+    // Traces the actual contours of the uploaded image with white-keylined black bars (Ref 6)
+    // and perpendicular cyber-comb teeth (Ref 1), scaled by `scaleMult`!
+    function renderImageContourStrokes(P, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, bandsProb, rand) {
+      if (!state.contourChains || state.contourChains.length === 0 || bandsProb <= 0.05) return;
+
+      const maxStrokes = Math.floor(state.contourChains.length * Math.min(1.0, bandsProb * 1.15));
+      for (let i = 0; i < maxStrokes; i++) {
+        const c = state.contourChains[i];
+        const cx = snap(c.nx * W, grain);
+        const cy = snap(c.ny * H, grain);
+
+        const len = Math.max(grain * 2, S * (0.011 + rand() * 0.012) * Math.pow(scaleMult, 0.75));
+        const thick = Math.max(1, S * 0.0026 * Math.pow(scaleMult, 0.75));
+        const jitterAngle = c.tangent + (rand() - 0.5) * chaosProb * 0.95;
+        const dx = Math.cos(jitterAngle);
+        const dy = Math.sin(jitterAngle);
+        const nx = -dy;
+        const ny = dx;
+
+        if (i % 3 === 0) {
+          const pts = [
+            [cx - dx * len - nx * thick, cy - dy * len - ny * thick],
+            [cx + dx * len - nx * thick, cy + dy * len - ny * thick],
+            [cx + dx * len + nx * thick, cy + dy * len + ny * thick],
+            [cx - dx * len + nx * thick, cy - dy * len + ny * thick]
+          ];
+          P.polygon(pts, pal.dark, pal.white, Math.max(1, Math.round(thick * 0.45)));
+        } else if (i % 3 === 1) {
+          const steps = 2;
+          const stepSize = Math.max(grain * 2, snap(S * 0.0045 * Math.pow(scaleMult, 0.7), grain));
+          for (let s = -steps; s <= steps; s++) {
+            const sx = snap(cx + dx * s * stepSize, grain);
+            const sy = snap(cy + dy * s * stepSize, grain);
+            P.rect(sx - 1, sy - 1, stepSize + 2, stepSize + 2, pal.dark);
+            P.mutatedShape(sx, sy, stepSize, stepSize, c.lum > 0.5 ? pal.white : pal.c0, chaosProb, jitterAngle, rand);
+          }
+        } else if (rand() < bandsProb * 0.7) {
+          const toothLen = Math.max(grain * 2, snap(S * 0.011 * Math.pow(scaleMult, 0.75), grain));
+          const tw = Math.max(1, snap(S * 0.0025 * Math.pow(scaleMult, 0.75), grain));
+          for (let t = -1; t <= 1; t++) {
+            const tx = snap(cx + dx * t * tw * 2, grain);
+            const ty = snap(cy + dy * t * tw * 2, grain);
+            if (Math.abs(nx) > Math.abs(ny)) {
+              P.mutatedShape(tx, ty, toothLen, tw, pal.c1, chaosProb, jitterAngle, rand);
+            } else {
+              P.mutatedShape(tx, ty, tw, toothLen, pal.c1, chaosProb, jitterAngle, rand);
+            }
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // 10. MASTER FIGURATIVE REINTERPRETATION COMPOSITOR (CANVAS + SVG)
+    // =========================================================================
+    function buildScene(P, W, H, seedValue) {
+      const rand = createPRNG(seedValue);
+      const S = Math.min(W, H);
+      const resMultiplier = S / Math.min(state.baseW, state.baseH);
+      const grain = Math.max(1, Math.round(resMultiplier));
+      const scaleMult = OBJECT_SCALE_MAP[state.pixelScale] || 1.0;
+      const chaosProb = state.chaosLevel / 100;
+      const imgInf = state.imgInfluence / 100;
+      const density = state.ditherDensity / 100;
+      const useImgCol = (state.paletteKey === 'image_hybrid');
+
+      const shuffledArchs = shuffleArray(ARCHETYPE_KEYS, rand);
+      const primaryArch = state.archetype === 'hybrid_all' ? shuffledArchs[0] : state.archetype;
+      const secondaryArch = state.archetype === 'hybrid_all' ? shuffledArchs[1] : state.archetype;
+
+      const pal = resolvePalette(primaryArch, rand);
+      const pal2 = resolvePalette(secondaryArch, rand);
+
+      // LAYER 0: DEEP BRUTALIST BASE
+      P.rect(0, 0, W, H, pal.dark);
+
+      // LAYER 1: MULTI-SCALE DETAIL-ADAPTIVE SUBDIVISION (Scaled by `scaleMult` & warped by `chaosProb`)
+      const cells = [];
+      const maxDepth = Math.min(7, Math.max(3, Math.floor(state.complexity * 0.78)));
+      const minCellDim = Math.max(grain * 4, S * Math.max(0.014, 0.055 - state.complexity * 0.0042) * Math.pow(scaleMult, 0.65));
+      const maxCoarseDim = S * (state.sourceMode === 'image' ? 0.13 : 0.25) * Math.pow(scaleMult, 0.5);
+
+      function subdivideAdaptive(x, y, w, h, depth) {
+        const stats = sampleRegionStats(x, y, w, h, W, H);
+
+        const hasImageFeature = state.sourceMode === 'image' && (
+          stats.maxEdge > (0.14 - imgInf * 0.08) ||
+          stats.spanL > (0.16 - imgInf * 0.08) ||
+          w > maxCoarseDim ||
+          h > maxCoarseDim
+        );
+        const randomSplit = state.sourceMode !== 'image' && (rand() < 0.72 || w > maxCoarseDim);
+
+        if (depth <= 0 || (w <= minCellDim * 1.6 && h <= minCellDim * 1.6) || (!hasImageFeature && !randomSplit)) {
+          cells.push({ x, y, w, h, stats });
+          return;
+        }
+
+        // Chaos introduces asymmetric subdivision ratios while still subdividing around image features
+        const asymRange = 0.28 * chaosProb;
+        const splitRatioX = 0.5 + (rand() - 0.5) * asymRange;
+        const splitRatioY = 0.5 + (rand() - 0.5) * asymRange;
+
+        if ((hasImageFeature || rand() < 0.5) && w >= minCellDim * 1.8 && h >= minCellDim * 1.8) {
+          const mx = snap(w * splitRatioX, grain);
+          const my = snap(h * splitRatioY, grain);
+          subdivideAdaptive(x, y, mx, my, depth - 1);
+          subdivideAdaptive(x + mx, y, w - mx, my, depth - 1);
+          subdivideAdaptive(x, y + my, mx, h - my, depth - 1);
+          subdivideAdaptive(x + mx, y + my, w - mx, h - my, depth - 1);
+        } else {
+          const splitHoriz = h >= w;
+          if (splitHoriz && h >= minCellDim * 1.8) {
+            const my = snap(h * splitRatioY, grain);
+            subdivideAdaptive(x, y, w, my, depth - 1);
+            subdivideAdaptive(x, y + my, w, h - my, depth - 1);
+          } else if (w >= minCellDim * 1.8) {
+            const mx = snap(w * splitRatioX, grain);
+            subdivideAdaptive(x, y, mx, h, depth - 1);
+            subdivideAdaptive(x + mx, y, w - mx, h, depth - 1);
+          } else {
+            cells.push({ x, y, w, h, stats });
+          }
+        }
+      }
+
+      subdivideAdaptive(0, 0, W, H, maxDepth);
+
+      // LAYER 2: RENDER EACH CELL WITH ELASTIC SILHOUETTE-SCULPTING PATTERNS
+      const glyphProb = state.glyphsRatio / 100;
+      const allFamilies = ['brick', 'tartan', 'punchcard', 'comb', 'glyph_mosaic'];
+
+      cells.forEach((cell) => {
+        const nx = (cell.x + cell.w * 0.5) / W;
+        const ny = (cell.y + cell.h * 0.5) / H;
+        const cluster = spatialClusterValue(nx, ny, seedValue, 2.6 + chaosProb * 3.5);
+        const activePal = (state.archetype === 'hybrid_all' && cluster > 0.52) ? pal2 : pal;
+        const { lum, maxEdge } = cell.stats;
+
+        let family;
+        // When chaosProb is active, it can randomly swap the pattern family in a zone while keeping the image tone!
+        if (chaosProb > 0.08 && rand() < chaosProb * 0.65) {
+          family = allFamilies[Math.floor(rand() * allFamilies.length)];
+        } else if (state.archetype === 'ref6_brick' && cluster > 0.25) {
+          family = 'brick';
+        } else if (state.archetype === 'ref3_tartan' && cluster > 0.25) {
+          family = 'tartan';
+        } else if (state.archetype === 'ref2_city' && cluster > 0.25) {
+          family = 'punchcard';
+        } else if ((state.archetype === 'ref1_sh6' || state.archetype === 'ref5_slash') && cluster > 0.25) {
+          family = 'comb';
+        } else if (state.archetype === 'ref7_giant_glyph' && cluster > 0.35) {
+          family = 'glyph_mosaic';
+        } else {
+          if (maxEdge > 0.32) {
+            family = cluster > 0.5 ? 'comb' : 'tartan';
+          } else if (lum > 0.68) {
+            family = cluster > 0.48 ? 'punchcard' : 'brick';
+          } else if (lum > 0.32) {
+            if (cluster < 0.26) family = 'brick';
+            else if (cluster < 0.50) family = 'tartan';
+            else if (cluster < 0.72 || rand() > glyphProb) family = 'comb';
+            else family = 'glyph_mosaic';
+          } else {
+            family = (cluster > 0.55 && rand() < glyphProb) ? 'glyph_mosaic' : (cluster > 0.3 ? 'tartan' : 'brick');
+          }
+        }
+
+        if (family === 'brick') {
+          renderElasticBricks(P, cell, W, H, S, activePal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand);
+        } else if (family === 'tartan') {
+          renderElasticTartan(P, cell, W, H, S, activePal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand);
+        } else if (family === 'punchcard') {
+          renderElasticPunchCard(P, cell, W, H, S, activePal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand);
+        } else if (family === 'glyph_mosaic') {
+          renderMultiScaleGlyphMosaic(P, cell, W, H, S, activePal, grain, scaleMult, chaosProb, imgInf, useImgCol, rand);
+        } else {
+          renderElasticCombEngraving(P, cell, W, H, S, activePal, grain, scaleMult, chaosProb, imgInf, density, useImgCol, rand);
+        }
+      });
+
+      // LAYER 3: RANDOM-SCALED IMAGE-AWARE GLYPHS & SYMBOLS ACROSS THE IMAGE
+      // Now spawns glyphs at wildly varied random scales (tiny, small, medium, and occasional large)
+      // where every block of the glyph is colored by the exact underlying image tone!
+      if (glyphProb > 0.08 && state.backgroundSpots && state.backgroundSpots.length > 0) {
+        const shuffledSpots = shuffleArray(state.backgroundSpots, rand);
+        const shuffledChars = shuffleArray(GLYPH_KEYS, rand);
+        const totalGlyphCount = Math.floor(glyphProb * 18);
+
+        for (let i = 0; i < Math.min(totalGlyphCount, shuffledSpots.length); i++) {
+          const spot = shuffledSpots[i];
+          // Distribution of random sizes: 55% micro/small, 30% medium, 15% larger (only in low-edge spots)
+          const sizeRoll = rand();
+          let sizeFactor;
+          if (sizeRoll < 0.55) {
+            sizeFactor = 0.0028 + rand() * 0.0035; // Micro / Small glyph
+          } else if (sizeRoll < 0.85) {
+            sizeFactor = 0.0065 + rand() * 0.0055; // Medium glyph
+          } else {
+            // Only allow larger glyph if spot has low edge energy so facial features stay sharp
+            sizeFactor = (spot.edge < 0.14) ? (0.012 + rand() * 0.009) : (0.004 + rand() * 0.004);
+          }
+
+          const blockW = Math.max(1, snap(S * sizeFactor * Math.pow(scaleMult, 0.75), grain));
+          const blockH = Math.max(1, snap(blockW * (0.9 + rand() * 0.3), grain));
+          const gx = Math.max(grain, Math.min(W - blockW * 8, snap(spot.nx * W - blockW * 3.5, grain)));
+          const gy = Math.max(grain, Math.min(H - blockH * 10, snap(spot.ny * H - blockH * 4.5, grain)));
+
+          paintImageAwareGlyph(
+            P,
+            shuffledChars[i % shuffledChars.length],
+            gx, gy, blockW, blockH,
+            W, H,
+            (i & 1) ? pal2 : pal,
+            useImgCol, imgInf, chaosProb, rand
+          );
+        }
+      }
+
+      // LAYER 4: CONTOUR-FOLLOWING KEYLINED VECTORS & PERPENDICULAR COMB TICKS
+      renderImageContourStrokes(P, W, H, S, pal, grain, scaleMult, chaosProb, imgInf, state.bandsRatio / 100, rand);
+
+      // LAYER 5: SUBTLE GLITCH SCANLINE ACCENTS & MICRO-STICKERS ALONG CONTOURS
+      const fusionProb = state.fusionLevel / 100;
+      if (fusionProb > 0.1 && state.contourChains && state.contourChains.length > 0) {
+        const count = Math.floor(fusionProb * 9);
+        for (let i = 0; i < count; i++) {
+          const c = state.contourChains[(i * 13) % state.contourChains.length];
+          const sx = snap(c.nx * W, grain * 2);
+          const sy = snap(c.ny * H, grain * 2);
+          const sw = snap(S * (0.014 + rand() * 0.018) * Math.pow(scaleMult, 0.65), grain);
+          const sh = Math.max(grain * 2, snap(S * 0.006 * Math.pow(scaleMult, 0.65), grain));
+          P.rect(sx - 1, sy - 1, sw + 2, sh + 2, pal.dark);
+          P.mutatedShape(sx, sy, sw, sh, (i & 1) ? pal.c0 : pal.white, chaosProb, c.tangent, rand);
+        }
+      }
+    }
+
+    function renderPatternToCanvas(targetCanvas, seedValue) {
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, W, H);
+
+      const painter = createDualPainter(ctx, W, H, false);
+      buildScene(painter, W, H, seedValue);
+    }
+
+    // =========================================================================
+    // 11. UI RENDER & BATCH EXPLORER (ADAPTIVE ASPECT RATIO)
+    // =========================================================================
+    function updateAllViews() {
+      seedBadge.textContent = `SEED #${state.seed}`;
+      document.getElementById('active-archetype-title').textContent = `MODO: ${ARCHETYPE_NAMES[state.archetype]}`;
+      document.getElementById('canvas-res-label').textContent = `${state.baseW} × ${state.baseH} px Adaptativo · Escala ${state.pixelScale}px · Caos ${state.chaosLevel}%`;
+
+      if (state.viewMode === 'single') {
+        renderPatternToCanvas(mainCanvas, state.seed);
+      } else {
+        renderBatchGrid();
+      }
+    }
+
+    function renderBatchGrid() {
+      batchGrid.innerHTML = '';
+      const batchScale = 0.45;
+      const bw = Math.max(200, Math.round(state.baseW * batchScale));
+      const bh = Math.max(200, Math.round(state.baseH * batchScale));
+
+      for (let i = 0; i < 9; i++) {
+        const itemSeed = (state.seed + i * 15485863) % 999999;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'group relative rounded-lg overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer bg-black transition-all flex items-center justify-center';
+
+        const c = document.createElement('canvas');
+        c.width = bw;
+        c.height = bh;
+        c.className = 'w-full h-auto block object-contain pixelated-canvas';
+        renderPatternToCanvas(c, itemSeed);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded bg-black/80 text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity';
+        badge.innerHTML = `<span>#${itemSeed}</span><span class="text-brand-orange">Abrir ↗</span>`;
+
+        wrapper.appendChild(c);
+        wrapper.appendChild(badge);
+
+        wrapper.addEventListener('click', () => {
+          state.seed = itemSeed;
+          switchViewMode('single');
+        });
+
+        batchGrid.appendChild(wrapper);
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const btnSingle = document.getElementById('btn-mode-single');
+      const btnBatch = document.getElementById('btn-mode-batch');
+      const singleContainer = document.getElementById('view-single-container');
+      const batchContainer = document.getElementById('view-batch-container');
+
+      if (mode === 'single') {
+        btnSingle.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnBatch.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.remove('hidden');
+        batchContainer.classList.add('hidden');
+      } else {
+        btnBatch.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnSingle.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.add('hidden');
+        batchContainer.classList.remove('hidden');
+      }
+      updateAllViews();
+    }
+
+    function triggerRandomSeed() {
+      state.mutationCounter++;
+      state.seed = (Math.floor(10000 + Math.random() * 890000) + state.mutationCounter * 2654435761) % 999999;
+      if (state.seed < 10000) state.seed += 10000;
+      updateAllViews();
+    }
+
+    // =========================================================================
+    // 12. EVENT LISTENERS & ADAPTIVE PNG / SVG EXPORTERS
+    // =========================================================================
+    document.getElementById('btn-mode-single').addEventListener('click', () => switchViewMode('single'));
+    document.getElementById('btn-mode-batch').addEventListener('click', () => switchViewMode('batch'));
+    document.getElementById('btn-randomize').addEventListener('click', triggerRandomSeed);
+    document.getElementById('btn-regenerate-batch').addEventListener('click', triggerRandomSeed);
+    mainCanvas.addEventListener('click', triggerRandomSeed);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        triggerRandomSeed();
+      }
+    });
+
+    // Archetype selector
+    document.querySelectorAll('.arch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.arch-btn').forEach(b => {
+          b.className = 'arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left';
+        });
+        btn.className = 'arch-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left';
+        state.archetype = btn.getAttribute('data-arch');
+        triggerRandomSeed();
+      });
+    });
+
+    // Built-in Preset Image buttons
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => {
+          b.className = 'preset-btn py-1.5 px-1.5 rounded bg-black/40 hover:bg-white/10 border border-brand-border text-neutral-300 text-center';
+        });
+        btn.className = 'preset-btn py-1.5 px-1.5 rounded bg-white/10 hover:bg-white/20 border border-brand-orange text-white font-medium text-center';
+        const preset = btn.getAttribute('data-preset') || 'portrait';
+        state.presetName = preset;
+        state.sourceMode = 'image';
+        generatePresetImage(preset);
+        updateAllViews();
+      });
+    });
+
+    // Source mode buttons
+    const btnSourceRandom = document.getElementById('btn-source-random');
+    const btnSourceImage = document.getElementById('btn-source-image');
+
+    btnSourceImage.addEventListener('click', () => {
+      state.sourceMode = 'image';
+      btnSourceImage.className = 'py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all';
+      btnSourceRandom.className = 'py-1.5 px-2 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      if (!state.hasSourceImage) {
+        generatePresetImage(state.presetName);
+      }
+      updateAllViews();
+    });
+
+    btnSourceRandom.addEventListener('click', () => {
+      state.sourceMode = 'random';
+      btnSourceRandom.className = 'py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all';
+      btnSourceImage.className = 'py-1.5 px-2 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      updateAllViews();
+    });
+
+    // Upload Any Image -> Automatically sets canvas aspect ratio & dimensions!
+    document.getElementById('input-upload-image').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.sourceMode = 'image';
+          btnSourceImage.className = 'py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all';
+          btnSourceRandom.className = 'py-1.5 px-2 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+          analyzeImageComposition(img);
+          updateAllViews();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Palette buttons
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.palette-btn').forEach(b => {
+          b.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left';
+        });
+        btn.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left';
+        state.paletteKey = btn.getAttribute('data-palette');
+        state.paletteRotation = 0;
+        updateAllViews();
+      });
+    });
+
+    document.getElementById('btn-shuffle-palette').addEventListener('click', () => {
+      state.paletteRotation = (state.paletteRotation + 1) % 7;
+      updateAllViews();
+    });
+
+    function bindSlider(id, labelId, stateKey, suffix = '') {
+      const el = document.getElementById(id);
+      const lbl = document.getElementById(labelId);
+      el.addEventListener('input', () => {
+        state[stateKey] = parseInt(el.value, 10);
+        lbl.textContent = `${state[stateKey]}${suffix}`;
+        updateAllViews();
+      });
+    }
+
+    bindSlider('slider-img-influence', 'label-img-influence', 'imgInfluence', '%');
+    bindSlider('slider-threshold', 'val-threshold', 'lumThreshold', '%');
+    bindSlider('slider-chaos', 'val-chaos', 'chaosLevel', '%');
+    bindSlider('slider-fusion', 'val-fusion', 'fusionLevel', '%');
+    bindSlider('slider-complexity', 'val-complexity', 'complexity', '');
+    bindSlider('slider-pixel-scale', 'val-pixel-scale', 'pixelScale', ' px');
+    bindSlider('slider-bands', 'val-bands', 'bandsRatio', '%');
+    bindSlider('slider-dither', 'val-dither', 'ditherDensity', '%');
+    bindSlider('slider-glyphs', 'val-glyphs', 'glyphsRatio', '%');
+
+    const btnToggleStream = document.getElementById('btn-toggle-stream');
+    btnToggleStream.addEventListener('click', () => {
+      if (state.streamInterval) {
+        clearInterval(state.streamInterval);
+        state.streamInterval = null;
+        btnToggleStream.textContent = '▶ Iniciar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors';
+      } else {
+        state.streamInterval = setInterval(triggerRandomSeed, 650);
+        btnToggleStream.textContent = '⏸ Pausar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-orange bg-brand-orange text-white font-mono text-xs font-semibold transition-colors';
+      }
+    });
+
+    // Export PNG (1x to 6x using adaptive baseW x baseH)
+    selectExportScale.addEventListener('change', () => {
+      state.exportScale = parseInt(selectExportScale.value, 10) || 2;
+    });
+
+    document.getElementById('btn-export-png').addEventListener('click', () => {
+      const mult = parseInt(selectExportScale.value, 10) || 2;
+      const targetW = state.baseW * mult;
+      const targetH = state.baseH * mult;
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = targetW;
+      exportCanvas.height = targetH;
+
+      renderPatternToCanvas(exportCanvas, state.seed);
+
+      const link = document.createElement('a');
+      link.download = `image-synth-v2-${mult}x-${targetW}x${targetH}px-seed-${state.seed}.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // Export Pure Vector SVG (using adaptive baseW x baseH)
+    document.getElementById('btn-export-svg').addEventListener('click', () => {
+      const mult = parseInt(selectExportScale.value, 10) || 2;
+      const targetW = state.baseW * mult;
+      const targetH = state.baseH * mult;
+      const svgPainter = createDualPainter(null, targetW, targetH, true);
+      buildScene(svgPainter, targetW, targetH, state.seed);
+
+      const svgContent = svgPainter.toSVGString();
+      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `image-synth-v2-vector-${targetW}x${targetH}px-seed-${state.seed}.svg`;
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    });
+
+    // Initialize with default preset image (4:5 portrait)
+    generatePresetImage('portrait');
+    updateAllViews();
+  </script>
+</body>
+</html>
