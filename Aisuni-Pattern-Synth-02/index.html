@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI — Sintetizador de Patrones Dither & Sistemas Modulares</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5500',
+              dark: '#0A0B0C',
+              panel: '#121316',
+              border: '#23252A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0A0B0C;
+      color: #F3F4F6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    .pixelated-canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #23252A;
+      height: 5px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FF5500;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #121316;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2E3138;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-orange selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-brand-border bg-brand-panel/90 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold tracking-tight text-base sm:text-lg uppercase">AISUNI <span class="text-brand-orange">✷</span></span>
+          <span class="text-xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-300">Pattern Synthesizer v1.2 · Seamless Fusion</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher & Quick Actions -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div class="flex items-center bg-black/50 p-1 rounded-lg border border-brand-border font-mono text-xs">
+          <button id="btn-mode-single" class="px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all">
+            Lienzo Único
+          </button>
+          <button id="btn-mode-batch" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all">
+            Mosaico ×9 Variaciones
+          </button>
+        </div>
+
+        <button id="btn-randomize" class="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-brand-orange hover:text-white font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Nueva Semilla [Espacio]</span>
+        </button>
+
+        <button id="btn-export-png" class="px-3.5 py-1.5 rounded-lg bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>Exportar Textura PNG</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-6">
+
+    <!-- LEFT SIDEBAR: ALGORITHMIC PARAMETERS & IMAGE ANALYZER -->
+    <aside class="lg:col-span-4 space-y-4 custom-scroll">
+
+      <!-- 1. SOURCE MODE: PROCEDURAL RANDOM vs IMAGE COMPOSITIONAL GUIDANCE -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">1. Fuente de Composición</h2>
+          <span id="seed-badge" class="font-mono text-[11px] text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded border border-brand-orange/20">SEED #84920</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+          <button id="btn-source-random" class="py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all">
+            100% Algorítmico
+          </button>
+          <button id="btn-source-image" class="py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all">
+            Guiado por Imagen
+          </button>
+        </div>
+
+        <!-- Image Upload & Analysis Box -->
+        <div id="image-analyzer-box" class="hidden pt-2 border-t border-brand-border space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <label for="input-upload-image" class="flex-1 cursor-pointer py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-dashed border-neutral-600 text-center font-mono text-xs text-neutral-300 transition-colors">
+              + Cargar Imagen de Referencia
+            </label>
+            <input id="input-upload-image" type="file" accept="image/*" class="hidden">
+            <button id="btn-demo-image" class="py-2 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-brand-border font-mono text-[11px] text-brand-orange" title="Usar composición geométrica de prueba">
+              Demo
+            </button>
+          </div>
+
+          <!-- Compositional Diagnosis Telemetry -->
+          <div class="p-2.5 rounded-lg bg-black/50 border border-brand-border space-y-2">
+            <div class="flex items-center gap-2.5">
+              <canvas id="source-thumb-canvas" width="48" height="48" class="w-12 h-12 rounded border border-neutral-700 bg-black flex-shrink-0"></canvas>
+              <div class="flex-1 min-w-0 font-mono text-[10px] space-y-1">
+                <div class="flex justify-between"><span class="text-neutral-400">Contraste RMS:</span><span id="metric-contrast" class="text-white">68.4%</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Densidad Bordes:</span><span id="metric-edges" class="text-emerald-400">Alta (Sobel)</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Centro Masa:</span><span id="metric-center" class="text-brand-orange">X:0.51 Y:0.48</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-mono text-neutral-400 mb-1">
+                <span>Influencia de la Imagen</span>
+                <span id="label-img-influence">75%</span>
+              </div>
+              <input id="slider-img-influence" type="range" min="10" max="100" value="75" class="w-full">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PALETTE SYSTEM -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">2. Sistema de Color (RGB / Dither)</h2>
+          <button id="btn-shuffle-palette" class="text-[11px] font-mono text-brand-orange hover:underline">Rotar colores ↻</button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="palette-selector">
+          <button data-palette="hoodie_ref" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left">
+            <span>Hoodie Original (RGB/CMYK)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#00FF00]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF0000]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0000FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF007F]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="aisuni_lab" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>AISUNI Acid Minimal</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FF5500]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#00E5FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#10B981]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#F8F9FA]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0C0D0E] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="mono_1bit" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>1-Bit Puro (Serigrafía B&W)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="thermal_synth" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Espectro Térmico</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFE600]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF2A6D]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#7700FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#05D9E8]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#050508] border border-white/20"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. GEOMETRIC, FUSION & DITHER MATRIX CONTROLS -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3.5">
+        <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">3. Parámetros de Fusión y Textura</h2>
+
+        <!-- Seamless Interlocking Fusion Slider (NEW) -->
+        <div class="p-2.5 rounded-lg bg-brand-orange/10 border border-brand-orange/30">
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-white font-semibold">Fusión y Entrelazado de Segmentos</span>
+            <span id="val-fusion" class="text-brand-orange font-bold">85%</span>
+          </div>
+          <input id="slider-fusion" type="range" min="0" max="100" value="85" class="w-full">
+          <p class="text-[10px] font-mono text-neutral-400 mt-1">Integra los bordes mediante dithering cruzado, dientes de píxel y fase continua.</p>
+        </div>
+
+        <!-- Grid Subdivision Complexity -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Complejidad de Zonas Entrelazadas</span>
+            <span id="val-complexity" class="text-brand-orange">6</span>
+          </div>
+          <input id="slider-complexity" type="range" min="2" max="10" value="6" class="w-full">
+        </div>
+
+        <!-- Pixel / Dither Scale -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Escala de Píxel / Matriz Bayer</span>
+            <span id="val-pixel-scale" class="text-brand-orange">4 px</span>
+          </div>
+          <input id="slider-pixel-scale" type="range" min="2" max="10" step="1" value="4" class="w-full">
+        </div>
+
+        <!-- Horizontal Bands Ratio -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Frecuencia de Bandas Continuas</span>
+            <span id="val-bands" class="text-brand-orange">50%</span>
+          </div>
+          <input id="slider-bands" type="range" min="0" max="100" value="50" class="w-full">
+        </div>
+
+        <!-- Dither vs Solid Balance -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Densidad de Tramas Dither</span>
+            <span id="val-dither" class="text-brand-orange">75%</span>
+          </div>
+          <input id="slider-dither" type="range" min="10" max="100" value="75" class="w-full">
+        </div>
+
+        <!-- Retro GUI & Bitmap Glyphs -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Módulos GUI / Glifos Integrados</span>
+            <span id="val-glyphs" class="text-brand-orange">45%</span>
+          </div>
+          <input id="slider-glyphs" type="range" min="0" max="100" value="45" class="w-full">
+        </div>
+      </div>
+
+      <!-- 4. AUTO-MUTATION GENERATOR -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-white">Ráfaga Generativa Automática</p>
+          <p class="text-[11px] font-mono text-neutral-400">Genera variaciones en bucle continuo</p>
+        </div>
+        <button id="btn-toggle-stream" class="px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors">
+          ▶ Iniciar
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT WORKSPACE: CANVAS VIEWER & BATCH VARIATIONS -->
+    <section class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- SINGLE HIGH-RES CANVAS VIEW -->
+      <div id="view-single-container" class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border relative min-h-[460px]">
+        <div class="w-full flex items-center justify-between mb-3 font-mono text-xs text-neutral-400">
+          <span>TEJIDO DIGITAL CONTINUO · FUSIÓN BAYER & ENCAJE DE PÍXEL</span>
+          <span id="canvas-res-label">800 × 800 px (Sin bordes divisorios)</span>
+        </div>
+
+        <div class="relative w-full max-w-[620px] aspect-square rounded-lg overflow-hidden shadow-2xl border border-white/15 bg-black flex items-center justify-center">
+          <canvas id="main-pattern-canvas" width="800" height="800" class="w-full h-full object-contain pixelated-canvas cursor-pointer" title="Haz clic para generar una nueva variación"></canvas>
+        </div>
+
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-brand-border text-[11px] font-mono text-neutral-400">
+          <span>Haz clic sobre el lienzo o presiona <strong class="text-white">[Espacio]</strong> para mutar la semilla.</span>
+          <span id="active-modules-summary" class="text-brand-orange">Transiciones Dither Entrelazadas + Fase Global</span>
+        </div>
+      </div>
+
+      <!-- 3x3 BATCH GRID VIEW (THOUSANDS OF VERSIONS EXPLORER) -->
+      <div id="view-batch-container" class="hidden flex-1 flex flex-col p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-neutral-300">EXPLORADOR DE LOTES · 9 SEMILLAS SIMULTÁNEAS</span>
+          <button id="btn-regenerate-batch" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors">
+            Generar 9 Nuevas Variaciones ↻
+          </button>
+        </div>
+
+        <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- 9 mini canvases injected via JS -->
+        </div>
+
+        <p class="text-[11px] font-mono text-neutral-400 text-center">
+          Haz clic en cualquiera de las 9 variaciones para abrirla en el lienzo principal en alta resolución.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT GENERATIVE PATTERN ENGINE -->
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG (MULBERRY32) FOR REPRODUCIBLE SEEDS
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = seed >>> 0;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // =========================================================================
+    // 2. BAYER DITHER MATRICES (4x4 & 8x8) & BITMAP GLYPH SPRITES
+    // =========================================================================
+    const BAYER_4X4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ];
+
+    const BAYER_8X8 = [
+      [ 0, 32,  8, 40,  2, 34, 10, 42],
+      [48, 16, 56, 24, 50, 18, 58, 26],
+      [12, 44,  4, 36, 14, 46,  6, 38],
+      [60, 28, 52, 20, 62, 30, 54, 22],
+      [ 3, 35, 11, 43,  1, 33,  9, 41],
+      [51, 19, 59, 27, 49, 17, 57, 25],
+      [15, 47,  7, 39, 13, 45,  5, 37],
+      [63, 31, 55, 23, 61, 29, 53, 21]
+    ];
+
+    const BITMAP_GLYPHS = [
+      [
+        "11111111",
+        "10000001",
+        "10111101",
+        "10100101",
+        "10100101",
+        "10111101",
+        "10000001",
+        "11111111"
+      ],
+      [
+        "11111111",
+        "10101001",
+        "11111111",
+        "10000001",
+        "10011001",
+        "10011001",
+        "10000001",
+        "11111111"
+      ],
+      [
+        "11000011",
+        "11100111",
+        "01111110",
+        "00111100",
+        "00111100",
+        "01111110",
+        "11100111",
+        "11000011"
+      ],
+      [
+        "00011000",
+        "00111100",
+        "01100110",
+        "11011011",
+        "11011011",
+        "01100110",
+        "00111100",
+        "00011000"
+      ],
+      [
+        "10110101",
+        "10110101",
+        "10000001",
+        "11111111",
+        "00111100",
+        "11111111",
+        "10101011",
+        "10101011"
+      ],
+      [
+        "11100111",
+        "10000001",
+        "10011001",
+        "00111100",
+        "00111100",
+        "10011001",
+        "10000001",
+        "11100111"
+      ]
+    ];
+
+    // =========================================================================
+    // 3. COLOR PALETTES
+    // =========================================================================
+    const PALETTES = {
+      hoodie_ref: [
+        [0, 0, 0],         // Pure Black
+        [255, 255, 255],   // Crisp White
+        [0, 255, 0],       // Acid Green (#00FF00)
+        [255, 0, 0],       // Pure Red (#FF0000)
+        [0, 38, 255],      // Electric Royal Blue
+        [255, 0, 127],     // Hot Magenta / Neon Pink
+        [255, 240, 0]      // Vivid Yellow
+      ],
+      aisuni_lab: [
+        [12, 13, 14],      // Matte Black
+        [248, 249, 250],   // Crisp Paper White
+        [255, 85, 0],      // AISUNI Brand Orange
+        [0, 229, 255],     // Cyber Cyan
+        [16, 185, 129],    // Emerald Signal
+        [120, 40, 255]     // Deep Violet
+      ],
+      mono_1bit: [
+        [0, 0, 0],
+        [255, 255, 255]
+      ],
+      thermal_synth: [
+        [8, 6, 16],
+        [255, 255, 255],
+        [255, 230, 0],
+        [255, 42, 109],
+        [119, 0, 255],
+        [5, 217, 232]
+      ]
+    };
+
+    // =========================================================================
+    // 4. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      seed: 84920,
+      viewMode: 'single',       // 'single' | 'batch'
+      sourceMode: 'random',     // 'random' | 'image'
+      paletteKey: 'hoodie_ref',
+      paletteRotation: 0,
+      fusionLevel: 85,          // 0..100 (Seamless interlocking & dither bleed across segments)
+      complexity: 6,            // 2..10
+      pixelScale: 4,            // 2..10
+      bandsRatio: 50,           // 0..100
+      ditherDensity: 75,        // 10..100
+      glyphsRatio: 45,          // 0..100
+      imgInfluence: 75,         // 10..100
+      hasSourceImage: false,
+      sourceLumGrid: null,      // 64x64 luminance map
+      sourceEdgeGrid: null,     // 64x64 sobel edge map
+      streamInterval: null
+    };
+
+    const mainCanvas = document.getElementById('main-pattern-canvas');
+    const seedBadge = document.getElementById('seed-badge');
+    const batchGrid = document.getElementById('batch-grid');
+
+    // =========================================================================
+    // 5. IMAGE COMPOSITION ANALYZER
+    // =========================================================================
+    const thumbCanvas = document.getElementById('source-thumb-canvas');
+    const thumbCtx = thumbCanvas.getContext('2d');
+
+    function analyzeImageComposition(imgSource) {
+      const W = 64, H = 64;
+      thumbCanvas.width = W;
+      thumbCanvas.height = H;
+      thumbCtx.drawImage(imgSource, 0, 0, W, H);
+      const imgData = thumbCtx.getImageData(0, 0, W, H).data;
+
+      const lum = new Float32Array(W * H);
+      const edges = new Float32Array(W * H);
+      let sumLum = 0;
+      let weightedX = 0, weightedY = 0, totalWeight = 0;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const idx = (y * W + x) * 4;
+          const l = (0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2]) / 255;
+          lum[y * W + x] = l;
+          sumLum += l;
+          const weight = Math.abs(l - 0.5) + 0.1;
+          weightedX += x * weight;
+          weightedY += y * weight;
+          totalWeight += weight;
+        }
+      }
+
+      const meanLum = sumLum / (W * H);
+      let varianceSum = 0;
+      let edgeSum = 0;
+
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+          const l = lum[y * W + x];
+          varianceSum += (l - meanLum) * (l - meanLum);
+
+          const gx = (
+            -lum[(y - 1) * W + (x - 1)] + lum[(y - 1) * W + (x + 1)] +
+            -2 * lum[y * W + (x - 1)]   + 2 * lum[y * W + (x + 1)] +
+            -lum[(y + 1) * W + (x - 1)] + lum[(y + 1) * W + (x + 1)]
+          );
+          const gy = (
+            -lum[(y - 1) * W + (x - 1)] - 2 * lum[(y - 1) * W + x] - lum[(y - 1) * W + (x + 1)] +
+             lum[(y + 1) * W + (x - 1)] + 2 * lum[(y + 1) * W + x] + lum[(y + 1) * W + (x + 1)]
+          );
+          const mag = Math.min(1, Math.sqrt(gx * gx + gy * gy));
+          edges[y * W + x] = mag;
+          edgeSum += mag;
+        }
+      }
+
+      const rmsContrast = Math.sqrt(varianceSum / (W * H));
+      const avgEdge = edgeSum / ((W - 2) * (H - 2));
+      const cmX = (weightedX / totalWeight / W).toFixed(2);
+      const cmY = (weightedY / totalWeight / H).toFixed(2);
+
+      state.sourceLumGrid = lum;
+      state.sourceEdgeGrid = edges;
+      state.hasSourceImage = true;
+
+      document.getElementById('metric-contrast').textContent = `${(rmsContrast * 100 * 2.2).toFixed(1)}%`;
+      document.getElementById('metric-edges').textContent = avgEdge > 0.22 ? 'Alta (Compleja)' : 'Media (Suave)';
+      document.getElementById('metric-center').textContent = `X:${cmX} Y:${cmY}`;
+    }
+
+    function createDemoSyntheticImage() {
+      const temp = document.createElement('canvas');
+      temp.width = 64;
+      temp.height = 64;
+      const ctx = temp.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 64, 64);
+      const grad = ctx.createRadialGradient(32, 28, 4, 32, 32, 30);
+      grad.addColorStop(0, '#fff');
+      grad.addColorStop(0.5, '#888');
+      grad.addColorStop(1, '#000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(4, 4, 56, 56);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(12, 12, 40, 40);
+      analyzeImageComposition(temp);
+    }
+
+    // =========================================================================
+    // 6. SEAMLESS INTERLOCKING & FUSED PATTERN SYNTHESIZER
+    // =========================================================================
+    function renderPatternToCanvas(targetCanvas, seedValue) {
+      const rand = createPRNG(seedValue);
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+
+      const scale = state.pixelScale;
+      const gw = Math.floor(W / scale);
+      const gh = Math.floor(H / scale);
+
+      const rawPalette = PALETTES[state.paletteKey] || PALETTES.hoodie_ref;
+      const palette = rawPalette.map((_, i) => rawPalette[(i + state.paletteRotation) % rawPalette.length]);
+
+      // Global continuous horizontal band table so bands flow across the entire fabric
+      const globalBands = [];
+      let curBandY = 0;
+      while (curBandY < gh + 32) {
+        const bh = Math.max(2, Math.floor(2 + rand() * 8));
+        const cA = palette[Math.floor(rand() * palette.length)];
+        const cB = palette[(palette.indexOf(cA) + 1 + Math.floor(rand() * (palette.length - 1))) % palette.length];
+        const ditherLvl = 2 + Math.floor(rand() * 13);
+        const isSolid = rand() > (state.ditherDensity / 100);
+        for (let i = 0; i < bh; i++) {
+          globalBands.push({ cA, cB, ditherLvl, isSolid, bandIndex: globalBands.length });
+        }
+        curBandY += bh;
+      }
+
+      // 1. Recursive Spatial Subdivision (BSP) WITH Shared Chained Colors between siblings
+      const rects = [];
+      function splitRect(x, y, w, h, depth, inheritedColorIdx) {
+        let localEdge = 0.5;
+        let localLum = 0.5;
+        if (state.sourceMode === 'image' && state.hasSourceImage) {
+          const sx = Math.min(63, Math.floor(((x + w * 0.5) / gw) * 64));
+          const sy = Math.min(63, Math.floor(((y + h * 0.5) / gh) * 64));
+          localEdge = state.sourceEdgeGrid[sy * 64 + sx];
+          localLum = state.sourceLumGrid[sy * 64 + sx];
+        }
+
+        const minSize = Math.max(10, Math.floor(30 - state.complexity * 2));
+        const shouldStop = depth <= 0 || (w < minSize * 2 && h < minSize * 2) ||
+          (state.sourceMode === 'image' && state.hasSourceImage && localEdge < 0.12 && depth < state.complexity - 2 && rand() < (state.imgInfluence / 100));
+
+        if (shouldStop) {
+          // Chained color continuity: each zone shares at least one anchor color with its neighbor
+          const fgIdx = inheritedColorIdx % palette.length;
+          const bgIdx = (fgIdx + 1 + Math.floor(rand() * Math.max(1, palette.length - 1))) % palette.length;
+          const accIdx = (bgIdx + 1) % palette.length;
+
+          // Choose motif
+          const roll = rand() * 100;
+          const bandsThresh = state.bandsRatio * 0.55;
+          const glyphThresh = bandsThresh + state.glyphsRatio * 0.45;
+          const ditherThresh = glyphThresh + state.ditherDensity * 0.6;
+
+          let motif = 'bayer_gradient';
+          if (roll < bandsThresh) {
+            motif = 'stacked_bands';
+          } else if (roll < glyphThresh) {
+            motif = rand() < 0.5 ? 'nested_gui' : 'bitmap_glyph_tile';
+          } else if (roll < ditherThresh) {
+            const sub = rand();
+            motif = sub < 0.4 ? 'bayer_gradient' : sub < 0.72 ? 'checker_dither' : 'diagonal_stipple';
+          } else {
+            motif = 'woven_patch';
+          }
+
+          rects.push({
+            x, y, w, h,
+            cx: x + w * 0.5,
+            cy: y + h * 0.5,
+            fg: palette[fgIdx],
+            bg: palette[bgIdx],
+            acc: palette[accIdx],
+            motif,
+            dir: rand() < 0.5 ? 'vertical' : 'horizontal',
+            invert: rand() < 0.5,
+            period: 4 + Math.floor(rand() * 5),
+            diagDir: rand() < 0.5 ? 1 : -1,
+            patternMode: Math.floor(rand() * 3),
+            glyph: BITMAP_GLYPHS[Math.floor(rand() * BITMAP_GLYPHS.length)],
+            tileScale: rand() < 0.55 ? 1 : 2,
+            ringStep: Math.max(2, Math.floor(2 + rand() * 3)),
+            bandOffset: Math.floor(rand() * 16)
+          });
+          return;
+        }
+
+        const splitHoriz = (w > h * 1.35) ? false : (h > w * 1.35) ? true : (rand() < 0.52);
+        const nextColorA = inheritedColorIdx;
+        // Neighbor inherits the color chain so adjacent segments feel cromatically fused
+        const nextColorB = (inheritedColorIdx + (rand() < 0.65 ? 0 : 1)) % palette.length;
+
+        if (splitHoriz && h >= minSize * 2) {
+          const splitRatio = 0.28 + rand() * 0.44;
+          const h1 = Math.floor(h * splitRatio);
+          splitRect(x, y, w, h1, depth - 1, nextColorA);
+          splitRect(x, y + h1, w, h - h1, depth - 1, nextColorB);
+        } else if (!splitHoriz && w >= minSize * 2) {
+          const splitRatio = 0.28 + rand() * 0.44;
+          const w1 = Math.floor(w * splitRatio);
+          splitRect(x, y, w1, h, depth - 1, nextColorA);
+          splitRect(x + w1, y, w - w1, h, depth - 1, nextColorB);
+        } else {
+          splitRect(x, y, w, h, 0, inheritedColorIdx);
+        }
+      }
+
+      splitRect(0, 0, gw, gh, state.complexity, Math.floor(rand() * palette.length));
+
+      // Evaluator for any zone r at global pixel coordinates (px, py)
+      // Notice we use global (px, py) phase so patterns align seamlessly across boundaries!
+      function evaluateZoneAtPixel(r, px, py) {
+        const { fg, bg, acc, motif } = r;
+
+        if (motif === 'stacked_bands') {
+          const b = globalBands[(py + r.bandOffset) % globalBands.length];
+          if (b.isSolid) return (py & 4) ? fg : b.cA;
+          const threshold = BAYER_4X4[py & 3][px & 3];
+          return threshold < b.ditherLvl ? b.cA : bg;
+        }
+
+        if (motif === 'bayer_gradient') {
+          let t = r.dir === 'vertical'
+            ? (py - r.y) / Math.max(1, r.h)
+            : (px - r.x) / Math.max(1, r.w);
+          t = Math.max(0, Math.min(1, t));
+          if (r.invert) t = 1 - t;
+
+          if (state.sourceMode === 'image' && state.hasSourceImage) {
+            const sx = Math.min(63, Math.floor((px / gw) * 64));
+            const sy = Math.min(63, Math.floor((py / gh) * 64));
+            const imgL = state.sourceLumGrid[sy * 64 + sx];
+            const inf = state.imgInfluence / 100;
+            t = t * (1 - inf) + imgL * inf;
+          }
+          const bayerVal = (BAYER_8X8[py & 7][px & 7] + 0.5) / 64;
+          return t > bayerVal ? fg : bg;
+        }
+
+        if (motif === 'checker_dither') {
+          let on = false;
+          if (r.patternMode === 0) {
+            on = ((px + py) & 1) === 0;
+          } else if (r.patternMode === 1) {
+            on = (px % 2 === 0) && (py % 2 === 0);
+          } else {
+            on = ((px % 4 === 0) || (py % 4 === 0));
+          }
+          return on ? fg : bg;
+        }
+
+        if (motif === 'diagonal_stipple') {
+          const phase = ((px * r.diagDir + py) % r.period + r.period) % r.period;
+          if (phase < 2) return fg;
+          if (phase === 2) return ((px + py) & 1) ? acc : bg;
+          return bg;
+        }
+
+        if (motif === 'nested_gui') {
+          const dist = Math.max(Math.abs(px - r.cx), Math.abs(py - r.cy));
+          const ring = Math.floor(dist / r.ringStep) & 1;
+          return ring ? fg : bg;
+        }
+
+        if (motif === 'bitmap_glyph_tile') {
+          const gx = Math.floor(px / r.tileScale) & 7;
+          const gy = Math.floor(py / r.tileScale) & 7;
+          const bit = r.glyph[gy][gx] === '1';
+          return bit ? fg : bg;
+        }
+
+        // 'woven_patch': Dither-edged color block integrated with global bands
+        const bayer = BAYER_4X4[py & 3][px & 3];
+        return bayer < 12 ? fg : acc;
+      }
+
+      // Build spatial lookup grid (gw x gh) storing primary rect index
+      const cellMap = new Int16Array(gw * gh);
+      rects.forEach((r, idx) => {
+        for (let py = r.y; py < r.y + r.h; py++) {
+          for (let px = r.x; px < r.x + r.w; px++) {
+            if (px >= 0 && px < gw && py >= 0 && py < gh) {
+              cellMap[py * gw + px] = idx;
+            }
+          }
+        }
+      });
+
+      const buf = new Uint8ClampedArray(gw * gh * 4);
+      // Fusion radius in virtual pixels (0 to 18 pixels of interlocking dither bleed)
+      const fusionRadius = Math.round((state.fusionLevel / 100) * 18);
+
+      for (let py = 0; py < gh; py++) {
+        for (let px = 0; px < gw; px++) {
+          let chosenRectIdx = cellMap[py * gw + px];
+
+          if (fusionRadius > 0) {
+            // Interlocking stepped fingers + Bayer dithered domain warping across boundaries:
+            // Offset sample coordinate with stepped horizontal/vertical teeth and Bayer matrix
+            const bayerNorm = (BAYER_8X8[py & 7][px & 7] / 64) - 0.5; // -0.5 .. +0.5
+            const stepToothX = ((py >> 1) & 1 ? 1 : -1) * Math.floor(fusionRadius * 0.45);
+            const stepToothY = ((px >> 2) & 1 ? 1 : -1) * Math.floor(fusionRadius * 0.35);
+
+            const warpX = Math.max(0, Math.min(gw - 1, Math.round(px + bayerNorm * fusionRadius * 1.6 + stepToothX)));
+            const warpY = Math.max(0, Math.min(gh - 1, Math.round(py + bayerNorm * fusionRadius * 1.6 + stepToothY)));
+
+            chosenRectIdx = cellMap[warpY * gw + warpX];
+          }
+
+          const activeRect = rects[chosenRectIdx];
+          let rgb = evaluateZoneAtPixel(activeRect, px, py);
+
+          // Cross-stitch harmonic overlay: when fusion is high, weave global horizontal scanlines
+          // at zone transitions so adjacent zones lock into the same textile fabric
+          if (fusionRadius > 4) {
+            const rightIdx = cellMap[py * gw + Math.min(gw - 1, px + 3)];
+            const downIdx = cellMap[Math.min(gh - 1, py + 3) * gw + px];
+            if (rightIdx !== chosenRectIdx || downIdx !== chosenRectIdx) {
+              const neighborRect = rects[rightIdx !== chosenRectIdx ? rightIdx : downIdx];
+              const neighborRgb = evaluateZoneAtPixel(neighborRect, px, py);
+              // Checkerboard / Bayer 1-bit interleave at the transition zone
+              if (((px + py) & 1) === 0) {
+                rgb = neighborRgb;
+              }
+            }
+          }
+
+          const outIdx = (py * gw + px) * 4;
+          buf[outIdx] = rgb[0];
+          buf[outIdx + 1] = rgb[1];
+          buf[outIdx + 2] = rgb[2];
+          buf[outIdx + 3] = 255;
+        }
+      }
+
+      // Upscale with crisp Nearest-Neighbor pixelation
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = gw;
+      tempCanvas.height = gh;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.putImageData(new ImageData(buf, gw, gh), 0, 0);
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(tempCanvas, 0, 0, W, H);
+    }
+
+    // =========================================================================
+    // 7. UI RENDER & BATCH EXPLORER
+    // =========================================================================
+    function updateAllViews() {
+      seedBadge.textContent = `SEED #${state.seed}`;
+      if (state.viewMode === 'single') {
+        renderPatternToCanvas(mainCanvas, state.seed);
+      } else {
+        renderBatchGrid();
+      }
+    }
+
+    function renderBatchGrid() {
+      batchGrid.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const itemSeed = (state.seed + i * 7919) % 999999;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'group relative aspect-square rounded-lg overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer bg-black transition-all';
+
+        const c = document.createElement('canvas');
+        c.width = 400;
+        c.height = 400;
+        c.className = 'w-full h-full object-contain pixelated-canvas';
+        renderPatternToCanvas(c, itemSeed);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded bg-black/80 text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity';
+        badge.innerHTML = `<span>#${itemSeed}</span><span class="text-brand-orange">Abrir ↗</span>`;
+
+        wrapper.appendChild(c);
+        wrapper.appendChild(badge);
+
+        wrapper.addEventListener('click', () => {
+          state.seed = itemSeed;
+          switchViewMode('single');
+        });
+
+        batchGrid.appendChild(wrapper);
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const btnSingle = document.getElementById('btn-mode-single');
+      const btnBatch = document.getElementById('btn-mode-batch');
+      const singleContainer = document.getElementById('view-single-container');
+      const batchContainer = document.getElementById('view-batch-container');
+
+      if (mode === 'single') {
+        btnSingle.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnBatch.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.remove('hidden');
+        batchContainer.classList.add('hidden');
+      } else {
+        btnBatch.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnSingle.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.add('hidden');
+        batchContainer.classList.remove('hidden');
+      }
+      updateAllViews();
+    }
+
+    function triggerRandomSeed() {
+      state.seed = Math.floor(10000 + Math.random() * 900000);
+      updateAllViews();
+    }
+
+    // =========================================================================
+    // 8. EVENT LISTENERS
+    // =========================================================================
+    document.getElementById('btn-mode-single').addEventListener('click', () => switchViewMode('single'));
+    document.getElementById('btn-mode-batch').addEventListener('click', () => switchViewMode('batch'));
+    document.getElementById('btn-randomize').addEventListener('click', triggerRandomSeed);
+    document.getElementById('btn-regenerate-batch').addEventListener('click', triggerRandomSeed);
+    mainCanvas.addEventListener('click', triggerRandomSeed);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+        e.preventDefault();
+        triggerRandomSeed();
+      }
+    });
+
+    const btnSourceRandom = document.getElementById('btn-source-random');
+    const btnSourceImage = document.getElementById('btn-source-image');
+    const imageAnalyzerBox = document.getElementById('image-analyzer-box');
+
+    btnSourceRandom.addEventListener('click', () => {
+      state.sourceMode = 'random';
+      btnSourceRandom.className = 'py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all';
+      btnSourceImage.className = 'py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      imageAnalyzerBox.classList.add('hidden');
+      updateAllViews();
+    });
+
+    btnSourceImage.addEventListener('click', () => {
+      state.sourceMode = 'image';
+      btnSourceImage.className = 'py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all';
+      btnSourceRandom.className = 'py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      imageAnalyzerBox.classList.remove('hidden');
+      if (!state.hasSourceImage) {
+        createDemoSyntheticImage();
+      }
+      updateAllViews();
+    });
+
+    document.getElementById('btn-demo-image').addEventListener('click', () => {
+      createDemoSyntheticImage();
+      updateAllViews();
+    });
+
+    document.getElementById('input-upload-image').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          analyzeImageComposition(img);
+          updateAllViews();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.palette-btn').forEach(b => {
+          b.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left';
+        });
+        btn.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left';
+        state.paletteKey = btn.getAttribute('data-palette');
+        state.paletteRotation = 0;
+        updateAllViews();
+      });
+    });
+
+    document.getElementById('btn-shuffle-palette').addEventListener('click', () => {
+      state.paletteRotation = (state.paletteRotation + 1) % 7;
+      updateAllViews();
+    });
+
+    function bindSlider(id, labelId, stateKey, suffix = '') {
+      const el = document.getElementById(id);
+      const lbl = document.getElementById(labelId);
+      el.addEventListener('input', () => {
+        state[stateKey] = parseInt(el.value, 10);
+        lbl.textContent = `${state[stateKey]}${suffix}`;
+        updateAllViews();
+      });
+    }
+
+    bindSlider('slider-fusion', 'val-fusion', 'fusionLevel', '%');
+    bindSlider('slider-complexity', 'val-complexity', 'complexity', '');
+    bindSlider('slider-pixel-scale', 'val-pixel-scale', 'pixelScale', ' px');
+    bindSlider('slider-bands', 'val-bands', 'bandsRatio', '%');
+    bindSlider('slider-dither', 'val-dither', 'ditherDensity', '%');
+    bindSlider('slider-glyphs', 'val-glyphs', 'glyphsRatio', '%');
+    bindSlider('slider-img-influence', 'label-img-influence', 'imgInfluence', '%');
+
+    const btnToggleStream = document.getElementById('btn-toggle-stream');
+    btnToggleStream.addEventListener('click', () => {
+      if (state.streamInterval) {
+        clearInterval(state.streamInterval);
+        state.streamInterval = null;
+        btnToggleStream.textContent = '▶ Iniciar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors';
+      } else {
+        state.streamInterval = setInterval(triggerRandomSeed, 650);
+        btnToggleStream.textContent = '⏸ Pausar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-orange bg-brand-orange text-white font-mono text-xs font-semibold transition-colors';
+      }
+    });
+
+    document.getElementById('btn-export-png').addEventListener('click', () => {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = 1600;
+      exportCanvas.height = 1600;
+      const prevScale = state.pixelScale;
+      state.pixelScale = prevScale * 2;
+      renderPatternToCanvas(exportCanvas, state.seed);
+      state.pixelScale = prevScale;
+
+      const link = document.createElement('a');
+      link.download = `aisuni-pattern-seed-${state.seed}.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    updateAllViews();
+  </script>
+</body>
+</html>
