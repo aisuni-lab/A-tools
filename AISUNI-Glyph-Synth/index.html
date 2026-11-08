@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI — Glyph Mitosis Synth v1.6 (Precision Filleted Geometry)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5500',
+              dark: '#0A0B0C',
+              panel: '#121316',
+              border: '#23252A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0A0B0C;
+      color: #F3F4F6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #23252A;
+      height: 5px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FF5500;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #121316;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2E3138;
+      border-radius: 4px;
+    }
+    .dna-card.active {
+      border-color: #FF5500;
+      background-color: rgba(255, 85, 0, 0.14);
+      color: #FFFFFF;
+    }
+    .dna-card.inactive {
+      border-color: #23252A;
+      background-color: rgba(0, 0, 0, 0.45);
+      color: #71717A;
+      opacity: 0.52;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-orange selection:text-white">
+
+  <!-- TOP STUDIO HEADER -->
+  <header class="border-b border-brand-border bg-brand-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold tracking-tight text-base sm:text-lg uppercase">AISUNI <span class="text-brand-orange">✷</span></span>
+          <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-brand-orange/15 border border-brand-orange/30 text-brand-orange font-semibold">Glyph Mitosis Synth v1.6</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher & Primary Actions -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center bg-black/60 p-1 rounded-lg border border-brand-border font-mono text-xs">
+          <button id="btn-view-loop" class="px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all">
+            Loop Mitosis
+          </button>
+          <button id="btn-view-stages" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all">
+            5 Fases (1→256)
+          </button>
+          <button id="btn-view-batch" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all">
+            Mosaico ×9
+          </button>
+        </div>
+
+        <button id="btn-random-mix" class="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-brand-orange hover:text-white font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Mezcla Random [Espacio]</span>
+        </button>
+
+        <!-- Export Controls -->
+        <div class="flex items-center rounded-lg bg-black/60 border border-brand-border p-0.5">
+          <label for="select-export-scale" class="sr-only">Resolución PNG</label>
+          <select id="select-export-scale" class="bg-transparent text-white font-mono text-xs px-2 py-1 focus:outline-none cursor-pointer" title="Resolución de exportación PNG">
+            <option value="1" class="bg-brand-panel text-white">1x · 1000px</option>
+            <option value="2" selected class="bg-brand-panel text-white">2x · 2000px</option>
+            <option value="4" class="bg-brand-panel text-white">4x · 4000px</option>
+          </select>
+          <button id="btn-export-png" class="px-2.5 py-1 rounded-md bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-colors">
+            PNG
+          </button>
+          <button id="btn-export-video" class="ml-1 px-2.5 py-1 rounded-md bg-white/10 text-white hover:bg-white/20 font-mono text-xs font-semibold transition-colors" title="Grabar 1 ciclo completo de mitosis en video WebM">
+            ● Grabar Loop
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATUS TOAST -->
+  <div id="status-toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-brand-panel border border-brand-orange text-xs font-mono text-white shadow-2xl"></div>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-6">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="lg:col-span-4 space-y-4 custom-scroll">
+
+      <!-- 1. USER'S CURATED 12 AISUNI SYMBOLS BANK -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-brand-orange font-semibold">1. Set Curado (12 Símbolos AISUNI)</h2>
+          <span id="seed-badge" class="font-mono text-[11px] text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded border border-brand-orange/20">SEED #48219</span>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 font-mono text-[11px]">
+          <button id="btn-dna-random-subset" class="flex-1 py-1.5 px-2 rounded-lg bg-brand-orange/15 hover:bg-brand-orange/25 border border-brand-orange/40 text-brand-orange font-semibold transition-colors">
+            ⚄ Subconjunto Random
+          </button>
+          <button id="btn-dna-all" class="py-1.5 px-2.5 rounded-lg bg-black/50 hover:bg-white/10 border border-brand-border text-neutral-300 transition-colors">
+            Todos (12)
+          </button>
+        </div>
+
+        <!-- 4x3 Grid of the Exact 12 User-Approved Symbols -->
+        <div id="dna-grid" class="grid grid-cols-4 gap-1.5">
+          <!-- Injected dynamically via JS -->
+        </div>
+
+        <p class="text-[10px] font-mono text-neutral-400">
+          Esquinas sutilmente suavizadas en todos los glifos y silueta limpia sin fallas.
+        </p>
+      </div>
+
+      <!-- 2. RANDOM MIX & MITOSIS CHOREOGRAPHY -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">2. Motor de Mezcla y Mitosis</h2>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="mix-mode-selector">
+          <button data-mix="hybrid_random" class="mix-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left">
+            <span>⚄ Mezcla Random Armónica (Cada Celda Única)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-orange text-white">Mix</span>
+          </button>
+          <button data-mix="choreo_sync" class="mix-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>◎ Mitosis Sincronizada (Estilo Reel)</span>
+            <span class="text-[10px] text-neutral-400">1→256</span>
+          </button>
+          <button data-mix="cell_mutant" class="mix-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>❖ Mosaico Caótico (Rotación Libre)</span>
+            <span class="text-[10px] text-neutral-400">Grid</span>
+          </button>
+        </div>
+
+        <div class="pt-1">
+          <label for="select-progression" class="block font-mono text-[11px] text-neutral-400 mb-1">Progresión + Cierre Multi-Escala</label>
+          <select id="select-progression" class="w-full bg-black/60 border border-brand-border rounded-lg px-2.5 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-brand-orange">
+            <option value="1_2x4_4x4_8x8_16x16">Clásica + Final 16×16 Reemplazo Multi-Escala</option>
+            <option value="1_2x2_4x4_8x8_16x16">Simétrica + Final 16×16 Reemplazo Multi-Escala</option>
+            <option value="1_3x3_6x6_9x9_18x18">Modular Ternaria + Final 18×18 Multi-Escala</option>
+            <option value="1_2x4_4x8_8x8_16x16">Panorámica + Final 16×16 Reemplazo Multi-Escala</option>
+          </select>
+        </div>
+
+        <div class="space-y-2.5 pt-1">
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-neutral-300">Capas Superpuestas (1 a 5)</span>
+              <span id="val-layers" class="text-brand-orange font-semibold">3 capas</span>
+            </div>
+            <input id="slider-layers" type="range" min="1" max="5" step="1" value="3" class="w-full">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-neutral-300">Bloques Multi-Escala (Final 16×16)</span>
+              <span id="val-macro" class="text-brand-orange font-semibold">14 bloques</span>
+            </div>
+            <input id="slider-macro" type="range" min="4" max="24" step="2" value="14" class="w-full">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-neutral-300">Velocidad del Ciclo Mitosis</span>
+              <span id="val-speed" class="text-brand-orange">1.0x</span>
+            </div>
+            <input id="slider-speed" type="range" min="2" max="25" step="1" value="10" class="w-full">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-neutral-300">Rotación y Desfase Interno</span>
+              <span id="val-rotation" class="text-brand-orange">75%</span>
+            </div>
+            <input id="slider-rotation" type="range" min="0" max="100" step="5" value="75" class="w-full">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-neutral-300">Grosor Modular de Trazo</span>
+              <span id="val-grain" class="text-brand-orange">3 px</span>
+            </div>
+            <input id="slider-grain" type="range" min="1" max="5" step="1" value="3" class="w-full">
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-brand-border flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-white">Auto-Mutar en Cada Loop</p>
+            <p class="text-[10px] font-mono text-neutral-400">Genera nueva composición al reiniciar 1×1</p>
+          </div>
+          <button id="btn-auto-mutate" class="px-3 py-1 rounded-lg border border-brand-orange bg-brand-orange/20 font-mono text-xs text-brand-orange font-semibold transition-colors">
+            ON
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. HARMONIC OVERPRINT (3, 4 OR 5 COLORS) & SURFACE -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">3. Sobreimpresión Armónica</h2>
+          <button id="btn-shuffle-palette" class="text-[11px] font-mono text-brand-orange hover:underline">Rotar mezcla ↻</button>
+        </div>
+
+        <div class="space-y-1">
+          <span class="block font-mono text-[10px] text-neutral-400">Cantidad de Tintas por Set</span>
+          <div class="grid grid-cols-3 gap-1.5 font-mono text-xs" id="color-count-selector">
+            <button data-ccount="3" class="ccount-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center transition-all">
+              3 Colores
+            </button>
+            <button data-ccount="4" class="ccount-btn py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all">
+              4 Colores
+            </button>
+            <button data-ccount="5" class="ccount-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center transition-all">
+              5 Colores
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1.5 font-mono text-[11px]" id="surface-selector">
+          <button data-surface="paper" class="surface-btn py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center">
+            Papel Riso
+          </button>
+          <button data-surface="obsidian" class="surface-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center">
+            Dark RGB
+          </button>
+          <button data-surface="blueprint" class="surface-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center">
+            Blueprint
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="palette-selector">
+          <button data-palette="cmyk_riso" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left">
+            <span>CMYK Risografía Luminosa</span>
+            <span class="palette-swatches flex gap-1 items-center" data-pal="cmyk_riso"></span>
+          </button>
+
+          <button data-palette="aisuni_harmony" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>AISUNI Espectro Limpio</span>
+            <span class="palette-swatches flex gap-1 items-center" data-pal="aisuni_harmony"></span>
+          </button>
+
+          <button data-palette="duotone_pure" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Espectro Pastel / Neón</span>
+            <span class="palette-swatches flex gap-1 items-center" data-pal="duotone_pure"></span>
+          </button>
+
+          <button data-palette="mono_accent" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Grafito + Acentos</span>
+            <span class="palette-swatches flex gap-1 items-center" data-pal="mono_accent"></span>
+          </button>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Desfase Registro Overprint</span>
+            <span id="val-offset" class="text-brand-orange">25%</span>
+          </div>
+          <input id="slider-offset" type="range" min="0" max="80" step="5" value="25" class="w-full">
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT WORKSPACE: STUDIO CANVAS + TIMELINE SCRUBBER -->
+    <section class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- VIEW 1: LIVE KINETIC MITOSIS LOOP VIEW -->
+      <div id="container-view-loop" class="flex-1 flex flex-col justify-between p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border">
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-3 font-mono text-xs text-neutral-400">
+          <span id="active-status-label" class="text-white font-semibold">FASE ACTUAL: 1×1 · SÍMBOLO AISUNI</span>
+          <span id="active-dna-summary" class="text-brand-orange">12/12 Símbolos · 3 Capas · 4 Colores</span>
+        </div>
+
+        <!-- Main Square Studio Canvas -->
+        <div class="relative w-full max-w-[640px] mx-auto aspect-square rounded-xl overflow-hidden shadow-2xl border border-white/15 bg-[#F4F3EF] flex items-center justify-center">
+          <canvas id="mitosis-canvas" width="1000" height="1000" class="w-full h-full object-contain cursor-pointer" title="Haz clic para generar una nueva Mezcla Random"></canvas>
+        </div>
+
+        <!-- Interactive 5-Stage Mitosis Timeline Scrubber -->
+        <div class="mt-4 pt-3 border-t border-brand-border space-y-2.5">
+          <div class="flex items-center gap-3">
+            <button id="btn-play-pause" class="w-9 h-9 rounded-lg bg-brand-orange text-white hover:bg-orange-600 flex items-center justify-center font-mono text-sm font-bold flex-shrink-0 transition-colors" title="Pausar / Reanudar Loop">
+              ⏸
+            </button>
+            <div class="flex-1 space-y-1">
+              <input id="timeline-scrubber" type="range" min="0" max="1000" value="0" class="w-full">
+              <div class="grid grid-cols-6 text-[11px] font-mono text-neutral-400">
+                <button data-jump="0.05" class="stage-jump-btn text-left hover:text-brand-orange font-semibold text-brand-orange">1×1</button>
+                <button data-jump="0.25" class="stage-jump-btn text-center hover:text-brand-orange">2×4</button>
+                <button data-jump="0.45" class="stage-jump-btn text-center hover:text-brand-orange">4×4</button>
+                <button data-jump="0.65" class="stage-jump-btn text-center hover:text-brand-orange">8×8</button>
+                <button data-jump="0.86" class="stage-jump-btn text-center hover:text-brand-orange font-semibold text-white">16×16 MIX</button>
+                <button data-jump="0.00" class="stage-jump-btn text-right hover:text-brand-orange">LOOP ↻</button>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-neutral-400">
+            <span>Clic en el lienzo o <strong class="text-white">[Espacio]</strong> para Mezcla Random · En <strong class="text-brand-orange">16×16 MIX</strong> los bloques 2×2, 3×3 y 4×4 reemplazan limpiamente las celdas que ocupan.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: 5-STAGE PROGRESSION VIEW -->
+      <div id="container-view-stages" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-white font-semibold">DESGLOSE DE MITOSIS EN 5 FASES + CIERRE 16×16 MULTI-ESCALA</span>
+          <button id="btn-stages-mutate" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors">
+            Mutar las 5 Fases ↻
+          </button>
+        </div>
+
+        <div id="five-stages-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- 5 canvases injected via JS -->
+        </div>
+
+        <p class="text-[11px] font-mono text-neutral-400 text-center">
+          Haz clic en cualquiera de las 5 fases para saltar directamente a ese momento exacto en el Loop Animado.
+        </p>
+      </div>
+
+      <!-- VIEW 3: 3x3 RANDOM MIX EXPLORER -->
+      <div id="container-view-batch" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-white font-semibold">EXPLORADOR ×9 COMPOSICIONES RANDOM MULTI-ESCALA</span>
+          <button id="btn-batch-mutate" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors">
+            Generar 9 Nuevas Mezclas ↻
+          </button>
+        </div>
+
+        <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- 9 mini canvases injected via JS -->
+        </div>
+
+        <p class="text-[11px] font-mono text-neutral-400 text-center">
+          Haz clic en cualquier variación para cargarla y animarla en el lienzo principal.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG & HELPERS
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = seed >>> 0;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffleArray(arr, rand) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const tmp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = tmp;
+      }
+      return copy;
+    }
+
+    function easeInOutCubic(x) {
+      return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('status-toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    // Subtle, consistent rounded-corner rectangle helper (matches blue-circled fillet!)
+    function drawFilletRect(ctx, x, y, w, h, r) {
+      const rad = Math.max(0, Math.min(r, Math.abs(w) * 0.35, Math.abs(h) * 0.35));
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, w, h, rad);
+      } else {
+        ctx.moveTo(x + rad, y);
+        ctx.lineTo(x + w - rad, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+        ctx.lineTo(x + w, y + h - rad);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+        ctx.lineTo(x + rad, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+        ctx.lineTo(x, y + rad);
+        ctx.quadraticCurveTo(x, y, x + rad, y);
+        ctx.closePath();
+      }
+    }
+
+    // Draws an open polyline whose interior vertices are subtly filleted with arcTo
+    // so NO sharp 90° miter corners stick out!
+    function traceFilletPolyline(ctx, pts, radius, closeLoop = false) {
+      if (pts.length < 2) return;
+      ctx.beginPath();
+      if (closeLoop && pts.length >= 3) {
+        const pLast = pts[pts.length - 1];
+        const p0 = pts[0];
+        const p1 = pts[1];
+        const midX = (pLast[0] + p0[0]) * 0.5;
+        const midY = (pLast[1] + p0[1]) * 0.5;
+        ctx.moveTo(midX, midY);
+        for (let i = 0; i < pts.length; i++) {
+          const curr = pts[i];
+          const next = pts[(i + 1) % pts.length];
+          ctx.arcTo(curr[0], curr[1], next[0], next[1], radius);
+        }
+        ctx.closePath();
+      } else {
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length - 1; i++) {
+          ctx.arcTo(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], radius);
+        }
+        const last = pts[pts.length - 1];
+        ctx.lineTo(last[0], last[1]);
+      }
+    }
+
+    // =========================================================================
+    // 2. THE USER'S EXACT 12 CURATED SYMBOLS
+    // =========================================================================
+    const DNA_PRIMITIVES = [
+      { id: 'concentric_arch',     name: 'Arco Concéntrico' },
+      { id: 'modular_ladder',      name: 'Escalera' },
+      { id: 'stepped_skyline',     name: 'Skyline' },
+      { id: 'blueprint_floorplan', name: 'Blueprint' },
+      { id: 'stepped_diamond',     name: 'Rombo Pixel' },
+      { id: 'circuit_tracks',      name: 'Pistas Bus' },
+      { id: 'dot_matrix_4x4',      name: 'Puntos 4×4' },
+      { id: 'double_spiral',       name: 'Espiral Doble' },
+      { id: 'pixel_archipelago',   name: 'Nubes Pixel' },
+      { id: 'hybrid_collage',      name: 'Collage Híbrido' },
+      { id: 'warped_grid',         name: 'Malla Ondulada' },
+      { id: 'floating_masonry',    name: 'Bloques Desfasados' }
+    ];
+
+    // =========================================================================
+    // 3. HARMONIC 5-INK RISOGRAPH / RGB SETS (SLICED TO 3, 4 OR 5 COLORS)
+    // =========================================================================
+    const HARMONIC_SETS = {
+      cmyk_riso: [
+        ['#00B8FF', '#FF1A8C', '#FFE600', '#00D47E', '#7B2CFF'],
+        ['#00C4B4', '#FF2E7E', '#FFD500', '#2E5BFF', '#FF6B1A'],
+        ['#1A6BFF', '#FF3399', '#A8F000', '#00D8FF', '#FF5500'],
+        ['#00A8E8', '#FF4D29', '#FFE11A', '#C81EFF', '#00D98B']
+      ],
+      aisuni_harmony: [
+        ['#FF5500', '#00B8FF', '#FFE000', '#00D455', '#9D3BFF'],
+        ['#00D455', '#FF147A', '#3B66FF', '#FFAA00', '#00E5D4'],
+        ['#FF4400', '#00D4A8', '#FFCC00', '#FF2E93', '#2B7FFF'],
+        ['#7B2CFF', '#00D8FF', '#FF4D79', '#A8E600', '#FF7700']
+      ],
+      duotone_pure: [
+        ['#1E50FF', '#FF2E88', '#00C2FF', '#FFD000', '#00D48E'],
+        ['#00B86B', '#FF5500', '#FFE000', '#00A8FF', '#E62E8A'],
+        ['#00A8E8', '#FFE000', '#FF2E88', '#6E2CF2', '#00D97E'],
+        ['#6E2CF2', '#00D4A8', '#FF7A00', '#FF2E88', '#1E90FF']
+      ],
+      mono_accent: [
+        ['#262932', '#FF5500', '#00B8FF', '#FFE000', '#00D47E'],
+        ['#262932', '#00A8E8', '#FF1A8C', '#A8E600', '#FF6B1A'],
+        ['#262932', '#FF1A75', '#00D4B4', '#FFD500', '#5E3BFF'],
+        ['#262932', '#00D455', '#FF5500', '#2E7BFF', '#FF3399']
+      ]
+    };
+
+    const SURFACES = {
+      paper:     { bg: '#F4F3EF', blend: 'multiply', baseAlpha: 0.88 },
+      obsidian:  { bg: '#0D0E12', blend: 'screen',   baseAlpha: 0.90 },
+      blueprint: { bg: '#E6E9EF', blend: 'multiply', baseAlpha: 0.88 }
+    };
+
+    // =========================================================================
+    // 4. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      seed: 48219,
+      mutationCounter: 0,
+      viewMode: 'loop',          // 'loop' | 'stages' | 'batch'
+      mixMode: 'hybrid_random',  // 'hybrid_random' | 'choreo_sync' | 'cell_mutant'
+      progression: '1_2x4_4x4_8x8_16x16',
+      surface: 'paper',
+      paletteKey: 'cmyk_riso',
+      colorCount: 4,             // 3, 4 or 5 colors per set
+      triadIndex: 0,
+      layersCount: 3,            // 1 to 5 superimposed layers
+      macroOverlayCount: 14,     // Number of multi-scale 2x2 / 3x3 / 4x4 replacement blocks
+      speed: 1.0,
+      rotationAmount: 0.75,
+      strokeWeight: 3,
+      overprintOffset: 0.25,
+      autoMutateLoop: true,
+      isPlaying: true,
+      loopPhase: 0.05,
+      lastFrameTime: 0,
+      activeDna: new Set(DNA_PRIMITIVES.map(d => d.id)),
+      genome: null
+    };
+
+    // Reusable offscreen silhouette fusion buffer
+    const fusionCanvas = document.createElement('canvas');
+    const fusionCtx = fusionCanvas.getContext('2d');
+
+    // =========================================================================
+    // 5. PALETTE & GENOME BUILDER (324 CELL RECIPES + NON-OVERLAPPING PACKER)
+    // =========================================================================
+    function getPaletteColors(palKey, idxOffset = 0) {
+      const sets = HARMONIC_SETS[palKey] || HARMONIC_SETS.cmyk_riso;
+      const fullSet = sets[(state.triadIndex + idxOffset) % sets.length].slice(0, state.colorCount);
+      return fullSet.map(hex => {
+        if (state.surface === 'obsidian' && hex === '#262932') return '#D4D8E2';
+        return hex;
+      });
+    }
+
+    function updatePaletteSwatchesUI() {
+      document.querySelectorAll('.palette-swatches').forEach(span => {
+        const palKey = span.getAttribute('data-pal');
+        const cols = getPaletteColors(palKey, 0);
+        span.innerHTML = cols.map(c =>
+          `<i class="w-2.5 h-2.5 rounded-sm border border-white/15" style="background-color:${c}"></i>`
+        ).join('');
+      });
+    }
+
+    function buildSeedGenome(seedVal) {
+      const rand = createPRNG(seedVal);
+      const activeList = DNA_PRIMITIVES.map(d => d.id).filter(id => state.activeDna.has(id));
+      const pool = activeList.length > 0 ? activeList : DNA_PRIMITIVES.map(d => d.id);
+
+      const baseInks = getPaletteColors(state.paletteKey, Math.floor(rand() * 4));
+
+      const recipes = [];
+      for (let cellIdx = 0; cellIdx < 324; cellIdx++) {
+        const cellRand = createPRNG((seedVal ^ Math.imul(cellIdx + 1, 2654435761)) >>> 0);
+        const layerPool = shuffleArray(pool, cellRand);
+        const cellInks = shuffleArray(baseInks, cellRand);
+        const baseSnapAngle = Math.floor(cellRand() * 8) * (Math.PI / 4);
+
+        const layers = [];
+        for (let l = 0; l < 5; l++) {
+          const primId = layerPool[l % layerPool.length];
+          const angleStep = baseSnapAngle + l * (Math.PI / 2) + (cellRand() < 0.5 ? 0 : Math.PI / 4);
+          const scaleFactor = 0.96 - l * 0.055;
+
+          layers.push({
+            primId,
+            ink: cellInks[l % cellInks.length],
+            rotOffset: angleStep,
+            rotDir: cellRand() < 0.5 ? 1 : -1,
+            scale: Math.max(0.7, scaleFactor),
+            variant: Math.floor(cellRand() * 4),
+            ox: Math.cos(l * 1.256) * 0.55,
+            oy: Math.sin(l * 1.256) * 0.55
+          });
+        }
+        recipes.push({
+          layers,
+          phaseShift: cellRand() * Math.PI * 2
+        });
+      }
+
+      const macroCandidates = [];
+      const macroRand = createPRNG((seedVal ^ 0x9E3779B9) >>> 0);
+      for (let m = 0; m < 40; m++) {
+        const rSpan = macroRand();
+        const span = rSpan < 0.22 ? 4 : (rSpan < 0.54 ? 3 : 2);
+        macroCandidates.push({
+          span,
+          randX: macroRand(),
+          randY: macroRand(),
+          recipeIdx: (m * 13 + Math.floor(macroRand() * 50)) % recipes.length,
+          rotDir: macroRand() < 0.5 ? 1 : -1,
+          phaseOffset: macroRand() * Math.PI * 2
+        });
+      }
+
+      return {
+        seed: seedVal,
+        inks: baseInks,
+        recipes,
+        macroCandidates
+      };
+    }
+
+    function computeVariableGridLayout(genome, finaleCols, finaleRows, targetCount) {
+      const occupied = Array.from({ length: finaleRows }, () => new Uint8Array(finaleCols));
+      const placedBlocks = [];
+
+      if (!genome || !genome.macroCandidates || targetCount <= 0) {
+        return { occupied, placedBlocks };
+      }
+
+      for (let i = 0; i < genome.macroCandidates.length && placedBlocks.length < targetCount; i++) {
+        const cand = genome.macroCandidates[i];
+        const span = cand.span;
+        const maxC = finaleCols - span;
+        const maxR = finaleRows - span;
+        if (maxC < 0 || maxR < 0) continue;
+
+        const startC = Math.floor(cand.randX * (maxC + 0.99));
+        const startR = Math.floor(cand.randY * (maxR + 0.99));
+
+        let placed = false;
+        for (let dr = 0; dr <= maxR && !placed; dr++) {
+          const r = (startR + dr) % (maxR + 1);
+          for (let dc = 0; dc <= maxC && !placed; dc++) {
+            const c = (startC + dc) % (maxC + 1);
+
+            let free = true;
+            for (let rr = r; rr < r + span && free; rr++) {
+              for (let cc = c; cc < c + span; cc++) {
+                if (occupied[rr][cc]) {
+                  free = false;
+                  break;
+                }
+              }
+            }
+
+            if (free) {
+              for (let rr = r; rr < r + span; rr++) {
+                for (let cc = c; cc < c + span; cc++) {
+                  occupied[rr][cc] = 1;
+                }
+              }
+              placedBlocks.push({
+                c,
+                r,
+                span,
+                recipeIdx: cand.recipeIdx,
+                rotDir: cand.rotDir,
+                phaseOffset: cand.phaseOffset
+              });
+              placed = true;
+            }
+          }
+        }
+      }
+
+      return { occupied, placedBlocks };
+    }
+
+    // =========================================================================
+    // 6. THE 12 USER-SELECTED SYMBOLS WITH SUBTLE FILLETED CORNERS & ZERO ARTIFACTS
+    //    Matches the exact subtle corner fillet circled in blue by the user!
+    // =========================================================================
+    function drawRawSymbolPath(ctx, primId, S, color, variant, strokeScale) {
+      const lw = Math.max(1.8, S * (0.042 + strokeScale * 0.009));
+      // Subtle, tactile corner fillet (~2.5-4px on 200px glyph, proportional on smaller tiles)
+      // so NO sharp needle corners stick out while keeping architectural clarity!
+      const filletR = Math.max(1.2, Math.min(4.8, S * 0.022));
+
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (primId === 'concentric_arch') {
+        // 1. Set A (1,1): Concentric semicircular arches with subtle rounded ends
+        const count = 4;
+        const maxR = S * 0.40;
+        const minR = S * 0.13;
+        const cy = -S * 0.02;
+        const botY = S * 0.40;
+        for (let i = 0; i < count; i++) {
+          const r = minR + (i / (count - 1)) * (maxR - minR);
+          ctx.beginPath();
+          ctx.moveTo(-r, botY);
+          ctx.lineTo(-r, cy);
+          ctx.arc(0, cy, r, Math.PI, 0, false);
+          ctx.lineTo(r, botY);
+          ctx.stroke();
+        }
+      } else if (primId === 'modular_ladder') {
+        // 2. Set A (1,2): Two vertical rails + 5 horizontal rungs with subtle rounded corners
+        const railX = S * 0.24;
+        const topY = -S * 0.41;
+        const botY = S * 0.41;
+        drawFilletRect(ctx, -railX - lw * 0.5, topY, lw, botY - topY, filletR);
+        ctx.fill();
+        drawFilletRect(ctx, railX - lw * 0.5, topY, lw, botY - topY, filletR);
+        ctx.fill();
+
+        const rungs = 5;
+        for (let i = 0; i < rungs; i++) {
+          const ry = topY + S * 0.11 + (i / (rungs - 1)) * (S * 0.60);
+          drawFilletRect(ctx, -railX, ry - lw * 0.45, railX * 2, lw * 0.9, filletR * 0.85);
+          ctx.fill();
+        }
+      } else if (primId === 'stepped_skyline') {
+        // 3. Set A (2,1): Unified stepped skyline polygon with subtle filleted corners
+        const cols = 6;
+        const span = S * 0.82;
+        const w = span / cols;
+        const base = S * 0.37;
+        const profiles = [
+          [0.28, 0.54, 0.82, 0.44, 0.68, 0.34],
+          [0.34, 0.68, 0.44, 0.84, 0.52, 0.28],
+          [0.25, 0.48, 0.76, 0.62, 0.38, 0.55],
+          [0.42, 0.78, 0.50, 0.66, 0.32, 0.46]
+        ];
+        const heights = profiles[variant % profiles.length];
+        const pts = [[-span * 0.5, base]];
+        for (let c = 0; c < cols; c++) {
+          const x0 = -span * 0.5 + c * w;
+          const yTop = base - heights[c] * (S * 0.74);
+          pts.push([x0, yTop]);
+          pts.push([x0 + w, yTop]);
+        }
+        pts.push([span * 0.5, base]);
+        traceFilletPolyline(ctx, pts, filletR, true);
+        ctx.fill();
+      } else if (primId === 'blueprint_floorplan') {
+        // 4. Set A (3,1): Architectural floorplan with subtle filleted 90° corners
+        const thin = Math.max(1.6, lw * 0.7);
+        ctx.lineWidth = thin;
+        const u = S * 0.40;
+        const outerPts = [
+          [-u, -u],
+          [u * 0.35, -u],
+          [u * 0.35, -u * 0.25],
+          [u, -u * 0.25],
+          [u, u * 0.65],
+          [u * 0.2, u * 0.65],
+          [u * 0.2, u],
+          [-u, u]
+        ];
+        traceFilletPolyline(ctx, outerPts, filletR, true);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(-u, 0);
+        ctx.lineTo(-u * 0.25, 0);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(u * 0.35, 0);
+        ctx.moveTo(-u * 0.15, -u);
+        ctx.lineTo(-u * 0.15, -u * 0.35);
+        ctx.moveTo(u * 0.2, 0);
+        ctx.lineTo(u * 0.2, u * 0.4);
+        ctx.stroke();
+
+        drawFilletRect(ctx, -u * 0.75, -u * 0.72, u * 0.23, u * 0.23, filletR * 0.85);
+        ctx.fill();
+        drawFilletRect(ctx, u * 0.52, u * 0.1, u * 0.24, u * 0.24, filletR * 0.85);
+        ctx.fill();
+      } else if (primId === 'stepped_diamond') {
+        // 5. Set A (4,2): Concentric pixel-stepped diamond with subtle filleted corners
+        const step = Math.max(2.0, S * 0.056);
+        const rings = [7, 4, 1];
+        for (let rIdx = 0; rIdx < rings.length; rIdx++) {
+          const radSteps = rings[rIdx];
+          for (let dy = -radSteps; dy <= radSteps; dy++) {
+            const dx = radSteps - Math.abs(dy);
+            drawFilletRect(ctx, -dx * step - step * 0.51, dy * step - step * 0.51, step * 1.02, step * 1.02, filletR * 0.75);
+            ctx.fill();
+            if (dx > 0) {
+              drawFilletRect(ctx, dx * step - step * 0.51, dy * step - step * 0.51, step * 1.02, step * 1.02, filletR * 0.75);
+              ctx.fill();
+            }
+          }
+        }
+      } else if (primId === 'circuit_tracks') {
+        // 6. Set A (4,3): 4-way symmetrical circuit traces with subtle filleted 90° elbows
+        const thin = Math.max(1.7, lw * 0.74);
+        ctx.lineWidth = thin;
+        const inner = S * 0.11;
+        const outer = S * 0.39;
+        const dotR = thin * 1.15;
+
+        for (let q = 0; q < 4; q++) {
+          ctx.save();
+          ctx.rotate((q * Math.PI) / 2);
+
+          traceFilletPolyline(ctx, [
+            [inner, -outer],
+            [inner, -inner],
+            [outer, -inner]
+          ], filletR * 1.2, false);
+          ctx.stroke();
+
+          traceFilletPolyline(ctx, [
+            [inner * 2.1, -outer * 0.80],
+            [inner * 2.1, -inner * 2.1],
+            [outer * 0.80, -inner * 2.1]
+          ], filletR * 1.2, false);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(outer * 0.84, -inner * 2.1, dotR, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      } else if (primId === 'dot_matrix_4x4') {
+        // 7. Set B (1,3): Clean 4x4 grid of 16 circular dots
+        const count = 4;
+        const span = S * 0.68;
+        const step = span / (count - 1);
+        const radius = Math.max(1.8, S * 0.056);
+        for (let r = 0; r < count; r++) {
+          for (let c = 0; c < count; c++) {
+            ctx.beginPath();
+            ctx.arc(-span * 0.5 + c * step, -span * 0.5 + r * step, radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      } else if (primId === 'double_spiral') {
+        // 8. Set B (2,2): Interlocking double square spiral with subtle filleted 90° turns
+        const u = S * 0.086;
+        const arm1 = [
+          [-4 * u, -4 * u],
+          [ 4 * u, -4 * u],
+          [ 4 * u,  4 * u],
+          [-2 * u,  4 * u],
+          [-2 * u, -2 * u],
+          [ 2 * u, -2 * u],
+          [ 2 * u,  1.2 * u]
+        ];
+        const arm2 = [
+          [ 4 * u,  4 * u],
+          [-4 * u,  4 * u],
+          [-4 * u, -2.5 * u]
+        ];
+        traceFilletPolyline(ctx, arm1, filletR * 1.15, false);
+        ctx.stroke();
+
+        traceFilletPolyline(ctx, arm2, filletR * 1.15, false);
+        ctx.stroke();
+      } else if (primId === 'pixel_archipelago') {
+        // 9. Set B (4,1): Cluster of 6 fused mini pixel clouds with subtle filleted corners
+        const clouds = [
+          { cx: -0.22, cy: -0.24, s: 0.036 },
+          { cx:  0.18, cy: -0.26, s: 0.028 },
+          { cx: -0.02, cy: -0.03, s: 0.044 },
+          { cx: -0.26, cy:  0.18, s: 0.032 },
+          { cx:  0.22, cy:  0.16, s: 0.038 },
+          { cx:  0.02, cy:  0.32, s: 0.026 }
+        ];
+        for (const cl of clouds) {
+          const px = cl.s * S;
+          const x0 = cl.cx * S;
+          const y0 = cl.cy * S;
+          const r = filletR * 0.7;
+          drawFilletRect(ctx, x0 - px * 2.5, y0, px * 5, px + 0.8, r);
+          ctx.fill();
+          drawFilletRect(ctx, x0 - px * 1.5, y0 - px, px * 3, px + 1.2, r);
+          ctx.fill();
+          drawFilletRect(ctx, x0 - px * 0.5, y0 - px * 2, px, px + 1.2, r);
+          ctx.fill();
+        }
+      } else if (primId === 'hybrid_collage') {
+        // 10. Set C (1,2): Clean composite collage with:
+        //     - Top-left comb with subtle filleted corners
+        //     - Diagonal bars drawn cleanly with filleted corners (ZERO stray top-right speck!)
+        //     - Bottom-right perforated box completely clean inside (no stripe poking in!)
+        const u = S * 0.39;
+
+        // A. Top-left comb
+        drawFilletRect(ctx, -u, -u, u * 0.96, lw * 0.86, filletR * 0.85);
+        ctx.fill();
+        for (let i = 0; i < 4; i++) {
+          drawFilletRect(ctx, -u + i * (u * 0.255), -u, lw * 0.68, u * 0.45, filletR * 0.75);
+          ctx.fill();
+        }
+
+        // B. Diagonal bars clipped strictly to clean geometric region (stops cleanly before
+        //    the top-right tip so no stray triangle speck appears, and excludes bottom-right box!)
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(u * 0.08, -u);
+        ctx.lineTo(u * 0.84, -u);      // Stops cleanly before top-right corner -> zero stray tip!
+        ctx.lineTo(u * 0.84, -u * 0.35);
+        ctx.lineTo(u * 0.06, u * 0.14);
+        ctx.lineTo(u * 0.06, u * 0.88);
+        ctx.lineTo(-u * 0.15, u);
+        ctx.lineTo(-u, u);
+        ctx.lineTo(-u, u * 0.12);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.rotate(-Math.PI / 4);
+        const stripe = S * 0.082;
+        for (let sx = -S * 0.9; sx <= S * 0.72; sx += stripe * 2) {
+          drawFilletRect(ctx, sx, -S, stripe, S * 2, filletR * 0.8);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // C. Bottom-right perforated frame + 6 inner dots (subtle rounded corners matching blue circle!)
+        const boxX = u * 0.12;
+        const boxY = u * 0.22;
+        const boxW = u * 0.86;
+        const boxH = u * 0.76;
+        drawFilletRect(ctx, boxX, boxY, boxW, boxH, filletR * 1.15);
+        ctx.stroke();
+
+        const dotS = Math.max(2.0, lw * 0.56);
+        for (let r = 0; r < 2; r++) {
+          for (let c = 0; c < 3; c++) {
+            drawFilletRect(
+              ctx,
+              boxX + boxW * 0.16 + c * (boxW * 0.28),
+              boxY + boxH * 0.22 + r * (boxH * 0.38),
+              dotS,
+              dotS,
+              filletR * 0.65
+            );
+            ctx.fill();
+          }
+        }
+      } else if (primId === 'warped_grid') {
+        // 11. Set C (3,1): 5x5 curved wireframe mesh with subtle rounded endpoints
+        const thin = Math.max(1.5, lw * 0.65);
+        ctx.lineWidth = thin;
+        const lines = 5;
+        const span = S * 0.76;
+        const amp = S * 0.065;
+        const steps = 16;
+
+        for (let r = 0; r < lines; r++) {
+          const baseY = -span * 0.5 + (r / (lines - 1)) * span;
+          ctx.beginPath();
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = -span * 0.5 + t * span;
+            const y = baseY + Math.sin(t * Math.PI * 1.35 + r * 0.4) * amp;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+        for (let c = 0; c < lines; c++) {
+          const baseX = -span * 0.5 + (c / (lines - 1)) * span;
+          ctx.beginPath();
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const y = -span * 0.5 + t * span;
+            const x = baseX + Math.sin(t * Math.PI * 1.35 + c * 0.4) * amp;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      } else if (primId === 'floating_masonry') {
+        // 12. Set C (4,1): 6 staggered horizontal blocks with subtle filleted corners
+        const blocks = [
+          { x: -0.38, y: -0.38, w: 0.32, h: 0.13 },
+          { x:  0.04, y: -0.34, w: 0.34, h: 0.13 },
+          { x: -0.22, y: -0.14, w: 0.38, h: 0.13 },
+          { x: -0.40, y:  0.08, w: 0.30, h: 0.13 },
+          { x:  0.02, y:  0.12, w: 0.36, h: 0.13 },
+          { x: -0.16, y:  0.30, w: 0.36, h: 0.13 }
+        ];
+        for (const b of blocks) {
+          drawFilletRect(ctx, b.x * S, b.y * S, b.w * S, b.h * S, filletR);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawFusedSymbol(targetCtx, primId, S, color, variant, strokeScale) {
+      const bufDim = Math.max(20, Math.ceil(S * 1.15));
+      if (fusionCanvas.width < bufDim || fusionCanvas.height < bufDim) {
+        fusionCanvas.width = bufDim;
+        fusionCanvas.height = bufDim;
+      }
+      fusionCtx.save();
+      fusionCtx.globalCompositeOperation = 'source-over';
+      fusionCtx.globalAlpha = 1.0;
+      fusionCtx.clearRect(0, 0, bufDim, bufDim);
+      fusionCtx.translate(bufDim * 0.5, bufDim * 0.5);
+      drawRawSymbolPath(fusionCtx, primId, S, color, variant, strokeScale);
+      fusionCtx.restore();
+
+      targetCtx.drawImage(
+        fusionCanvas,
+        0, 0, bufDim, bufDim,
+        -bufDim * 0.5, -bufDim * 0.5, bufDim, bufDim
+      );
+    }
+
+    // =========================================================================
+    // 7. HARMONIC COMPOSITE GLYPH RENDERER (SUPPORTS 1 TO 5 LAYERS)
+    // =========================================================================
+    function getCalibratedLayerAlpha(baseAlpha, layerCount) {
+      if (layerCount <= 1) return Math.min(0.95, baseAlpha * 1.04);
+      if (layerCount === 2) return baseAlpha * 0.94;
+      if (layerCount === 3) return baseAlpha * 0.84;
+      if (layerCount === 4) return baseAlpha * 0.74;
+      return baseAlpha * 0.66;
+    }
+
+    function renderCompositeGlyph(ctx, cx, cy, size, cellRecipe, phaseAngle, surf) {
+      const layers = cellRecipe.layers;
+      const layerLimit = Math.min(state.layersCount, layers.length);
+      const offsetMax = size * 0.085 * state.overprintOffset;
+      const perLayerAlpha = getCalibratedLayerAlpha(surf.baseAlpha, layerLimit);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.globalCompositeOperation = surf.blend;
+
+      for (let i = 0; i < layerLimit; i++) {
+        const L = layers[i];
+        const rot = L.rotOffset + phaseAngle * L.rotDir * state.rotationAmount * (1 - i * 0.12);
+        const ox = Math.cos(phaseAngle + i * 1.256) * offsetMax + L.ox * offsetMax;
+        const oy = Math.sin(phaseAngle + i * 1.256) * offsetMax + L.oy * offsetMax;
+
+        ctx.save();
+        ctx.globalAlpha *= perLayerAlpha;
+        ctx.translate(ox, oy);
+        ctx.rotate(rot);
+        drawFusedSymbol(ctx, L.primId, size * L.scale, L.ink, L.variant, state.strokeWeight);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // =========================================================================
+    // 8. 5-STAGE MITOSIS RESOLVER + 16x16 VARIABLE-CELL REPLACEMENT FINALE
+    // =========================================================================
+    function getProgressionStages() {
+      if (state.progression === '1_2x2_4x4_8x8_16x16') {
+        return [
+          { cols: 1,  rows: 1,  label: '1×1',   isMacroFinale: false },
+          { cols: 2,  rows: 2,  label: '2×2',   isMacroFinale: false },
+          { cols: 4,  rows: 4,  label: '4×4',   isMacroFinale: false },
+          { cols: 8,  rows: 8,  label: '8×8',   isMacroFinale: false },
+          { cols: 16, rows: 16, label: '16×16', isMacroFinale: true }
+        ];
+      } else if (state.progression === '1_3x3_6x6_9x9_18x18') {
+        return [
+          { cols: 1,  rows: 1,  label: '1×1',   isMacroFinale: false },
+          { cols: 3,  rows: 3,  label: '3×3',   isMacroFinale: false },
+          { cols: 6,  rows: 6,  label: '6×6',   isMacroFinale: false },
+          { cols: 9,  rows: 9,  label: '9×9',   isMacroFinale: false },
+          { cols: 18, rows: 18, label: '18×18', isMacroFinale: true }
+        ];
+      } else if (state.progression === '1_2x4_4x8_8x8_16x16') {
+        return [
+          { cols: 1,  rows: 1,  label: '1×1',   isMacroFinale: false },
+          { cols: 4,  rows: 2,  label: '2×4',   isMacroFinale: false },
+          { cols: 8,  rows: 4,  label: '4×8',   isMacroFinale: false },
+          { cols: 8,  rows: 8,  label: '8×8',   isMacroFinale: false },
+          { cols: 16, rows: 16, label: '16×16', isMacroFinale: true }
+        ];
+      }
+      return [
+        { cols: 1,  rows: 1,  label: '1×1',   isMacroFinale: false },
+        { cols: 4,  rows: 2,  label: '2×4',   isMacroFinale: false },
+        { cols: 4,  rows: 4,  label: '4×4',   isMacroFinale: false },
+        { cols: 8,  rows: 8,  label: '8×8',   isMacroFinale: false },
+        { cols: 16, rows: 16, label: '16×16', isMacroFinale: true }
+      ];
+    }
+
+    function renderMitosisFrame(targetCanvas, genome, loopT) {
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+      const surf = SURFACES[state.surface] || SURFACES.paper;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = surf.bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+
+      const stages = getProgressionStages();
+      const numStages = stages.length;
+      const scaled = (loopT % 1) * numStages;
+      const stageIdx = Math.floor(scaled) % numStages;
+      const nextIdx = (stageIdx + 1) % numStages;
+      const localT = scaled - Math.floor(scaled);
+
+      const transitionT = localT < 0.54 ? 0 : easeInOutCubic((localT - 0.54) / 0.46);
+
+      const cur = stages[stageIdx];
+      const nxt = stages[nextIdx];
+
+      const effCols = cur.cols + (nxt.cols - cur.cols) * transitionT;
+      const effRows = cur.rows + (nxt.rows - cur.rows) * transitionT;
+
+      const drawCols = Math.ceil(Math.max(cur.cols, nxt.cols));
+      const drawRows = Math.ceil(Math.max(cur.rows, nxt.rows));
+
+      const margin = W * 0.055;
+      const usableW = W - margin * 2;
+      const usableH = H - margin * 2;
+
+      const cellW = usableW / effCols;
+      const cellH = usableH / effRows;
+      const glyphSize = Math.min(cellW, cellH) * 0.85;
+
+      const globalPhaseAngle = loopT * Math.PI * 2;
+
+      let macroVisibility = 0;
+      if (cur.isMacroFinale && !nxt.isMacroFinale) {
+        macroVisibility = 1.0 - transitionT;
+      } else if (!cur.isMacroFinale && nxt.isMacroFinale) {
+        macroVisibility = transitionT;
+      } else if (cur.isMacroFinale && nxt.isMacroFinale) {
+        macroVisibility = 1.0;
+      }
+
+      const finaleCols = cur.isMacroFinale ? cur.cols : nxt.cols;
+      const finaleRows = cur.isMacroFinale ? cur.rows : nxt.rows;
+      const { occupied, placedBlocks } = macroVisibility > 0.01
+        ? computeVariableGridLayout(genome, finaleCols, finaleRows, state.macroOverlayCount)
+        : { occupied: null, placedBlocks: [] };
+
+      // 1. Render base 1x1 grid cells (suppressing cells replaced by 2x2 / 3x3 / 4x4 blocks)
+      for (let r = 0; r < drawRows; r++) {
+        for (let c = 0; c < drawCols; c++) {
+          const cx = margin + (c + 0.5) * cellW;
+          const cy = margin + (r + 0.5) * cellH;
+
+          if (cx - glyphSize * 0.5 > W - margin * 0.25 || cy - glyphSize * 0.5 > H - margin * 0.25) continue;
+
+          let alpha = 1.0;
+          if (c >= cur.cols || r >= cur.rows) {
+            alpha = transitionT;
+          } else if (c >= nxt.cols || r >= nxt.rows) {
+            alpha = 1.0 - transitionT;
+          }
+
+          if (occupied && r < finaleRows && c < finaleCols && occupied[r][c]) {
+            alpha *= (1.0 - macroVisibility);
+          }
+
+          if (alpha <= 0.02) continue;
+
+          const uniqueIdx = (r * 18 + c) % genome.recipes.length;
+          let cellRecipe = genome.recipes[0];
+          let cellPhaseOffset = 0;
+
+          if (state.mixMode === 'hybrid_random') {
+            cellRecipe = genome.recipes[uniqueIdx];
+            cellPhaseOffset = cellRecipe.phaseShift;
+          } else if (state.mixMode === 'cell_mutant') {
+            cellRecipe = genome.recipes[(uniqueIdx + stageIdx * 11) % genome.recipes.length];
+            cellPhaseOffset = cellRecipe.phaseShift * 1.5;
+          } else {
+            cellRecipe = genome.recipes[stageIdx % genome.recipes.length];
+            cellPhaseOffset = ((r + c) % 2) * (Math.PI / 2) * transitionT;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          renderCompositeGlyph(
+            ctx,
+            cx,
+            cy,
+            glyphSize,
+            cellRecipe,
+            globalPhaseAngle + cellPhaseOffset,
+            surf
+          );
+          ctx.restore();
+        }
+      }
+
+      // 2. Render the Multi-Scale Replacement Blocks cleanly filling vacated slots
+      if (macroVisibility > 0.02 && placedBlocks.length > 0) {
+        for (let m = 0; m < placedBlocks.length; m++) {
+          const mb = placedBlocks[m];
+          const mCx = margin + (mb.c + mb.span * 0.5) * cellW;
+          const mCy = margin + (mb.r + mb.span * 0.5) * cellH;
+          const mSize = Math.min(cellW, cellH) * mb.span * 0.90;
+
+          if (mCx - mSize * 0.5 > W - margin * 0.2 || mCy - mSize * 0.5 > H - margin * 0.2) continue;
+
+          ctx.save();
+          ctx.globalAlpha = macroVisibility;
+          renderCompositeGlyph(
+            ctx,
+            mCx,
+            mCy,
+            mSize,
+            genome.recipes[mb.recipeIdx],
+            globalPhaseAngle * mb.rotDir + mb.phaseOffset,
+            surf
+          );
+          ctx.restore();
+        }
+      }
+
+      return { currentLabel: cur.label, nextLabel: nxt.label, transitionT, isMacroFinale: cur.isMacroFinale };
+    }
+
+    // =========================================================================
+    // 9. UI INITIALIZATION
+    // =========================================================================
+    const mainCanvas = document.getElementById('mitosis-canvas');
+    const scrubberEl = document.getElementById('timeline-scrubber');
+
+    function buildDnaSidebarCards() {
+      const grid = document.getElementById('dna-grid');
+      grid.innerHTML = '';
+
+      DNA_PRIMITIVES.forEach((prim, idx) => {
+        const isActive = state.activeDna.has(prim.id);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `dna-card ${isActive ? 'active' : 'inactive'} flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all cursor-pointer`;
+        btn.title = `${prim.name} (Clic para activar/desactivar)`;
+
+        const mini = document.createElement('canvas');
+        mini.width = 64;
+        mini.height = 64;
+        mini.className = 'w-10 h-10 mb-1';
+        const mctx = mini.getContext('2d');
+        mctx.translate(32, 32);
+        drawFusedSymbol(mctx, prim.id, 52, '#FFFFFF', idx % 4, 2);
+
+        const lbl = document.createElement('span');
+        lbl.className = 'text-[9px] font-mono leading-tight text-center truncate w-full';
+        lbl.textContent = prim.name;
+
+        btn.appendChild(mini);
+        btn.appendChild(lbl);
+
+        btn.addEventListener('click', () => {
+          if (state.activeDna.has(prim.id)) {
+            if (state.activeDna.size <= 2) {
+              showToast('Mantén al menos 2 símbolos activos para crear combinaciones.');
+              return;
+            }
+            state.activeDna.delete(prim.id);
+          } else {
+            state.activeDna.add(prim.id);
+          }
+          buildDnaSidebarCards();
+          regenerateGenome(false);
+        });
+
+        grid.appendChild(btn);
+      });
+
+      document.getElementById('active-dna-summary').textContent =
+        `${state.activeDna.size}/12 Símbolos · ${state.layersCount} ${state.layersCount === 1 ? 'Capa' : 'Capas'} · ${state.colorCount} Colores`;
+    }
+
+    function regenerateGenome(advanceSeed = true) {
+      if (advanceSeed) {
+        state.mutationCounter++;
+        state.seed = (Math.floor(10000 + Math.random() * 890000) + state.mutationCounter * 2654435761) % 999999;
+        if (state.seed < 10000) state.seed += 10000;
+      }
+      document.getElementById('seed-badge').textContent = `SEED #${state.seed}`;
+      state.genome = buildSeedGenome(state.seed);
+      updatePaletteSwatchesUI();
+
+      if (state.viewMode === 'stages') {
+        renderFiveStagesView();
+      } else if (state.viewMode === 'batch') {
+        renderBatchView();
+      } else if (!state.isPlaying) {
+        drawCurrentLoopFrame();
+      }
+    }
+
+    function drawCurrentLoopFrame() {
+      if (!state.genome) state.genome = buildSeedGenome(state.seed);
+      const info = renderMitosisFrame(mainCanvas, state.genome, state.loopPhase);
+      scrubberEl.value = Math.round(state.loopPhase * 1000);
+
+      const labelEl = document.getElementById('active-status-label');
+      if (info.transitionT > 0.05) {
+        labelEl.textContent = `DIVISIÓN MITOSIS: ${info.currentLabel} ➔ ${info.nextLabel}`;
+      } else if (info.isMacroFinale) {
+        labelEl.textContent = `CIERRE MULTI-ESCALA: ${info.currentLabel} (REEMPLAZO 2×2 / 3×3 / 4×4)`;
+      } else {
+        labelEl.textContent = `FASE ESTABLE: ${info.currentLabel} · SÍMBOLOS AISUNI`;
+      }
+    }
+
+    function renderFiveStagesView() {
+      const container = document.getElementById('five-stages-grid');
+      container.innerHTML = '';
+      const stages = getProgressionStages();
+      const stageTimes = [0.05, 0.25, 0.45, 0.65, 0.86];
+
+      stages.forEach((st, idx) => {
+        const card = document.createElement('div');
+        card.className = 'group relative aspect-square rounded-xl overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer transition-all';
+
+        const c = document.createElement('canvas');
+        c.width = 600;
+        c.height = 600;
+        c.className = 'w-full h-full object-contain';
+        renderMitosisFrame(c, state.genome, stageTimes[idx]);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute top-2.5 left-2.5 px-2 py-1 rounded-md bg-black/85 border border-white/15 font-mono text-[11px] text-white flex items-center gap-1.5';
+        const desc = st.isMacroFinale ? `${st.label} + Reemplazo Multi-Escala` : `${st.label} (${st.cols * st.rows})`;
+        badge.innerHTML = `<span class="text-brand-orange font-bold">F${idx + 1}</span><span>${desc}</span>`;
+
+        card.appendChild(c);
+        card.appendChild(badge);
+        card.addEventListener('click', () => {
+          state.loopPhase = stageTimes[idx];
+          switchViewMode('loop');
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    function renderBatchView() {
+      const grid = document.getElementById('batch-grid');
+      grid.innerHTML = '';
+      const previewPhases = [0.86, 0.86, 0.45, 0.86, 0.65, 0.86, 0.25, 0.86, 0.86];
+
+      for (let i = 0; i < 9; i++) {
+        const itemSeed = (state.seed + i * 15485863) % 999999;
+        const itemGenome = buildSeedGenome(itemSeed);
+        const card = document.createElement('div');
+        card.className = 'group relative aspect-square rounded-lg overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer transition-all';
+
+        const c = document.createElement('canvas');
+        c.width = 500;
+        c.height = 500;
+        c.className = 'w-full h-full object-contain';
+        renderMitosisFrame(c, itemGenome, previewPhases[i]);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded bg-black/85 text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity';
+        badge.innerHTML = `<span>#${itemSeed}</span><span class="text-brand-orange">Animar ↗</span>`;
+
+        card.appendChild(c);
+        card.appendChild(badge);
+        card.addEventListener('click', () => {
+          state.seed = itemSeed;
+          state.genome = itemGenome;
+          switchViewMode('loop');
+        });
+
+        grid.appendChild(card);
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const map = {
+        loop:   ['btn-view-loop',   'container-view-loop'],
+        stages: ['btn-view-stages', 'container-view-stages'],
+        batch:  ['btn-view-batch',  'container-view-batch']
+      };
+      Object.entries(map).forEach(([k, [btnId, contId]]) => {
+        const b = document.getElementById(btnId);
+        const c = document.getElementById(contId);
+        if (k === mode) {
+          b.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+          c.classList.remove('hidden');
+        } else {
+          b.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+          c.classList.add('hidden');
+        }
+      });
+
+      if (mode === 'stages') renderFiveStagesView();
+      else if (mode === 'batch') renderBatchView();
+      else drawCurrentLoopFrame();
+    }
+
+    // =========================================================================
+    // 10. ANIMATION LOOP (60FPS REQUESTANIMATIONFRAME)
+    // =========================================================================
+    function animationTick(timestamp) {
+      if (!state.lastFrameTime) state.lastFrameTime = timestamp;
+      const dt = Math.min(0.05, (timestamp - state.lastFrameTime) / 1000);
+      state.lastFrameTime = timestamp;
+
+      if (state.isPlaying && state.viewMode === 'loop') {
+        const prevPhase = state.loopPhase;
+        state.loopPhase = (state.loopPhase + dt * 0.10 * state.speed) % 1.0;
+
+        if (state.autoMutateLoop && state.loopPhase < prevPhase) {
+          regenerateGenome(true);
+        }
+        drawCurrentLoopFrame();
+      }
+      requestAnimationFrame(animationTick);
+    }
+
+    // =========================================================================
+    // 11. EVENT LISTENERS & EXPORTS
+    // =========================================================================
+    document.getElementById('btn-view-loop').addEventListener('click', () => switchViewMode('loop'));
+    document.getElementById('btn-view-stages').addEventListener('click', () => switchViewMode('stages'));
+    document.getElementById('btn-view-batch').addEventListener('click', () => switchViewMode('batch'));
+
+    document.getElementById('btn-random-mix').addEventListener('click', () => {
+      if (Math.random() < 0.55) {
+        const rand = createPRNG(Date.now());
+        const shuffled = shuffleArray(DNA_PRIMITIVES.map(d => d.id), rand);
+        const count = 4 + Math.floor(rand() * 6);
+        state.activeDna = new Set(shuffled.slice(0, count));
+        buildDnaSidebarCards();
+      }
+      regenerateGenome(true);
+    });
+
+    document.getElementById('btn-stages-mutate').addEventListener('click', () => regenerateGenome(true));
+    document.getElementById('btn-batch-mutate').addEventListener('click', () => regenerateGenome(true));
+    mainCanvas.addEventListener('click', () => regenerateGenome(true));
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        regenerateGenome(true);
+      }
+    });
+
+    document.getElementById('btn-dna-random-subset').addEventListener('click', () => {
+      const rand = createPRNG(Date.now());
+      const shuffled = shuffleArray(DNA_PRIMITIVES.map(d => d.id), rand);
+      const count = 4 + Math.floor(rand() * 5);
+      state.activeDna = new Set(shuffled.slice(0, count));
+      buildDnaSidebarCards();
+      regenerateGenome(true);
+    });
+
+    document.getElementById('btn-dna-all').addEventListener('click', () => {
+      state.activeDna = new Set(DNA_PRIMITIVES.map(d => d.id));
+      buildDnaSidebarCards();
+      regenerateGenome(false);
+    });
+
+    document.querySelectorAll('.mix-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mix-btn').forEach(b => {
+          b.className = 'mix-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left';
+        });
+        btn.className = 'mix-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left';
+        state.mixMode = btn.getAttribute('data-mix');
+        buildDnaSidebarCards();
+        regenerateGenome(false);
+      });
+    });
+
+    document.getElementById('select-progression').addEventListener('change', (e) => {
+      state.progression = e.target.value;
+      const stages = getProgressionStages();
+      const jumpBtns = document.querySelectorAll('.stage-jump-btn');
+      if (jumpBtns.length >= 5) {
+        jumpBtns[0].textContent = stages[0].label;
+        jumpBtns[1].textContent = stages[1].label;
+        jumpBtns[2].textContent = stages[2].label;
+        jumpBtns[3].textContent = stages[3].label;
+        jumpBtns[4].textContent = `${stages[4].label} MIX`;
+      }
+      regenerateGenome(false);
+    });
+
+    document.getElementById('slider-layers').addEventListener('input', (e) => {
+      state.layersCount = parseInt(e.target.value, 10);
+      document.getElementById('val-layers').textContent = `${state.layersCount} ${state.layersCount === 1 ? 'capa' : 'capas'}`;
+      buildDnaSidebarCards();
+      regenerateGenome(false);
+    });
+
+    document.getElementById('slider-macro').addEventListener('input', (e) => {
+      state.macroOverlayCount = parseInt(e.target.value, 10);
+      document.getElementById('val-macro').textContent = `${state.macroOverlayCount} bloques`;
+      if (state.viewMode === 'stages') renderFiveStagesView();
+      else if (state.viewMode === 'batch') renderBatchView();
+      else if (!state.isPlaying) drawCurrentLoopFrame();
+    });
+
+    document.getElementById('slider-speed').addEventListener('input', (e) => {
+      state.speed = parseInt(e.target.value, 10) / 10;
+      document.getElementById('val-speed').textContent = `${state.speed.toFixed(1)}x`;
+    });
+
+    document.getElementById('slider-rotation').addEventListener('input', (e) => {
+      state.rotationAmount = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-rotation').textContent = `${e.target.value}%`;
+      if (!state.isPlaying) drawCurrentLoopFrame();
+    });
+
+    document.getElementById('slider-grain').addEventListener('input', (e) => {
+      state.strokeWeight = parseInt(e.target.value, 10);
+      document.getElementById('val-grain').textContent = `${state.strokeWeight} px`;
+      regenerateGenome(false);
+    });
+
+    document.getElementById('slider-offset').addEventListener('input', (e) => {
+      state.overprintOffset = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-offset').textContent = `${e.target.value}%`;
+      if (!state.isPlaying) drawCurrentLoopFrame();
+    });
+
+    const btnAutoMutate = document.getElementById('btn-auto-mutate');
+    btnAutoMutate.addEventListener('click', () => {
+      state.autoMutateLoop = !state.autoMutateLoop;
+      if (state.autoMutateLoop) {
+        btnAutoMutate.textContent = 'ON';
+        btnAutoMutate.className = 'px-3 py-1 rounded-lg border border-brand-orange bg-brand-orange/20 font-mono text-xs text-brand-orange font-semibold transition-colors';
+      } else {
+        btnAutoMutate.textContent = 'OFF';
+        btnAutoMutate.className = 'px-3 py-1 rounded-lg border border-brand-border bg-black/50 font-mono text-xs text-neutral-400 transition-colors';
+      }
+    });
+
+    document.querySelectorAll('.ccount-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ccount-btn').forEach(b => {
+          b.className = 'ccount-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center transition-all';
+        });
+        btn.className = 'ccount-btn py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center transition-all';
+        state.colorCount = parseInt(btn.getAttribute('data-ccount'), 10);
+        buildDnaSidebarCards();
+        regenerateGenome(false);
+      });
+    });
+
+    document.querySelectorAll('.surface-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.surface-btn').forEach(b => {
+          b.className = 'surface-btn py-1.5 px-2 rounded-lg border border-brand-border bg-black/40 text-neutral-400 hover:text-white text-center';
+        });
+        btn.className = 'surface-btn py-1.5 px-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-center';
+        state.surface = btn.getAttribute('data-surface');
+        regenerateGenome(false);
+      });
+    });
+
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.palette-btn').forEach(b => {
+          b.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left';
+        });
+        btn.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left';
+        state.paletteKey = btn.getAttribute('data-palette');
+        state.triadIndex = 0;
+        buildDnaSidebarCards();
+        regenerateGenome(false);
+      });
+    });
+
+    document.getElementById('btn-shuffle-palette').addEventListener('click', () => {
+      state.triadIndex = (state.triadIndex + 1) % 4;
+      regenerateGenome(false);
+    });
+
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    btnPlayPause.addEventListener('click', () => {
+      state.isPlaying = !state.isPlaying;
+      btnPlayPause.textContent = state.isPlaying ? '⏸' : '▶';
+    });
+
+    scrubberEl.addEventListener('input', (e) => {
+      state.isPlaying = false;
+      btnPlayPause.textContent = '▶';
+      state.loopPhase = parseInt(e.target.value, 10) / 1000;
+      drawCurrentLoopFrame();
+    });
+
+    document.querySelectorAll('.stage-jump-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.loopPhase = parseFloat(btn.getAttribute('data-jump'));
+        drawCurrentLoopFrame();
+      });
+    });
+
+    document.getElementById('btn-export-png').addEventListener('click', () => {
+      const mult = parseInt(document.getElementById('select-export-scale').value, 10) || 2;
+      const dim = 1000 * mult;
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = dim;
+      expCanvas.height = dim;
+      renderMitosisFrame(expCanvas, state.genome, state.loopPhase);
+
+      const link = document.createElement('a');
+      link.download = `aisuni-glyph-mitosis-v1.6-${mult}x-seed-${state.seed}.png`;
+      link.href = expCanvas.toDataURL('image/png');
+      link.click();
+      showToast(`Exportado PNG ${dim}×${dim}px`);
+    });
+
+    document.getElementById('btn-export-video').addEventListener('click', () => {
+      if (typeof MediaRecorder === 'undefined' || !mainCanvas.captureStream) {
+        showToast('Tu navegador no soporta grabación WebM directa; usa Exportar PNG.');
+        return;
+      }
+      showToast('Grabando ciclo completo de mitosis (5 seg)...');
+      state.loopPhase = 0;
+      state.isPlaying = true;
+      btnPlayPause.textContent = '⏸';
+
+      const stream = mainCanvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      const chunks = [];
+      recorder.ondataavailable = (ev) => { if (ev.data.size > 0) chunks.push(ev.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `aisuni-mitosis-loop-seed-${state.seed}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Video WebM del loop descargado.');
+      };
+      recorder.start();
+      setTimeout(() => {
+        if (recorder.state === 'recording') recorder.stop();
+      }, 5200);
+    });
+
+    // Boot
+    buildDnaSidebarCards();
+    regenerateGenome(false);
+    drawCurrentLoopFrame();
+    requestAnimationFrame(animationTick);
+  </script>
+</body>
+</html>

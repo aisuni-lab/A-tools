@@ -34,5 +34,8 @@ Herramientas generativas de AISUNI. Exploraciones con código.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Synth/
 - [Aisuni-Symbol](Aisuni-Symbol/) — genera variaciones del símbolo AISUNI ajustando proporciones geométricas y color, con exportación SVG y PNG.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Symbol/
+- [AISUNI Glyph Synth](AISUNI-Glyph-Synth/) — combina 12 símbolos AISUNI en composiciones generativas con variaciones cromáticas, mitosis animada y exportación PNG y WebM.
+  - Versión: 1.6
+  - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glyph-Synth/
 - [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
