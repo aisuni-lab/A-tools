@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Type Synth v6.0 — Kinetic Vortex Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5500',
+              dark: '#060608',
+              panel: '#101115',
+              border: '#20222A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #060608;
+      color: #F3F4F6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    .pixelated-canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #1C1E26;
+      height: 4px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FF5500;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0A0A0D;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2A2D3A;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-orange selection:text-white bg-[#060608]">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-brand-border bg-brand-panel/95 backdrop-blur sticky top-0 z-40 px-3 sm:px-6 py-2 flex-shrink-0">
+    <div class="max-w-[1850px] mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+        <div class="flex items-center gap-1.5">
+          <span class="font-bold tracking-tight text-sm sm:text-base uppercase">TYPE SYNTH <span class="text-brand-orange">V6.0</span></span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-orange/15 border border-brand-orange/30 text-brand-orange font-semibold">Kinetic Vortex</span>
+        </div>
+
+        <div class="hidden sm:flex items-center gap-1.5 ml-2 font-mono text-xs">
+          <label for="select-preset" class="text-neutral-400 text-[11px]">Preset:</label>
+          <select id="select-preset" class="bg-black/80 border border-brand-border text-white text-xs px-2.5 py-1 rounded focus:outline-none focus:border-brand-orange cursor-pointer">
+            <option value="vortex_full">Vortex Core (Cintas & Torbellino)</option>
+            <option value="orbital_sweep">Orbital Sweep (Arcos Fluidos)</option>
+            <option value="hex_fracture">Hex Isometric Bends (Codos 45°/90°)</option>
+            <option value="kinetic_splinter">Kinetic Splinter (Puntas en Cascada)</option>
+            <option value="dense_weave">Dense Cyber Weave (Malla Cromática)</option>
+            <option value="mono_vortex">1-Bit Mono Vortex (Alto Contraste)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center bg-black/60 p-0.5 rounded-lg border border-brand-border font-mono text-xs">
+          <button id="btn-mode-single" class="px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all text-xs">
+            Lienzo
+          </button>
+          <button id="btn-mode-batch" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all text-xs">
+            Mosaico ×9
+          </button>
+        </div>
+
+        <button id="btn-randomize" class="px-3 py-1.5 rounded-lg bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Mutar [Espacio]</span>
+        </button>
+
+        <button id="btn-chaos-instant" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-700 to-pink-600 text-white hover:brightness-110 font-mono text-xs font-semibold transition-all shadow-sm">
+          ⚡ Caos
+        </button>
+
+        <div class="flex items-center rounded-lg bg-black/70 border border-brand-border p-0.5 gap-1">
+          <select id="select-export-scale" class="bg-transparent text-white font-mono text-xs px-2 py-1 focus:outline-none cursor-pointer">
+            <option value="1" class="bg-brand-panel text-white">1x</option>
+            <option value="2" selected class="bg-brand-panel text-white">2x</option>
+            <option value="3" class="bg-brand-panel text-white">3x</option>
+            <option value="4" class="bg-brand-panel text-white">4x</option>
+            <option value="5" class="bg-brand-panel text-white">5x</option>
+            <option value="6" class="bg-brand-panel text-white">6x</option>
+          </select>
+          <button id="btn-export-png" class="px-2.5 py-1 rounded bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-colors shadow-sm">
+            PNG
+          </button>
+          <button id="btn-export-svg" class="px-2.5 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-500 font-mono text-xs font-semibold transition-colors shadow-sm">
+            SVG
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-[1850px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3.5 p-3 sm:p-4 items-start">
+
+    <!-- LEFT SIDEBAR: CONTROLS DOCK -->
+    <aside class="lg:col-span-5 xl:col-span-4 flex flex-col bg-brand-panel rounded-xl border border-brand-border overflow-hidden shadow-xl lg:sticky lg:top-[60px]">
+      
+      <!-- TOP TYPOGRAPHY & RATIO BAR -->
+      <div class="p-3 border-b border-brand-border bg-black/40 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="grid grid-cols-2 gap-1 p-0.5 bg-black/70 rounded-lg border border-brand-border text-center font-mono text-xs w-44">
+            <button id="btn-tab-word" class="py-1 px-1 rounded-md bg-brand-orange text-white font-semibold transition-all">Palabra</button>
+            <button id="btn-tab-letter" class="py-1 px-1 rounded-md text-neutral-400 hover:text-white transition-all font-medium">Letra</button>
+          </div>
+          <span id="seed-badge" class="font-mono text-xs text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded-md border border-brand-orange/20 font-bold">SEED #54192</span>
+        </div>
+
+        <!-- WORD INPUT ROW -->
+        <div id="panel-path-word" class="space-y-2">
+          <div class="grid grid-cols-12 gap-2">
+            <textarea id="input-type-word" rows="2" class="col-span-7 px-2.5 py-1.5 bg-black/80 border border-brand-border focus:border-brand-orange rounded-lg font-mono text-xs uppercase text-white tracking-widest focus:outline-none resize-none custom-scroll" placeholder="TEXTO (ENTER PARA SALTO DE LÍNEA)">AISUNI</textarea>
+            <select id="select-word-canvas-size" class="col-span-5 px-2 py-1.5 bg-black/80 border border-brand-border focus:border-brand-orange rounded-lg font-mono text-xs text-white focus:outline-none cursor-pointer self-start">
+              <option value="16:9" selected class="bg-brand-panel text-white">16:9 · Banner</option>
+              <option value="21:9" class="bg-brand-panel text-white">21:9 · Panorámico</option>
+              <option value="3:2" class="bg-brand-panel text-white">3:2 · Editorial</option>
+              <option value="1:1" class="bg-brand-panel text-white">1:1 · Cuadrado</option>
+              <option value="2:3" class="bg-brand-panel text-white">2:3 · Vertical</option>
+              <option value="9:16" class="bg-brand-panel text-white">9:16 · Cartel</option>
+            </select>
+          </div>
+
+          <!-- Quick Word Chips -->
+          <div class="flex items-center justify-between gap-1">
+            <div class="flex flex-wrap gap-1 font-mono text-[10px]">
+              <button class="btn-word-chip px-2 py-0.5 rounded bg-black/50 hover:bg-brand-orange hover:text-white border border-brand-border text-neutral-300">AISUNI</button>
+              <button class="btn-word-chip px-2 py-0.5 rounded bg-black/50 hover:bg-brand-orange hover:text-white border border-brand-border text-neutral-300">VOID</button>
+              <button class="btn-word-chip px-2 py-0.5 rounded bg-black/50 hover:bg-brand-orange hover:text-white border border-brand-border text-neutral-300">AISUNI&#10;KINETIC&#10;VORTEX</button>
+              <button class="btn-word-chip px-2 py-0.5 rounded bg-black/50 hover:bg-brand-orange hover:text-white border border-brand-border text-neutral-300">SH6</button>
+            </div>
+            <div class="flex items-center gap-1 font-mono text-xs text-neutral-400 whitespace-nowrap">
+              <span>Track:</span>
+              <span id="label-word-tracking" class="text-brand-orange font-bold">14%</span>
+            </div>
+          </div>
+          <input id="slider-word-tracking" type="range" min="-10" max="60" value="14" class="w-full">
+
+          <!-- SEPARACIÓN EXTRA ENTRE LETRAS -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div class="flex items-center gap-1 font-mono text-xs">
+              <span class="text-emerald-400 font-semibold">Separación Extra (Gap):</span>
+              <span id="label-letter-gap" class="text-emerald-400 font-bold">35 px</span>
+            </div>
+            <span class="text-[10px] font-mono text-neutral-500">Anticolisión</span>
+          </div>
+          <input id="slider-letter-gap" type="range" min="0" max="180" value="35" class="w-full">
+
+          <!-- ESPACIO ENTRE PALABRAS -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div class="flex items-center gap-1 font-mono text-xs">
+              <span class="text-cyan-400 font-semibold">Espacio entre Palabras:</span>
+              <span id="label-word-spacing" class="text-cyan-400 font-bold">100%</span>
+            </div>
+            <span class="text-[10px] font-mono text-neutral-500">Word Space</span>
+          </div>
+          <input id="slider-word-spacing" type="range" min="30" max="300" value="100" class="w-full">
+        </div>
+
+        <!-- SINGLE LETTER ROW -->
+        <div id="panel-path-letter" class="hidden space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-neutral-400">Glifo:</span>
+              <input id="input-single-letter" type="text" value="V" maxlength="6" class="w-20 px-2 py-1 bg-black/80 border border-brand-border focus:border-brand-orange rounded-lg font-mono text-sm uppercase text-center font-bold text-white focus:outline-none" placeholder="Cualquiera">
+            </div>
+            <select id="select-letter-template" class="w-full px-2 py-1 bg-black/80 border border-brand-orange rounded-lg font-mono text-xs text-white focus:outline-none cursor-pointer">
+              <option value="1:1" selected class="bg-brand-panel text-white">1:1 (1000×1000)</option>
+              <option value="2:3" class="bg-brand-panel text-white">2:3 (1000×1500)</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-6 gap-1 font-mono text-xs">
+            <button class="btn-letter-chip py-1 rounded bg-white/20 hover:bg-brand-orange hover:text-white border border-brand-orange text-center text-white font-bold">V</button>
+            <button class="btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold">O</button>
+            <button class="btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold">I</button>
+            <button class="btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold">D</button>
+            <button class="btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold">R</button>
+            <button class="btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold">A</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS SELECTOR -->
+      <div class="grid grid-cols-4 border-b border-brand-border bg-black/50 font-mono text-xs text-center">
+        <button id="dock-tab-trazos" class="py-2 text-brand-orange font-bold border-b-2 border-brand-orange bg-brand-orange/5 transition-all">TRAZOS</button>
+        <button id="dock-tab-fractura" class="py-2 text-neutral-400 hover:text-white transition-all font-semibold">FRACTURA</button>
+        <button id="dock-tab-detalle" class="py-2 text-neutral-400 hover:text-white transition-all font-semibold">DETALLES</button>
+        <button id="dock-tab-color" class="py-2 text-neutral-400 hover:text-white transition-all font-semibold">PALETAS</button>
+      </div>
+
+      <!-- TAB CONTENT VIEWS -->
+      <div class="p-3.5 space-y-2.5 overflow-y-auto max-h-[46vh] sm:max-h-[50vh] custom-scroll">
+
+        <!-- SUB-PANEL: TRAZOS -->
+        <div id="dock-panel-trazos" class="space-y-2.5">
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-white font-semibold">Cintas del Torbellino (Lines)</span>
+              <span id="val-lines-count" class="text-brand-orange font-bold">14</span>
+            </div>
+            <input id="slider-lines-count" type="range" min="2" max="32" value="14" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-white font-semibold">Envergadura de Cinta (Band Width)</span>
+              <span id="val-stem-weight" class="text-brand-orange font-bold">54 px</span>
+            </div>
+            <input id="slider-stem-weight" type="range" min="12" max="110" value="54" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-amber-400 font-semibold">Grosor Aleatorio de Líneas</span>
+              <span id="val-random-width" class="text-white font-bold">40%</span>
+            </div>
+            <input id="slider-random-width" type="range" min="0" max="100" value="40" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-cyan-400 font-semibold">Fuerza del Vórtice / Giro (Swirl)</span>
+              <span id="val-swirl-force" class="text-white font-bold">58%</span>
+            </div>
+            <input id="slider-swirl-force" type="range" min="0" max="100" value="58" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-brand-orange font-semibold">Remates Irregulares en Cascada</span>
+              <span id="val-tip-irregularity" class="text-white font-bold">75%</span>
+            </div>
+            <input id="slider-tip-irregularity" type="range" min="0" max="100" value="75" class="w-full">
+          </div>
+        </div>
+
+        <!-- SUB-PANEL: FRACTURA -->
+        <div id="dock-panel-fractura" class="hidden space-y-2.5">
+          <div class="p-2 rounded-lg bg-black/40 border border-purple-500/40 space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-white font-semibold">Fractura de Letra (Shear & Splinter)</span>
+              <span id="val-chaos" class="text-purple-400 font-bold">45%</span>
+            </div>
+            <input id="slider-chaos" type="range" min="0" max="100" value="45" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-neutral-300">Codos Angulares Isométricos (45° / 90°)</span>
+              <span id="val-displacement" class="text-brand-orange font-bold">26 px</span>
+            </div>
+            <input id="slider-displacement" type="range" min="0" max="90" value="26" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-neutral-300">Resonancia & Expansión Orbital</span>
+              <span id="val-wobble-amount" class="text-cyan-400 font-bold">28 px</span>
+            </div>
+            <input id="slider-wobble-amount" type="range" min="0" max="80" value="28" class="w-full">
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 font-mono text-xs pt-1">
+            <button id="toggle-grid" class="py-1.5 px-1 rounded-md border border-brand-orange bg-brand-orange/20 text-white font-semibold text-center text-[11px]">Retícula: ON</button>
+            <button id="toggle-caps" class="py-1.5 px-1 rounded-md border border-brand-border bg-black/40 text-neutral-400 text-center text-[11px]">Puntas Rectas</button>
+            <button id="toggle-bw" class="py-1.5 px-1 rounded-md border border-brand-border bg-black/40 text-neutral-400 text-center text-[11px]">1-Bit Mono</button>
+          </div>
+        </div>
+
+        <!-- SUB-PANEL: DETALLE -->
+        <div id="dock-panel-detalle" class="hidden space-y-2.5">
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-cyan-400 font-semibold">Rayos & Púas Cinemáticas</span>
+              <span id="val-comb-density" class="text-cyan-400 font-bold">40%</span>
+            </div>
+            <input id="slider-comb-density" type="range" min="0" max="100" value="40" class="w-full">
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
+              <div>
+                <span class="text-neutral-400">Largo:</span>
+                <span id="val-comb-len" class="text-white float-right">28 px</span>
+                <input id="slider-comb-len" type="range" min="4" max="70" value="28" class="w-full mt-1">
+              </div>
+              <div>
+                <span class="text-neutral-400">Paso:</span>
+                <span id="val-comb-step" class="text-white float-right">8 px</span>
+                <input id="slider-comb-step" type="range" min="3" max="24" value="8" class="w-full mt-1">
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-emerald-400 font-semibold">Costillas & Tramas Transversales</span>
+              <span id="val-tartan-density" class="text-emerald-400 font-bold">20%</span>
+            </div>
+            <input id="slider-tartan-density" type="range" min="0" max="100" value="20" class="w-full">
+          </div>
+
+          <div class="p-2 rounded-lg bg-black/40 border border-brand-border space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-purple-400 font-semibold">Prisma Hexagonal Concéntrico</span>
+              <span id="val-echo-offset" class="text-purple-400 font-bold">22 px</span>
+            </div>
+            <input id="slider-echo-offset" type="range" min="0" max="70" value="22" class="w-full">
+          </div>
+        </div>
+
+        <!-- SUB-PANEL: PALETAS DE COLOR -->
+        <div id="dock-panel-color" class="hidden space-y-2">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 pb-1">
+            <span>Seleccionar paleta activa:</span>
+            <button id="btn-shuffle-palette" class="text-brand-orange hover:underline font-semibold">Rotar colores ↻</button>
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="palette-selector">
+            <button data-palette="hoodie_ref" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left">
+              <span>Hoodie Original (RGB/CMYK)</span>
+              <span class="flex gap-1">
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FFE600]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FF5500]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#00E5FF]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FF0055]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FFFFFF]"></i>
+              </span>
+            </button>
+            <button data-palette="aisuni_lab" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+              <span>AISUNI Acid Minimal</span>
+              <span class="flex gap-1">
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FF5500]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#00E5FF]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#10B981]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FFFFFF]"></i>
+              </span>
+            </button>
+            <button data-palette="thermal_synth" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+              <span>Espectro Térmico</span>
+              <span class="flex gap-1">
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FFE600]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FF2A6D]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#7700FF]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#05D9E8]"></i>
+              </span>
+            </button>
+            <button data-palette="mono_1bit" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+              <span>1-Bit Blanco & Negro</span>
+              <span class="flex gap-1">
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#FFFFFF]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#A1A1AA]"></i>
+                <i class="w-2.5 h-2.5 rounded-sm bg-[#52525B]"></i>
+              </span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM TELEMETRY STRIP -->
+      <div class="p-2.5 border-t border-brand-border bg-black/60 flex items-center justify-between text-xs font-mono mt-auto">
+        <div class="flex items-center gap-2">
+          <canvas id="source-thumb-canvas" width="50" height="30" class="rounded border border-neutral-700 bg-black"></canvas>
+          <div>
+            <span id="metric-mode-name" class="text-white font-semibold block leading-tight text-xs">AISUNI</span>
+            <span id="metric-aspect" class="text-brand-orange text-[10px]">1600×900 px</span>
+          </div>
+        </div>
+        <div class="text-right text-neutral-400 text-xs">
+          <div>Motor: <span class="text-emerald-400 font-semibold">V6 Vortex</span></div>
+          <div>Cintas: <span id="telemetry-lines" class="text-white font-bold">14</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT WORKSPACE: CANVAS CONTAINER -->
+    <section class="lg:col-span-7 xl:col-span-8 flex flex-col bg-brand-panel rounded-xl border border-brand-border overflow-hidden shadow-xl">
+
+      <div id="view-single-container" class="flex flex-col p-3 sm:p-4 relative">
+        <div class="w-full flex items-center justify-between gap-2 mb-2 font-mono text-xs text-neutral-400">
+          <span id="active-archetype-title" class="text-white font-semibold truncate">TYPE SYNTH V6.0 · VORTEX SWIRL ENGINE</span>
+          <span id="canvas-res-label" class="text-brand-orange font-bold whitespace-nowrap">1600 × 900 px</span>
+        </div>
+
+        <!-- CANVAS FRAME -->
+        <div id="canvas-frame-wrapper" class="w-full flex items-center justify-center rounded-lg overflow-hidden border border-white/10 bg-[#060608] min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] p-2 shadow-inner">
+          <canvas id="main-pattern-canvas" width="1600" height="900" class="max-w-full w-auto h-auto object-contain pixelated-canvas cursor-pointer shadow-2xl rounded" title="Haz clic o pulsa [Espacio] para mutar"></canvas>
+        </div>
+
+        <div class="w-full flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-brand-border/80 text-xs font-mono text-neutral-400">
+          <span class="truncate">Pulsa <strong class="text-white">[Espacio]</strong> o haz clic en el lienzo para mutar.</span>
+          <span class="text-brand-orange whitespace-nowrap hidden sm:inline">Vórtice V6 · Curvas + Codos Hex</span>
+        </div>
+      </div>
+
+      <!-- BATCH 3x3 -->
+      <div id="view-batch-container" class="hidden flex flex-col p-4 space-y-3 overflow-y-auto max-h-[78vh] custom-scroll">
+        <div class="flex items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-neutral-300 font-semibold">EXPLORADOR DE LOTES · 9 MUTACIONES SIMULTÁNEAS</span>
+          <button id="btn-regenerate-batch" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors text-xs">
+            Regenerar 9 ↻
+          </button>
+        </div>
+        <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 items-start"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT GENERATIVE V6 CORE ENGINE -->
+  <script>
+    // =========================================================================
+    // 1. PRNG & PALETTES
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = (seed >>> 0) || 54192;
+      return function() {
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    const ARCHETYPE_PALETTES = {
+      hoodie_ref: {
+        primary: '#FFE600',
+        secondary: '#FF5500',
+        accent1: '#00E5FF',
+        accent2: '#FF0055',
+        accent3: '#00FF66',
+        white: '#FFFFFF',
+        bg: '#060608',
+        grid: '#15171F'
+      },
+      aisuni_lab: {
+        primary: '#FF5500',
+        secondary: '#00E5FF',
+        accent1: '#10B981',
+        accent2: '#FFE600',
+        accent3: '#A855F7',
+        white: '#FFFFFF',
+        bg: '#060608',
+        grid: '#15171F'
+      },
+      thermal_synth: {
+        primary: '#FFE600',
+        secondary: '#FF2A6D',
+        accent1: '#7700FF',
+        accent2: '#05D9E8',
+        accent3: '#00FF88',
+        white: '#FFFFFF',
+        bg: '#060608',
+        grid: '#15171F'
+      },
+      mono_1bit: {
+        primary: '#FFFFFF',
+        secondary: '#D4D4D8',
+        accent1: '#A1A1AA',
+        accent2: '#71717A',
+        accent3: '#52525B',
+        white: '#FFFFFF',
+        bg: '#060608',
+        grid: '#15171F'
+      }
+    };
+
+    // =========================================================================
+    // 2. GLYPH ANATOMICAL PATHS (ACCURATE PROPORTIONAL RATIOS)
+    // =========================================================================
+    const GLYPH_METRICS = {
+      'A': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.08, 1.0], [0.50, 0.0], [0.92, 1.0]] },
+          { pts: [[0.22, 0.62], [0.78, 0.62]] }
+        ]
+      },
+      'B': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0]] },
+          { pts: [[0.15, 0.0], [0.65, 0.0], [0.88, 0.22], [0.65, 0.48], [0.15, 0.48]] },
+          { pts: [[0.15, 0.48], [0.70, 0.48], [0.92, 0.72], [0.70, 1.0], [0.15, 1.0]] }
+        ]
+      },
+      'C': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.88, 0.22], [0.65, 0.0], [0.35, 0.0], [0.12, 0.25], [0.12, 0.75], [0.35, 1.0], [0.65, 1.0], [0.88, 0.78]] }
+        ]
+      },
+      'D': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0]] },
+          { pts: [[0.15, 0.0], [0.60, 0.0], [0.88, 0.28], [0.88, 0.72], [0.60, 1.0], [0.15, 1.0]] }
+        ]
+      },
+      'E': {
+        aspect: 0.62,
+        stems: [
+          { pts: [[0.88, 0.0], [0.15, 0.0], [0.15, 1.0], [0.88, 1.0]] },
+          { pts: [[0.15, 0.50], [0.75, 0.50]] }
+        ]
+      },
+      'F': {
+        aspect: 0.60,
+        stems: [
+          { pts: [[0.88, 0.0], [0.15, 0.0], [0.15, 1.0]] },
+          { pts: [[0.15, 0.50], [0.70, 0.50]] }
+        ]
+      },
+      'G': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.88, 0.22], [0.65, 0.0], [0.35, 0.0], [0.12, 0.25], [0.12, 0.75], [0.35, 1.0], [0.65, 1.0], [0.88, 0.75], [0.88, 0.50], [0.50, 0.50]] }
+        ]
+      },
+      'H': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0]] },
+          { pts: [[0.85, 0.0], [0.85, 1.0]] },
+          { pts: [[0.15, 0.50], [0.85, 0.50]] }
+        ]
+      },
+      'I': {
+        aspect: 0.30,
+        stems: [
+          { pts: [[0.50, 0.0], [0.50, 1.0]] }
+        ]
+      },
+      'J': {
+        aspect: 0.55,
+        stems: [
+          { pts: [[0.85, 0.0], [0.85, 0.75], [0.60, 1.0], [0.30, 1.0], [0.15, 0.78]] }
+        ]
+      },
+      'K': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0]] },
+          { pts: [[0.88, 0.0], [0.18, 0.55]] },
+          { pts: [[0.25, 0.50], [0.88, 1.0]] }
+        ]
+      },
+      'L': {
+        aspect: 0.58,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0], [0.88, 1.0]] }
+        ]
+      },
+      'M': {
+        aspect: 0.88,
+        stems: [
+          { pts: [[0.08, 1.0], [0.08, 0.0], [0.50, 0.65], [0.92, 0.0], [0.92, 1.0]] }
+        ]
+      },
+      'N': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.12, 1.0], [0.12, 0.0], [0.88, 1.0], [0.88, 0.0]] }
+        ]
+      },
+      'O': {
+        aspect: 0.76,
+        stems: [
+          { pts: [[0.50, 0.0], [0.88, 0.22], [0.88, 0.78], [0.50, 1.0], [0.12, 0.78], [0.12, 0.22], [0.50, 0.0]] }
+        ]
+      },
+      'P': {
+        aspect: 0.66,
+        stems: [
+          { pts: [[0.15, 1.0], [0.15, 0.0], [0.65, 0.0], [0.88, 0.22], [0.65, 0.52], [0.15, 0.52]] }
+        ]
+      },
+      'Q': {
+        aspect: 0.76,
+        stems: [
+          { pts: [[0.50, 0.0], [0.88, 0.22], [0.88, 0.78], [0.50, 1.0], [0.12, 0.78], [0.12, 0.22], [0.50, 0.0]] },
+          { pts: [[0.58, 0.68], [0.92, 1.02]] }
+        ]
+      },
+      'R': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.15, 1.0], [0.15, 0.0], [0.65, 0.0], [0.88, 0.22], [0.65, 0.52], [0.15, 0.52]] },
+          { pts: [[0.55, 0.52], [0.90, 1.0]] }
+        ]
+      },
+      'S': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.85, 0.18], [0.65, 0.0], [0.35, 0.0], [0.14, 0.22], [0.20, 0.44], [0.80, 0.56], [0.86, 0.78], [0.65, 1.0], [0.35, 1.0], [0.14, 0.82]] }
+        ]
+      },
+      'T': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.08, 0.0], [0.92, 0.0]] },
+          { pts: [[0.50, 0.0], [0.50, 1.0]] }
+        ]
+      },
+      'U': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.14, 0.0], [0.14, 0.75], [0.35, 1.0], [0.65, 1.0], [0.86, 0.75], [0.86, 0.0]] }
+        ]
+      },
+      'V': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.08, 0.0], [0.50, 1.0], [0.92, 0.0]] }
+        ]
+      },
+      'W': {
+        aspect: 0.92,
+        stems: [
+          { pts: [[0.06, 0.0], [0.28, 1.0], [0.50, 0.40], [0.72, 1.0], [0.94, 0.0]] }
+        ]
+      },
+      'X': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.12, 0.0], [0.88, 1.0]] },
+          { pts: [[0.88, 0.0], [0.12, 1.0]] }
+        ]
+      },
+      'Y': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.12, 0.0], [0.50, 0.50]] },
+          { pts: [[0.88, 0.0], [0.50, 0.50]] },
+          { pts: [[0.50, 0.50], [0.50, 1.0]] }
+        ]
+      },
+      'Z': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.12, 0.0], [0.88, 0.0], [0.12, 1.0], [0.88, 1.0]] }
+        ]
+      },
+      '0': {
+        aspect: 0.74,
+        stems: [
+          { pts: [[0.50, 0.0], [0.88, 0.22], [0.88, 0.78], [0.50, 1.0], [0.12, 0.78], [0.12, 0.22], [0.50, 0.0]] },
+          { pts: [[0.25, 0.75], [0.75, 0.25]] }
+        ]
+      },
+      '1': {
+        aspect: 0.35,
+        stems: [
+          { pts: [[0.22, 0.25], [0.50, 0.0], [0.50, 1.0]] }
+        ]
+      },
+      '2': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.15, 0.22], [0.35, 0.0], [0.65, 0.0], [0.85, 0.22], [0.85, 0.42], [0.15, 1.0], [0.85, 1.0]] }
+        ]
+      },
+      '3': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.15, 0.0], [0.85, 0.0], [0.45, 0.45], [0.85, 0.55], [0.85, 0.80], [0.65, 1.0], [0.35, 1.0], [0.15, 0.82]] }
+        ]
+      },
+      '4': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.72, 1.0], [0.72, 0.0], [0.12, 0.70], [0.88, 0.70]] }
+        ]
+      },
+      '5': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.85, 0.0], [0.15, 0.0], [0.15, 0.48], [0.65, 0.48], [0.88, 0.65], [0.88, 0.82], [0.65, 1.0], [0.35, 1.0], [0.15, 0.85]] }
+        ]
+      },
+      '6': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.82, 0.18], [0.60, 0.0], [0.35, 0.0], [0.14, 0.25], [0.14, 0.75], [0.35, 1.0], [0.65, 1.0], [0.86, 0.75], [0.86, 0.52], [0.14, 0.52]] }
+        ]
+      },
+      '7': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.12, 0.0], [0.88, 0.0], [0.45, 1.0]] },
+          { pts: [[0.28, 0.48], [0.68, 0.48]] }
+        ]
+      },
+      '8': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.50, 0.48], [0.22, 0.35], [0.22, 0.15], [0.50, 0.0], [0.78, 0.15], [0.78, 0.35], [0.50, 0.48], [0.18, 0.65], [0.18, 0.85], [0.50, 1.0], [0.82, 0.85], [0.82, 0.65], [0.50, 0.48]] }
+        ]
+      },
+      '9': {
+        aspect: 0.70,
+        stems: [
+          { pts: [[0.86, 0.48], [0.14, 0.48], [0.14, 0.25], [0.35, 0.0], [0.65, 0.0], [0.86, 0.25], [0.86, 0.75], [0.65, 1.0], [0.35, 1.0], [0.14, 0.82]] }
+        ]
+      },
+      '?': {
+        aspect: 0.60,
+        stems: [
+          { pts: [[0.18, 0.25], [0.35, 0.0], [0.65, 0.0], [0.82, 0.22], [0.60, 0.52], [0.50, 0.68]] },
+          { pts: [[0.50, 0.88], [0.50, 0.98]] }
+        ]
+      },
+      '!': {
+        aspect: 0.30,
+        stems: [
+          { pts: [[0.50, 0.0], [0.50, 0.68]] },
+          { pts: [[0.50, 0.88], [0.50, 0.98]] }
+        ]
+      },
+      '+': {
+        aspect: 0.68,
+        stems: [
+          { pts: [[0.15, 0.50], [0.85, 0.50]] },
+          { pts: [[0.50, 0.15], [0.50, 0.85]] }
+        ]
+      },
+      '-': {
+        aspect: 0.50,
+        stems: [
+          { pts: [[0.15, 0.50], [0.85, 0.50]] }
+        ]
+      },
+      '/': {
+        aspect: 0.50,
+        stems: [
+          { pts: [[0.15, 1.0], [0.85, 0.0]] }
+        ]
+      },
+      '#': {
+        aspect: 0.72,
+        stems: [
+          { pts: [[0.35, 0.05], [0.35, 0.95]] },
+          { pts: [[0.65, 0.05], [0.65, 0.95]] },
+          { pts: [[0.12, 0.35], [0.88, 0.35]] },
+          { pts: [[0.12, 0.65], [0.88, 0.65]] }
+        ]
+      },
+      '✷': {
+        aspect: 0.80,
+        stems: [
+          { pts: [[0.50, 0.0], [0.50, 1.0]] },
+          { pts: [[0.0, 0.50], [1.0, 0.50]] },
+          { pts: [[0.15, 0.15], [0.85, 0.85]] },
+          { pts: [[0.85, 0.15], [0.15, 0.85]] }
+        ]
+      }
+    };
+
+    // =========================================================================
+    // 3. MASTER APPLICATION STATE
+    // =========================================================================
+    const state = {
+      seed: 54192,
+      viewMode: 'single',
+      currentPath: 'word',        // 'word' | 'letter'
+      wordText: 'AISUNI',
+      wordCanvasRatio: '16:9',
+      wordTracking: 14,
+      letterExtraGapPx: 35,
+      wordSpacingPct: 100,
+      singleLetterChar: 'V',
+      singleLetterTemplate: '1:1',
+      // Core V6 Vortex Parameters
+      linesCount: 14,
+      stemWeightPx: 54,
+      randomWidthPct: 40,
+      swirlForce: 58,
+      tipIrregularity: 75,
+      chaosLevel: 45,
+      displacementPx: 26,
+      wobbleAmountPx: 28,
+      combDensity: 40,
+      combLenPx: 28,
+      combStepPx: 8,
+      tartanDensity: 20,
+      echoOffsetPx: 22,
+      // Toggles
+      showGrid: true,
+      roundCaps: false,
+      isBW: false,
+      paletteKey: 'hoodie_ref',
+      paletteRotation: 0,
+      baseW: 1600,
+      baseH: 900
+    };
+
+    function resolvePalette(rand) {
+      if (state.isBW || state.paletteKey === 'mono_1bit') {
+        return {
+          bg: '#060608',
+          grid: '#15171F',
+          strokeColors: ['#FFFFFF', '#E4E4E7', '#A1A1AA', '#71717A', '#FFFFFF']
+        };
+      }
+
+      const base = ARCHETYPE_PALETTES[state.paletteKey] || ARCHETYPE_PALETTES.hoodie_ref;
+      const c = [base.primary, base.secondary, base.accent1, base.accent2, base.accent3, base.white];
+      const offset = (state.paletteRotation + Math.floor(rand() * c.length)) % c.length;
+      const rotated = c.map((_, i) => c[(i + offset) % c.length]);
+
+      return {
+        bg: base.bg || '#060608',
+        grid: base.grid || '#15171F',
+        strokeColors: rotated
+      };
+    }
+
+    // Generic generator for ANY character not explicitly in GLYPH_METRICS
+    function getGlyphDefinition(ch) {
+      if (GLYPH_METRICS[ch]) return GLYPH_METRICS[ch];
+
+      // Procedural synthetic skeleton for custom or international symbols
+      const code = ch.charCodeAt(0) || 65;
+      const aspect = 0.68;
+      const seedVal = (code * 9301 + 49297) % 233280;
+      const r1 = (seedVal % 100) / 100;
+      const r2 = ((seedVal * 3) % 100) / 100;
+
+      return {
+        aspect,
+        stems: [
+          { pts: [[0.15, 0.0], [0.15, 1.0], [0.85, 1.0]] },
+          { pts: [[0.15, 0.0], [0.85, 0.0], [0.85, 0.50 + r1 * 0.3], [0.15, 0.50 + r2 * 0.3]] }
+        ]
+      };
+    }
+
+    // =========================================================================
+    // 5. DUAL PAINTER (CANVAS + SVG EXPORT)
+    // =========================================================================
+    function createDualPainter(ctx, W, H, collectSvg = false) {
+      const svgNodes = [];
+
+      return {
+        background(fill) {
+          if (ctx) {
+            ctx.fillStyle = fill;
+            ctx.fillRect(0, 0, W, H);
+          }
+          if (collectSvg) svgNodes.push(`<rect width="${W}" height="${H}" fill="${fill}"/>`);
+        },
+        grid(step, color) {
+          if (!state.showGrid || step <= 8) return;
+          if (ctx) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += step) {
+              ctx.moveTo(x, 0); ctx.lineTo(x, H);
+            }
+            for (let y = 0; y <= H; y += step) {
+              ctx.moveTo(0, y); ctx.lineTo(W, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (collectSvg) {
+            let p = '';
+            for (let x = 0; x <= W; x += step) p += `M${x},0 L${x},${H} `;
+            for (let y = 0; y <= H; y += step) p += `M0,${y} L${W},${y} `;
+            svgNodes.push(`<path d="${p}" stroke="${color}" stroke-width="1"/>`);
+          }
+        },
+        path(points, stroke, strokeWidth, dash = null) {
+          if (!points || points.length < 2 || strokeWidth <= 0) return;
+          const cap = state.roundCaps ? 'round' : 'butt';
+          if (ctx) {
+            ctx.save();
+            ctx.beginPath();
+            if (dash && dash.length > 0) ctx.setLineDash(dash);
+            ctx.lineWidth = strokeWidth;
+            ctx.strokeStyle = stroke;
+            ctx.lineCap = cap;
+            ctx.lineJoin = 'round';
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (collectSvg) {
+            const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+            const dashAttr = (dash && dash.length > 0) ? ` stroke-dasharray="${dash.map(v => v.toFixed(1)).join(',')}"` : '';
+            svgNodes.push(`<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth.toFixed(1)}"${dashAttr} stroke-linecap="${cap}" stroke-linejoin="round"/>`);
+          }
+        },
+        line(x1, y1, x2, y2, stroke, strokeWidth, dash = null) {
+          if (strokeWidth <= 0) return;
+          const cap = state.roundCaps ? 'round' : 'butt';
+          if (ctx) {
+            ctx.save();
+            ctx.beginPath();
+            if (dash && dash.length > 0) ctx.setLineDash(dash);
+            ctx.lineWidth = strokeWidth;
+            ctx.strokeStyle = stroke;
+            ctx.lineCap = cap;
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (collectSvg) {
+            const dashAttr = (dash && dash.length > 0) ? ` stroke-dasharray="${dash.map(v => v.toFixed(1)).join(',')}"` : '';
+            svgNodes.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${strokeWidth.toFixed(1)}"${dashAttr} stroke-linecap="${cap}"/>`);
+          }
+        },
+        toSVGString() {
+          return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">\n${svgNodes.join('\n')}\n</svg>`;
+        }
+      };
+    }
+
+    // =========================================================================
+    // 6. KINETIC VORTEX LETTER RENDERER (V6 CONTINUOUS FLUID RIBBONS)
+    // =========================================================================
+    function renderGenerativeStemV6(P, rawPts, W, H, pal, rand, scaleMult) {
+      if (!rawPts || rawPts.length < 2) return;
+
+      const stemW = state.stemWeightPx * scaleMult;
+      const lines = Math.max(2, state.linesCount);
+      const swirl = (state.swirlForce / 100) * 60 * scaleMult;
+      const disp = state.displacementPx * scaleMult;
+      const wobble = state.wobbleAmountPx * scaleMult;
+      const combDensity = state.combDensity / 100;
+      const combLen = state.combLenPx * scaleMult;
+      const combStep = Math.max(3, Math.round(state.combStepPx * scaleMult));
+      const tartanDensity = state.tartanDensity / 100;
+      const irregularTip = state.tipIrregularity / 100;
+      const chaos = state.chaosLevel / 100;
+
+      let totalL = 0;
+      const segLens = [0];
+      for (let i = 0; i < rawPts.length - 1; i++) {
+        const d = Math.hypot(rawPts[i+1][0] - rawPts[i][0], rawPts[i+1][1] - rawPts[i][1]);
+        totalL += d;
+        segLens.push(totalL);
+      }
+      if (totalL <= 1) return;
+
+      // Muestreo denso de alta resolución para curvas 100% orgánicas y continuas
+      const steps = Math.max(48, Math.min(220, Math.round(totalL / (3.5 * scaleMult))));
+      const pts = [];
+
+      for (let s = 0; s <= steps; s++) {
+        const targetD = (s / steps) * totalL;
+        let seg = 0;
+        while (seg < segLens.length - 2 && segLens[seg + 1] < targetD) seg++;
+        const sL = segLens[seg + 1] - segLens[seg];
+        const t = sL > 0 ? (targetD - segLens[seg]) / sL : 0;
+        
+        const x = rawPts[seg][0] + (rawPts[seg + 1][0] - rawPts[seg][0]) * t;
+        const y = rawPts[seg][1] + (rawPts[seg + 1][1] - rawPts[seg][1]) * t;
+
+        const dx = rawPts[seg + 1][0] - rawPts[seg][0];
+        const dy = rawPts[seg + 1][1] - rawPts[seg][1];
+        const m = Math.hypot(dx, dy) || 1;
+        const nx = -dy / m;
+        const ny = dx / m;
+
+        pts.push({ x, y, nx, ny, progress: s / steps });
+      }
+
+      // Suavizado cinemático de normales para evitar quiebres
+      for (let i = 1; i < pts.length - 1; i++) {
+        pts[i].nx = (pts[i-1].nx * 0.25 + pts[i].nx * 0.5 + pts[i+1].nx * 0.25);
+        pts[i].ny = (pts[i-1].ny * 0.25 + pts[i].ny * 0.5 + pts[i+1].ny * 0.25);
+        const norm = Math.hypot(pts[i].nx, pts[i].ny) || 1;
+        pts[i].nx /= norm;
+        pts[i].ny /= norm;
+      }
+
+      const offsets = [];
+      const halfW = stemW * 0.5;
+      for (let l = 0; l < lines; l++) {
+        offsets.push(lines <= 1 ? 0 : -halfW + (l / (lines - 1)) * stemW);
+      }
+
+      // CAPA A: CINTAS CONCÉNTRICAS ORGÁNICAS (VÓRTICE CONTINUO)
+      for (let l = 0; l < offsets.length; l++) {
+        const off = offsets[l];
+        const col = pal.strokeColors[l % pal.strokeColors.length];
+
+        const widthSeed = (l * 137.5 + rand() * 50) % 1;
+        const widthJitter = (state.randomWidthPct / 100) * (widthSeed * 2.4 - 0.7);
+        const baseLineWidth = Math.max(1, (stemW / lines) * 0.88);
+        const finalStrokeW = Math.max(1, baseLineWidth * (1.0 + widthJitter));
+
+        const maxIdx = pts.length - 1;
+        const trimL = (l / lines);
+        let startTrim = irregularTip > 0 ? Math.floor(irregularTip * steps * 0.35 * Math.abs(Math.sin(trimL * Math.PI))) : 0;
+        let endTrim = irregularTip > 0 ? steps - Math.floor(irregularTip * steps * 0.35 * Math.abs(Math.cos(trimL * Math.PI * 0.8))) : steps;
+        
+        startTrim = Math.max(0, Math.min(startTrim, maxIdx));
+        endTrim = Math.max(0, Math.min(endTrim, maxIdx));
+        if (startTrim >= endTrim) continue;
+
+        const ribbonPts = [];
+        const linePhase = (l / lines) * Math.PI * 1.5;
+
+        for (let i = startTrim; i <= endTrim; i++) {
+          const p = pts[i];
+          if (!p) continue;
+          const prg = p.progress;
+
+          const swirlDisp = Math.sin(prg * Math.PI + linePhase) * swirl;
+          const hexBend = (disp > 0) ? Math.sin(prg * Math.PI * 2.0 + linePhase) * disp * (0.8 + chaos * 0.4) : 0;
+          const wob = (wobble > 0) ? Math.cos(prg * 8.0 + linePhase) * wobble * 0.6 : 0;
+
+          const totalOff = off + swirlDisp + hexBend + wob;
+          ribbonPts.push([
+            p.x + p.nx * totalOff,
+            p.y + p.ny * totalOff
+          ]);
+        }
+
+        P.path(ribbonPts, col, finalStrokeW);
+      }
+
+      // CAPA B: PÚAS & RAYOS CINEMÁTICOS DE FRECUENCIA
+      if (combDensity > 0.05) {
+        for (let i = 0; i < pts.length; i += combStep) {
+          if (rand() > combDensity) continue;
+          const p = pts[i];
+          const sign = rand() < 0.5 ? 1 : -1;
+          const len = combLen * (0.6 + rand() * 0.8);
+          const col = pal.strokeColors[Math.floor(rand() * pal.strokeColors.length)];
+          const x1 = p.x + p.nx * (sign * halfW * 0.85);
+          const y1 = p.y + p.ny * (sign * halfW * 0.85);
+          const x2 = x1 + p.nx * (sign * len);
+          const y2 = y1 + p.ny * (sign * len);
+          P.line(x1, y1, x2, y2, col, Math.max(1, 1.8 * scaleMult));
+        }
+      }
+
+      // CAPA C: COSTILLAS TRANSVERSALES TARTÁN
+      if (tartanDensity > 0.05) {
+        for (let i = 0; i < pts.length; i += Math.max(4, Math.round(combStep * 1.5))) {
+          if (rand() > tartanDensity) continue;
+          const p = pts[i];
+          const col = pal.strokeColors[Math.floor(rand() * pal.strokeColors.length)];
+          const x1 = p.x - p.nx * (halfW * 1.15);
+          const y1 = p.y - p.ny * (halfW * 1.15);
+          const x2 = p.x + p.nx * (halfW * 1.15);
+          const y2 = p.y + p.ny * (halfW * 1.15);
+          P.line(x1, y1, x2, y2, col, Math.max(1, 1.2 * scaleMult), [4 * scaleMult, 3 * scaleMult]);
+        }
+      }
+    }
+
+    // =========================================================================
+    // 7. MASTER SCENE COMPILER
+    // =========================================================================
+    function buildScene(P, W, H, seedValue) {
+      const rand = createPRNG(seedValue);
+      const pal = resolvePalette(rand);
+      const scaleMult = W / state.baseW;
+
+      P.background(pal.bg);
+      P.grid(Math.max(12, Math.round(48 * scaleMult)), pal.grid);
+
+      let glyphList = [];
+
+      if (state.currentPath === 'word') {
+        const rawText = (state.wordText || 'AISUNI').toUpperCase();
+        const lines = rawText.split('\n').filter(l => l.length > 0);
+        if (lines.length === 0) lines.push('AISUNI');
+
+        const padX = W * 0.06;
+        const padY = H * 0.10;
+        const availW = W - padX * 2;
+        const availH = H - padY * 2;
+        const tracking = state.wordTracking / 100;
+        const extraGap = state.letterExtraGapPx * scaleMult;
+        const wordSpaceFactor = (state.wordSpacingPct || 100) / 100;
+
+        // Calculate layout across multiple lines
+        const lineCount = lines.length;
+        const lineSpacingPct = 0.22; // proportional line gap
+        const totalVUnits = lineCount + (lineCount - 1) * lineSpacingPct;
+
+        // Space character width in units (proportional to standard glyphs)
+        const spaceCharUnit = 0.50 * wordSpaceFactor;
+
+        // Determine max units across lines to fit canvas width & height
+        let maxLineWidthUnits = 0;
+        const lineMetrics = lines.map(lineStr => {
+          const chars = lineStr.split('');
+          let u = 0;
+          let letterGapsCount = 0;
+
+          chars.forEach((ch, idx) => {
+            if (ch === ' ') {
+              u += spaceCharUnit;
+            } else {
+              const m = getGlyphDefinition(ch);
+              u += m.aspect;
+              if (idx > 0 && chars[idx - 1] !== ' ') {
+                letterGapsCount++;
+              }
+            }
+          });
+
+          const totalGaps = Math.max(0, chars.length - 1);
+          const lineUnits = u + totalGaps * tracking;
+          if (lineUnits > maxLineWidthUnits) maxLineWidthUnits = lineUnits;
+          return { chars, u, letterGapsCount, totalGaps, lineUnits };
+        });
+
+        const maxExtraGapTotal = Math.max(...lineMetrics.map(lm => lm.letterGapsCount * extraGap));
+        const unitWidthByW = Math.max(8, (availW - maxExtraGapTotal) / Math.max(1, maxLineWidthUnits));
+        const maxCellHByTotalHeight = availH / totalVUnits;
+        const cellH = Math.min(maxCellHByTotalHeight, unitWidthByW / 0.65);
+        const unitWidth = cellH * 0.65;
+        const lineGapPx = cellH * lineSpacingPct;
+
+        const totalBlockHeight = lineCount * cellH + (lineCount - 1) * lineGapPx;
+        let currY = padY + Math.max(0, (availH - totalBlockHeight) * 0.5);
+
+        for (let l = 0; l < lineMetrics.length; l++) {
+          const { chars, u, letterGapsCount, totalGaps } = lineMetrics[l];
+          const lineW = (u + totalGaps * tracking) * unitWidth + letterGapsCount * extraGap;
+          let currX = padX + Math.max(0, (availW - lineW) * 0.5);
+
+          for (let i = 0; i < chars.length; i++) {
+            const ch = chars[i];
+            if (ch === ' ') {
+              currX += (spaceCharUnit + tracking) * unitWidth;
+              continue;
+            }
+            const m = getGlyphDefinition(ch);
+            const glyphW = m.aspect * unitWidth;
+            glyphList.push({ char: ch, x: currX, y: currY, w: glyphW, h: cellH });
+            const isNextSpace = (i + 1 < chars.length && chars[i + 1] === ' ');
+            const appliedExtraGap = isNextSpace ? 0 : extraGap;
+            currX += glyphW + (unitWidth * tracking) + appliedExtraGap;
+          }
+          currY += cellH + lineGapPx;
+        }
+      } else {
+        const rawInput = (state.singleLetterChar || 'V').trim().toUpperCase();
+        const chars = rawInput.split('').slice(0, 4); // allow up to 4 glyphs in custom glyph mode
+        const cellH = H * (chars.length > 1 ? 0.68 : 0.80);
+        let totalW = 0;
+        const charDefs = chars.map(c => {
+          const def = getGlyphDefinition(c);
+          const w = cellH * def.aspect;
+          totalW += w;
+          return { char: c, def, w };
+        });
+
+        const gap = state.letterExtraGapPx * scaleMult;
+        totalW += Math.max(0, chars.length - 1) * gap;
+        let currX = (W - totalW) * 0.5;
+        const startY = (H - cellH) * 0.5;
+
+        charDefs.forEach(item => {
+          glyphList.push({ char: item.char, x: currX, y: startY, w: item.w, h: cellH });
+          currX += item.w + gap;
+        });
+      }
+
+      glyphList.forEach(item => {
+        if (item.char === ' ' || item.char === '\n') return;
+        const m = getGlyphDefinition(item.char);
+        m.stems.forEach(stem => {
+          const rawPts = stem.pts.map(pt => [
+            item.x + pt[0] * item.w,
+            item.y + pt[1] * item.h
+          ]);
+          renderGenerativeStemV6(P, rawPts, W, H, pal, rand, scaleMult);
+        });
+      });
+    }
+
+    function renderPatternToCanvas(targetCanvas, seedValue) {
+      if (!targetCanvas) return;
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, W, H);
+      const painter = createDualPainter(ctx, W, H, false);
+      buildScene(painter, W, H, seedValue);
+    }
+
+    // =========================================================================
+    // 8. UI COORDINATION & DASHBOARD
+    // =========================================================================
+    function updateExportResolutionLabels() {
+      const selectExportScale = document.getElementById('select-export-scale');
+      if (!selectExportScale) return;
+      const opts = selectExportScale.options;
+      for (let i = 0; i < opts.length; i++) {
+        const mult = parseInt(opts[i].value, 10);
+        opts[i].textContent = `${mult}x · ${state.baseW * mult}×${state.baseH * mult} px`;
+      }
+    }
+
+    function updateAllViews() {
+      const seedBadge = document.getElementById('seed-badge');
+      if (seedBadge) seedBadge.textContent = `SEED #${state.seed}`;
+
+      const resLabel = document.getElementById('canvas-res-label');
+      if (resLabel) resLabel.textContent = `${state.baseW} × ${state.baseH} px · ${state.linesCount} Cintas · Caos ${state.chaosLevel}%`;
+
+      const telLines = document.getElementById('telemetry-lines');
+      if (telLines) telLines.textContent = state.linesCount;
+
+      const thumbCanvas = document.getElementById('source-thumb-canvas');
+      if (thumbCanvas) {
+        thumbCanvas.width = 160;
+        thumbCanvas.height = 100;
+        renderPatternToCanvas(thumbCanvas, state.seed);
+      }
+
+      const mainCanvas = document.getElementById('main-pattern-canvas');
+      if (state.viewMode === 'single') {
+        renderPatternToCanvas(mainCanvas, state.seed);
+      } else {
+        renderBatchGrid();
+      }
+    }
+
+    function renderBatchGrid() {
+      const batchGrid = document.getElementById('batch-grid');
+      if (!batchGrid) return;
+      batchGrid.innerHTML = '';
+      const bw = Math.max(200, Math.round(state.baseW * 0.35));
+      const bh = Math.max(140, Math.round(state.baseH * 0.35));
+
+      for (let i = 0; i < 9; i++) {
+        const itemSeed = (state.seed + i * 15485863) % 999999;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'group relative rounded-lg overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer bg-black transition-all flex items-center justify-center';
+
+        const c = document.createElement('canvas');
+        c.width = bw;
+        c.height = bh;
+        c.className = 'w-full h-auto block object-contain pixelated-canvas';
+        renderPatternToCanvas(c, itemSeed);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity';
+        badge.innerHTML = `<span>#${itemSeed}</span><span class="text-brand-orange">Abrir ↗</span>`;
+
+        wrapper.appendChild(c);
+        wrapper.appendChild(badge);
+        wrapper.addEventListener('click', () => {
+          state.seed = itemSeed;
+          switchViewMode('single');
+        });
+        batchGrid.appendChild(wrapper);
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const btnSingle = document.getElementById('btn-mode-single');
+      const btnBatch = document.getElementById('btn-mode-batch');
+      const singleContainer = document.getElementById('view-single-container');
+      const batchContainer = document.getElementById('view-batch-container');
+
+      if (mode === 'single') {
+        if (btnSingle) btnSingle.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all text-xs';
+        if (btnBatch) btnBatch.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all text-xs';
+        if (singleContainer) singleContainer.classList.remove('hidden');
+        if (batchContainer) batchContainer.classList.add('hidden');
+      } else {
+        if (btnBatch) btnBatch.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all text-xs';
+        if (btnSingle) btnSingle.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all text-xs';
+        if (singleContainer) singleContainer.classList.add('hidden');
+        if (batchContainer) batchContainer.classList.remove('hidden');
+      }
+      updateAllViews();
+    }
+
+    function triggerRandomSeed() {
+      state.seed = Math.floor(10000 + Math.random() * 890000);
+      const rand = createPRNG(state.seed);
+      state.linesCount = Math.floor(6 + rand() * 18);
+      state.swirlForce = Math.floor(30 + rand() * 55);
+      state.displacementPx = Math.floor(rand() * 45);
+      state.wobbleAmountPx = Math.floor(10 + rand() * 35);
+      state.randomWidthPct = Math.floor(rand() * 70);
+      state.tipIrregularity = Math.floor(40 + rand() * 55);
+      syncSliders();
+      updateAllViews();
+    }
+
+    function triggerChaos() {
+      state.seed = Math.floor(10000 + Math.random() * 890000);
+      const rand = createPRNG(state.seed);
+      state.linesCount = Math.floor(10 + rand() * 22);
+      state.swirlForce = Math.floor(65 + rand() * 35);
+      state.chaosLevel = Math.floor(60 + rand() * 40);
+      state.displacementPx = Math.floor(30 + rand() * 55);
+      state.wobbleAmountPx = Math.floor(30 + rand() * 50);
+      state.randomWidthPct = Math.floor(50 + rand() * 50);
+      state.combDensity = Math.floor(40 + rand() * 50);
+      state.tipIrregularity = 100;
+      state.paletteRotation = Math.floor(rand() * 6);
+      syncSliders();
+      updateAllViews();
+    }
+
+    function updateCanvasDimensions() {
+      const mainCanvas = document.getElementById('main-pattern-canvas');
+      if (!mainCanvas) return;
+
+      if (state.currentPath === 'word') {
+        const parts = state.wordCanvasRatio.split(':').map(Number);
+        const rw = parts[0] || 16, rh = parts[1] || 9;
+        const aspect = rw / rh;
+        if (aspect >= 1.0) {
+          state.baseW = Math.round(1000 * Math.min(1.8, aspect));
+          state.baseH = Math.round(state.baseW / aspect);
+        } else {
+          state.baseH = Math.round(1000 * Math.min(1.8, 1 / aspect));
+          state.baseW = Math.round(state.baseH * aspect);
+        }
+      } else {
+        if (state.singleLetterTemplate === '2:3') {
+          state.baseW = 1000;
+          state.baseH = 1500;
+        } else {
+          state.baseW = 1000;
+          state.baseH = 1000;
+        }
+      }
+
+      mainCanvas.width = state.baseW;
+      mainCanvas.height = state.baseH;
+      updateExportResolutionLabels();
+
+      const aspectLabel = document.getElementById('metric-aspect');
+      if (aspectLabel) aspectLabel.textContent = `${state.baseW}×${state.baseH} px`;
+
+      const modeNameLabel = document.getElementById('metric-mode-name');
+      if (modeNameLabel) {
+        if (state.currentPath === 'word') {
+          const firstLine = (state.wordText || 'AISUNI').split('\n')[0];
+          modeNameLabel.textContent = firstLine.length > 12 ? firstLine.slice(0, 12) + '...' : firstLine;
+        } else {
+          modeNameLabel.textContent = `[${state.singleLetterChar}]`;
+        }
+      }
+    }
+
+    function syncSliders() {
+      const setVal = (id, valId, v, suf = '') => {
+        const el = document.getElementById(id);
+        const lbl = document.getElementById(valId);
+        if (el) el.value = v;
+        if (lbl) lbl.textContent = `${v}${suf}`;
+      };
+
+      setVal('slider-lines-count', 'val-lines-count', state.linesCount);
+      setVal('slider-stem-weight', 'val-stem-weight', state.stemWeightPx, ' px');
+      setVal('slider-random-width', 'val-random-width', state.randomWidthPct, '%');
+      setVal('slider-swirl-force', 'val-swirl-force', state.swirlForce, '%');
+      setVal('slider-tip-irregularity', 'val-tip-irregularity', state.tipIrregularity, '%');
+      setVal('slider-chaos', 'val-chaos', state.chaosLevel, '%');
+      setVal('slider-displacement', 'val-displacement', state.displacementPx, ' px');
+      setVal('slider-wobble-amount', 'val-wobble-amount', state.wobbleAmountPx, ' px');
+      setVal('slider-comb-density', 'val-comb-density', state.combDensity, '%');
+      setVal('slider-comb-len', 'val-comb-len', state.combLenPx, ' px');
+      setVal('slider-comb-step', 'val-comb-step', state.combStepPx, ' px');
+      setVal('slider-tartan-density', 'val-tartan-density', state.tartanDensity, '%');
+      setVal('slider-echo-offset', 'val-echo-offset', state.echoOffsetPx, ' px');
+      setVal('slider-word-tracking', 'label-word-tracking', state.wordTracking, '%');
+      setVal('slider-letter-gap', 'label-letter-gap', state.letterExtraGapPx, ' px');
+      setVal('slider-word-spacing', 'label-word-spacing', state.wordSpacingPct, '%');
+    }
+
+    function setupDockTabs() {
+      const tabs = [
+        { btn: document.getElementById('dock-tab-trazos'), panel: document.getElementById('dock-panel-trazos') },
+        { btn: document.getElementById('dock-tab-fractura'), panel: document.getElementById('dock-panel-fractura') },
+        { btn: document.getElementById('dock-tab-detalle'), panel: document.getElementById('dock-panel-detalle') },
+        { btn: document.getElementById('dock-tab-color'), panel: document.getElementById('dock-panel-color') }
+      ];
+
+      tabs.forEach(({ btn, panel }) => {
+        if (!btn || !panel) return;
+        btn.addEventListener('click', () => {
+          tabs.forEach(t => {
+            if (t.btn) t.btn.className = 'py-2 text-neutral-400 hover:text-white transition-all font-semibold';
+            if (t.panel) t.panel.classList.add('hidden');
+          });
+          btn.className = 'py-2 text-brand-orange font-bold border-b-2 border-brand-orange bg-brand-orange/5 transition-all';
+          panel.classList.remove('hidden');
+        });
+      });
+    }
+
+    // =========================================================================
+    // 9. INITIALIZATION & EVENT LISTENERS
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      setupDockTabs();
+
+      const btnModeSingle = document.getElementById('btn-mode-single');
+      if (btnModeSingle) btnModeSingle.addEventListener('click', () => switchViewMode('single'));
+
+      const btnModeBatch = document.getElementById('btn-mode-batch');
+      if (btnModeBatch) btnModeBatch.addEventListener('click', () => switchViewMode('batch'));
+
+      const btnRandomize = document.getElementById('btn-randomize');
+      if (btnRandomize) btnRandomize.addEventListener('click', triggerRandomSeed);
+
+      const btnChaos = document.getElementById('btn-chaos-instant');
+      if (btnChaos) btnChaos.addEventListener('click', triggerChaos);
+
+      const mainCanvas = document.getElementById('main-pattern-canvas');
+      if (mainCanvas) mainCanvas.addEventListener('click', triggerRandomSeed);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+          e.preventDefault();
+          triggerRandomSeed();
+        }
+      });
+
+      const tabWord = document.getElementById('btn-tab-word');
+      const tabLetter = document.getElementById('btn-tab-letter');
+      const pWord = document.getElementById('panel-path-word');
+      const pLetter = document.getElementById('panel-path-letter');
+
+      const switchSubPath = (p) => {
+        state.currentPath = p;
+        if (tabWord) tabWord.className = 'py-1 px-1 rounded-md text-neutral-400 hover:text-white transition-all font-medium';
+        if (tabLetter) tabLetter.className = 'py-1 px-1 rounded-md text-neutral-400 hover:text-white transition-all font-medium';
+        if (pWord) pWord.classList.add('hidden');
+        if (pLetter) pLetter.classList.add('hidden');
+
+        if (p === 'word') {
+          if (tabWord) tabWord.className = 'py-1 px-1 rounded-md bg-brand-orange text-white font-semibold transition-all';
+          if (pWord) pWord.classList.remove('hidden');
+        } else {
+          if (tabLetter) tabLetter.className = 'py-1 px-1 rounded-md bg-brand-orange text-white font-semibold transition-all';
+          if (pLetter) pLetter.classList.remove('hidden');
+        }
+        updateCanvasDimensions();
+        updateAllViews();
+      };
+
+      if (tabWord) tabWord.addEventListener('click', () => switchSubPath('word'));
+      if (tabLetter) tabLetter.addEventListener('click', () => switchSubPath('letter'));
+
+      const inputWord = document.getElementById('input-type-word');
+      if (inputWord) {
+        inputWord.addEventListener('input', () => {
+          state.wordText = inputWord.value || 'AISUNI';
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      }
+
+      document.querySelectorAll('.btn-word-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.wordText = btn.textContent.trim();
+          if (inputWord) inputWord.value = state.wordText;
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      });
+
+      const selectRatio = document.getElementById('select-word-canvas-size');
+      if (selectRatio) {
+        selectRatio.addEventListener('change', (e) => {
+          state.wordCanvasRatio = e.target.value;
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      }
+
+      const inputLetter = document.getElementById('input-single-letter');
+      if (inputLetter) {
+        inputLetter.addEventListener('input', () => {
+          state.singleLetterChar = (inputLetter.value || 'V').trim().toUpperCase();
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      }
+
+      document.querySelectorAll('.btn-letter-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.btn-letter-chip').forEach(c => c.className = 'btn-letter-chip py-1 rounded bg-black/40 hover:bg-brand-orange hover:text-white border border-brand-border text-center text-white font-bold');
+          btn.className = 'btn-letter-chip py-1 rounded bg-white/20 hover:bg-brand-orange hover:text-white border border-brand-orange text-center text-white font-bold';
+          state.singleLetterChar = btn.textContent.trim();
+          if (inputLetter) inputLetter.value = state.singleLetterChar;
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      });
+
+      const selectLetterTpl = document.getElementById('select-letter-template');
+      if (selectLetterTpl) {
+        selectLetterTpl.addEventListener('change', (e) => {
+          state.singleLetterTemplate = e.target.value;
+          updateCanvasDimensions();
+          updateAllViews();
+        });
+      }
+
+      const bind = (id, valId, key, suf = '') => {
+        const el = document.getElementById(id);
+        const lbl = document.getElementById(valId);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          state[key] = parseFloat(el.value);
+          if (lbl) lbl.textContent = `${state[key]}${suf}`;
+          updateAllViews();
+        });
+      };
+
+      bind('slider-lines-count', 'val-lines-count', 'linesCount');
+      bind('slider-stem-weight', 'val-stem-weight', 'stemWeightPx', ' px');
+      bind('slider-random-width', 'val-random-width', 'randomWidthPct', '%');
+      bind('slider-swirl-force', 'val-swirl-force', 'swirlForce', '%');
+      bind('slider-tip-irregularity', 'val-tip-irregularity', 'tipIrregularity', '%');
+      bind('slider-chaos', 'val-chaos', 'chaosLevel', '%');
+      bind('slider-displacement', 'val-displacement', 'displacementPx', ' px');
+      bind('slider-wobble-amount', 'val-wobble-amount', 'wobbleAmountPx', ' px');
+      bind('slider-comb-density', 'val-comb-density', 'combDensity', '%');
+      bind('slider-comb-len', 'val-comb-len', 'combLenPx', ' px');
+      bind('slider-comb-step', 'val-comb-step', 'combStepPx', ' px');
+      bind('slider-tartan-density', 'val-tartan-density', 'tartanDensity', '%');
+      bind('slider-echo-offset', 'val-echo-offset', 'echoOffsetPx', ' px');
+      bind('slider-word-tracking', 'label-word-tracking', 'wordTracking', '%');
+      bind('slider-letter-gap', 'label-letter-gap', 'letterExtraGapPx', ' px');
+      bind('slider-word-spacing', 'label-word-spacing', 'wordSpacingPct', '%');
+
+      const toggleGrid = document.getElementById('toggle-grid');
+      if (toggleGrid) {
+        toggleGrid.addEventListener('click', (e) => {
+          state.showGrid = !state.showGrid;
+          e.target.className = state.showGrid ? 'py-1.5 px-1 rounded-md border border-brand-orange bg-brand-orange/20 text-white font-semibold text-center text-[11px]' : 'py-1.5 px-1 rounded-md border border-brand-border bg-black/40 text-neutral-400 text-center text-[11px]';
+          e.target.textContent = state.showGrid ? 'Retícula: ON' : 'Retícula: OFF';
+          updateAllViews();
+        });
+      }
+
+      const toggleCaps = document.getElementById('toggle-caps');
+      if (toggleCaps) {
+        toggleCaps.addEventListener('click', (e) => {
+          state.roundCaps = !state.roundCaps;
+          e.target.className = state.roundCaps ? 'py-1.5 px-1 rounded-md border border-brand-orange bg-brand-orange/20 text-white font-semibold text-center text-[11px]' : 'py-1.5 px-1 rounded-md border border-brand-border bg-black/40 text-neutral-400 text-center text-[11px]';
+          e.target.textContent = state.roundCaps ? 'Puntas Redondas' : 'Puntas Rectas';
+          updateAllViews();
+        });
+      }
+
+      const toggleBW = document.getElementById('toggle-bw');
+      if (toggleBW) {
+        toggleBW.addEventListener('click', (e) => {
+          state.isBW = !state.isBW;
+          e.target.className = state.isBW ? 'py-1.5 px-1 rounded-md border border-brand-orange bg-brand-orange/20 text-white font-semibold text-center text-[11px]' : 'py-1.5 px-1 rounded-md border border-brand-border bg-black/40 text-neutral-400 text-center text-[11px]';
+          updateAllViews();
+        });
+      }
+
+      document.querySelectorAll('.palette-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.palette-btn').forEach(b => b.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left');
+          btn.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left';
+          state.paletteKey = btn.getAttribute('data-palette');
+          state.paletteRotation = 0;
+          state.isBW = (state.paletteKey === 'mono_1bit');
+          updateAllViews();
+        });
+      });
+
+      const btnShufflePal = document.getElementById('btn-shuffle-palette');
+      if (btnShufflePal) {
+        btnShufflePal.addEventListener('click', () => {
+          state.paletteRotation = (state.paletteRotation + 1) % 6;
+          updateAllViews();
+        });
+      }
+
+      const selectPreset = document.getElementById('select-preset');
+      if (selectPreset) {
+        selectPreset.addEventListener('change', (e) => {
+          const v = e.target.value;
+          if (v === 'vortex_full') {
+            state.linesCount = 14; state.swirlForce = 58; state.tipIrregularity = 75; state.displacementPx = 26; state.paletteKey = 'hoodie_ref';
+          } else if (v === 'orbital_sweep') {
+            state.linesCount = 18; state.swirlForce = 85; state.tipIrregularity = 50; state.displacementPx = 10; state.paletteKey = 'thermal_synth';
+          } else if (v === 'hex_fracture') {
+            state.linesCount = 10; state.swirlForce = 20; state.displacementPx = 55; state.chaosLevel = 50; state.paletteKey = 'aisuni_lab';
+          } else if (v === 'kinetic_splinter') {
+            state.linesCount = 12; state.tipIrregularity = 100; state.combDensity = 60; state.combLenPx = 36; state.paletteKey = 'hoodie_ref';
+          } else if (v === 'dense_weave') {
+            state.linesCount = 24; state.swirlForce = 45; state.tartanDensity = 50; state.paletteKey = 'thermal_synth';
+          } else if (v === 'mono_vortex') {
+            state.linesCount = 16; state.swirlForce = 70; state.isBW = true; state.paletteKey = 'mono_1bit';
+          }
+          syncSliders();
+          updateAllViews();
+        });
+      }
+
+      const btnExportPng = document.getElementById('btn-export-png');
+      if (btnExportPng) {
+        btnExportPng.addEventListener('click', () => {
+          const selectExportScale = document.getElementById('select-export-scale');
+          const mult = parseInt(selectExportScale ? selectExportScale.value : '2', 10) || 2;
+          const targetW = state.baseW * mult;
+          const targetH = state.baseH * mult;
+          const exportCanvas = document.createElement('canvas');
+          exportCanvas.width = targetW;
+          exportCanvas.height = targetH;
+          renderPatternToCanvas(exportCanvas, state.seed);
+
+          const link = document.createElement('a');
+          const prefix = state.currentPath === 'word' ? state.wordText.toLowerCase() : 'glyph';
+          link.download = `typesynth-v6-${prefix}-${mult}x-${targetW}x${targetH}px.png`;
+          link.href = exportCanvas.toDataURL('image/png');
+          link.click();
+        });
+      }
+
+      const btnExportSvg = document.getElementById('btn-export-svg');
+      if (btnExportSvg) {
+        btnExportSvg.addEventListener('click', () => {
+          const selectExportScale = document.getElementById('select-export-scale');
+          const mult = parseInt(selectExportScale ? selectExportScale.value : '2', 10) || 2;
+          const targetW = state.baseW * mult;
+          const targetH = state.baseH * mult;
+          const svgPainter = createDualPainter(null, targetW, targetH, true);
+          buildScene(svgPainter, targetW, targetH, state.seed);
+
+          const svgContent = svgPainter.toSVGString();
+          const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          const prefix = state.currentPath === 'word' ? state.wordText.toLowerCase() : 'glyph';
+          link.download = `typesynth-v6-${prefix}-vector.svg`;
+          link.href = url;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        });
+      }
+
+      const btnRegenBatch = document.getElementById('btn-regenerate-batch');
+      if (btnRegenBatch) btnRegenBatch.addEventListener('click', triggerRandomSeed);
+
+      // Start engine
+      updateCanvasDimensions();
+      syncSliders();
+      updateAllViews();
+    });
+  </script>
+</body>
+</html>

@@ -29,5 +29,8 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni-Pattern-Synth-02](Aisuni-Pattern-Synth-02/) — sintetiza texturas de píxeles fusionados mediante dithering, matrices Bayer y módulos geométricos.
   - Versión: 1.2
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-02/
+- [Aisuni-Type-Synth](Aisuni-Type-Synth/) — convierte palabras y glifos en composiciones tipográficas cinéticas; exporta PNG y SVG.
+  - Versión: 6.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Synth/
 - [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
