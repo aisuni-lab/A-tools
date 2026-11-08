@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI — Pattern Synthesizer v2.0</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF5500',
+              dark: '#0A0B0C',
+              panel: '#121316',
+              border: '#23252A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #0A0B0C;
+      color: #F3F4F6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    .pixelated-canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #23252A;
+      height: 5px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #FF5500;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #121316;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2E3138;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-orange selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-brand-border bg-brand-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse"></span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold tracking-tight text-base sm:text-lg uppercase">AISUNI <span class="text-brand-orange">✷</span></span>
+          <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-brand-orange/15 border border-brand-orange/30 text-brand-orange font-semibold">Pattern Synthesizer v2.0</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher, Resolution Selector & Quick Actions -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center bg-black/50 p-1 rounded-lg border border-brand-border font-mono text-xs">
+          <button id="btn-mode-single" class="px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all">
+            Lienzo Único
+          </button>
+          <button id="btn-mode-batch" class="px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all">
+            Mosaico ×9 Variaciones
+          </button>
+        </div>
+
+        <button id="btn-randomize" class="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-brand-orange hover:text-white font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Nueva Semilla [Espacio]</span>
+        </button>
+
+        <!-- Export Scale 1x..6x + Export Button -->
+        <div class="flex items-center rounded-lg bg-black/60 border border-brand-border p-0.5">
+          <label for="select-export-scale" class="sr-only">Escala de Exportación</label>
+          <select id="select-export-scale" class="bg-transparent text-white font-mono text-xs px-2.5 py-1 focus:outline-none cursor-pointer" title="Seleccionar resolución y tamaño de exportación (1x a 6x)">
+            <option value="1" class="bg-brand-panel text-white">1x · 1000×1000 px</option>
+            <option value="2" selected class="bg-brand-panel text-white">2x · 2000×2000 px</option>
+            <option value="3" class="bg-brand-panel text-white">3x · 3000×3000 px</option>
+            <option value="4" class="bg-brand-panel text-white">4x · 4000×4000 px</option>
+            <option value="5" class="bg-brand-panel text-white">5x · 5000×5000 px</option>
+            <option value="6" class="bg-brand-panel text-white">6x · 6000×6000 px</option>
+          </select>
+          <button id="btn-export-png" class="px-3 py-1 rounded-md bg-brand-orange text-white hover:bg-orange-600 font-mono text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Exportar Textura PNG</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-6">
+
+    <!-- LEFT SIDEBAR: ARCHETYPES, ALGORITHMIC PARAMETERS & IMAGE ANALYZER -->
+    <aside class="lg:col-span-4 space-y-4 custom-scroll">
+
+      <!-- 0. 7 REFERENCE ARCHETYPES & NON-REPEATING HYBRID SELECTOR -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-brand-orange font-semibold">0. Familia / ADN de Referencia</h2>
+          <span id="seed-badge" class="font-mono text-[11px] text-brand-orange bg-brand-orange/10 px-2 py-0.5 rounded border border-brand-orange/20">SEED #90412</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="archetype-selector">
+          <button data-arch="hybrid_all" class="arch-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left">
+            <span>✷ Híbrido Mutante (Cruza las 7 Referencias)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-orange text-white">Auto-Mix</span>
+          </button>
+          <button data-arch="ref1_sh6" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 1 · Cyber-Typo & Peines (SH6 / Rojo)</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF1414]"></span>
+          </button>
+          <button data-arch="ref2_city" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 2 · Pixel City & Tarjetas Perforadas</span>
+            <span class="w-3 h-3 rounded-sm bg-[#00E600]"></span>
+          </button>
+          <button data-arch="ref3_tartan" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 3 · Malla Tartán, Diagonal & Skyline</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF007F]"></span>
+          </button>
+          <button data-arch="ref4_blueprint" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 4 · Brutalist Blueprint & Stickers Cian</span>
+            <span class="w-3 h-3 rounded-sm bg-[#00E5FF]"></span>
+          </button>
+          <button data-arch="ref5_slash" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 5 · Corte Diagonal V & Fotocopia</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FFE600]"></span>
+          </button>
+          <button data-arch="ref6_brick" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 6 · Ladrillo Rosa & Vectores K Borde Blanco</span>
+            <span class="w-3 h-3 rounded-sm bg-[#FF0066]"></span>
+          </button>
+          <button data-arch="ref7_giant_glyph" class="arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left">
+            <span>Ref 7 · Macro Glifos Fileteados (3.G / Scanline)</span>
+            <span class="w-3 h-3 rounded-sm bg-[#D900FF]"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. SOURCE MODE: PROCEDURAL RANDOM vs IMAGE COMPOSITIONAL GUIDANCE -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">1. Fuente de Composición</h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+          <button id="btn-source-random" class="py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all">
+            100% Algorítmico
+          </button>
+          <button id="btn-source-image" class="py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all">
+            Guiado por Imagen
+          </button>
+        </div>
+
+        <!-- Image Upload & Analysis Box -->
+        <div id="image-analyzer-box" class="hidden pt-2 border-t border-brand-border space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <label for="input-upload-image" class="flex-1 cursor-pointer py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-dashed border-neutral-600 text-center font-mono text-xs text-neutral-300 transition-colors">
+              + Cargar Imagen de Referencia
+            </label>
+            <input id="input-upload-image" type="file" accept="image/*" class="hidden">
+            <button id="btn-demo-image" class="py-2 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-brand-border font-mono text-[11px] text-brand-orange" title="Usar composición geométrica de prueba">
+              Demo
+            </button>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-black/50 border border-brand-border space-y-2">
+            <div class="flex items-center gap-2.5">
+              <canvas id="source-thumb-canvas" width="48" height="48" class="w-12 h-12 rounded border border-neutral-700 bg-black flex-shrink-0"></canvas>
+              <div class="flex-1 min-w-0 font-mono text-[10px] space-y-1">
+                <div class="flex justify-between"><span class="text-neutral-400">Contraste RMS:</span><span id="metric-contrast" class="text-white">68.4%</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Densidad Bordes:</span><span id="metric-edges" class="text-emerald-400">Alta (Sobel)</span></div>
+                <div class="flex justify-between"><span class="text-neutral-400">Centro Masa:</span><span id="metric-center" class="text-brand-orange">X:0.51 Y:0.48</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] font-mono text-neutral-400 mb-1">
+                <span>Influencia de la Imagen</span>
+                <span id="label-img-influence">75%</span>
+              </div>
+              <input id="slider-img-influence" type="range" min="10" max="100" value="75" class="w-full">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PALETTE SYSTEM -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">2. Sistema de Color (RGB / Dither)</h2>
+          <button id="btn-shuffle-palette" class="text-[11px] font-mono text-brand-orange hover:underline">Rotar colores ↻</button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1.5 font-mono text-xs" id="palette-selector">
+          <button data-palette="hoodie_ref" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left">
+            <span>Hoodie Original (RGB/CMYK)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#00FF00]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF0000]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0000FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF007F]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="aisuni_lab" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>AISUNI Acid Minimal</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FF5500]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#00E5FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#10B981]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#F8F9FA]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#0C0D0E] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="mono_1bit" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>1-Bit Puro (Serigrafía B&W)</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFFFFF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#000000] border border-white/20"></i>
+            </span>
+          </button>
+
+          <button data-palette="thermal_synth" class="palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left">
+            <span>Espectro Térmico</span>
+            <span class="flex gap-1">
+              <i class="w-3 h-3 rounded-sm bg-[#FFE600]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#FF2A6D]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#7700FF]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#05D9E8]"></i>
+              <i class="w-3 h-3 rounded-sm bg-[#050508] border border-white/20"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. GEOMETRIC, COLLAGE & MACRO-TYPOGRAPHY CONTROLS -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border space-y-3.5">
+        <h2 class="font-mono text-xs uppercase tracking-wider text-neutral-400">3. Parámetros del Collage y Capas</h2>
+
+        <!-- Seamless Interlocking Fusion Slider -->
+        <div class="p-2.5 rounded-lg bg-brand-orange/10 border border-brand-orange/30">
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-white font-semibold">Fusión y Entrelazado de Capas</span>
+            <span id="val-fusion" class="text-brand-orange font-bold">85%</span>
+          </div>
+          <input id="slider-fusion" type="range" min="0" max="100" value="85" class="w-full">
+        </div>
+
+        <!-- Grid Subdivision Complexity -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Densidad de Zonas / Bloques</span>
+            <span id="val-complexity" class="text-brand-orange">6</span>
+          </div>
+          <input id="slider-complexity" type="range" min="2" max="10" value="6" class="w-full">
+        </div>
+
+        <!-- Crisp Native Pixel / Grain Scale (1px to 6px at 100% full sharpness) -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Escala de Píxel / Grano (Nítido HD)</span>
+            <span id="val-pixel-scale" class="text-brand-orange">2 px</span>
+          </div>
+          <input id="slider-pixel-scale" type="range" min="1" max="6" step="1" value="2" class="w-full">
+        </div>
+
+        <!-- Slashes & Comb Bands Ratio -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Cortes, Peines y Bandas</span>
+            <span id="val-bands" class="text-brand-orange">75%</span>
+          </div>
+          <input id="slider-bands" type="range" min="0" max="100" value="75" class="w-full">
+        </div>
+
+        <!-- Waffle Grids, Bricks & Dither -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Mallas Tartán, Ladrillos y Ventanas</span>
+            <span id="val-dither" class="text-brand-orange">85%</span>
+          </div>
+          <input id="slider-dither" type="range" min="10" max="100" value="85" class="w-full">
+        </div>
+
+        <!-- Prominent Hero Forms & Typography -->
+        <div>
+          <div class="flex justify-between text-xs font-mono mb-1">
+            <span class="text-neutral-300">Formas Prominentes / Glifos y Vectores</span>
+            <span id="val-glyphs" class="text-brand-orange">80%</span>
+          </div>
+          <input id="slider-glyphs" type="range" min="0" max="100" value="80" class="w-full">
+        </div>
+      </div>
+
+      <!-- 4. AUTO-MUTATION GENERATOR -->
+      <div class="p-4 rounded-xl bg-brand-panel border border-brand-border flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-white">Ráfaga Generativa Automática</p>
+          <p class="text-[11px] font-mono text-neutral-400">Genera variaciones en bucle continuo</p>
+        </div>
+        <button id="btn-toggle-stream" class="px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors">
+          ▶ Iniciar
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT WORKSPACE: CANVAS VIEWER & BATCH VARIATIONS -->
+    <section class="lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- SINGLE HIGH-RES CANVAS VIEW -->
+      <div id="view-single-container" class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border relative min-h-[500px]">
+        <div class="w-full flex items-center justify-between mb-3 font-mono text-xs text-neutral-400">
+          <span id="active-archetype-title" class="text-white font-semibold">MODO: HÍBRIDO MUTANTE · AUTO-MIX VARIADO</span>
+          <span id="canvas-res-label">1000 × 1000 px Nativo · Nitidez 100%</span>
+        </div>
+
+        <div class="relative w-full max-w-[650px] aspect-square rounded-lg overflow-hidden shadow-2xl border border-white/15 bg-black flex items-center justify-center">
+          <canvas id="main-pattern-canvas" width="1000" height="1000" class="w-full h-full object-contain pixelated-canvas cursor-pointer" title="Haz clic para generar una nueva variación"></canvas>
+        </div>
+
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-brand-border text-[11px] font-mono text-neutral-400">
+          <span>Haz clic sobre el lienzo o presiona <strong class="text-white">[Espacio]</strong> para mutar la semilla.</span>
+          <span id="active-modules-summary" class="text-brand-orange">Topología Dinámica + Formas Heroicas No Repetitivas</span>
+        </div>
+      </div>
+
+      <!-- 3x3 BATCH GRID VIEW -->
+      <div id="view-batch-container" class="hidden flex-1 flex flex-col p-4 sm:p-6 rounded-2xl bg-brand-panel border border-brand-border space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <span class="text-neutral-300">EXPLORADOR DE LOTES · 9 COMPOSICIONES SIN REPETICIÓN</span>
+          <button id="btn-regenerate-batch" class="px-3 py-1 rounded bg-brand-orange text-white font-semibold hover:bg-orange-600 transition-colors">
+            Generar 9 Nuevas Variaciones ↻
+          </button>
+        </div>
+
+        <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- 9 mini canvases injected via JS -->
+        </div>
+
+        <p class="text-[11px] font-mono text-neutral-400 text-center">
+          Haz clic en cualquiera de las 9 variaciones para abrirla en el lienzo principal en alta resolución.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT PATTERN SYNTHESIZER v2.0 ENGINE -->
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG (MULBERRY32) & SHUFFLE HELPER
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = seed >>> 0;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffleArray(arr, rand) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        const temp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = temp;
+      }
+      return copy;
+    }
+
+    // =========================================================================
+    // 2. EXPANDED MACRO GLYPH & SYMBOL VOCABULARY (24 DISTINCT MATRICES)
+    // =========================================================================
+    const MACRO_GLYPHS = {
+      'S': ["1111111","1111111","1100000","1111111","1111111","0000011","0000011","1111111","1111111"],
+      'H': ["1100011","1100011","1100011","1111111","1111111","1100011","1100011","1100011","1100011"],
+      '6': ["1111111","1111111","1100000","1111111","1111111","1100011","1100011","1111111","1111111"],
+      '3': ["1111111","1111111","0000011","0111111","0111111","0000011","0000011","1111111","1111111"],
+      'G': ["1111111","1111111","1100000","1101111","1101111","1100011","1100011","1111111","1111111"],
+      'T': ["1111111","1111111","0011100","0011100","0011100","0011100","0011100","0011100","0011100"],
+      'U': ["1100011","1100011","1100011","1100011","1100011","1100011","1100011","1111111","1111111"],
+      'N': ["1110011","1111011","1111011","1101111","1101111","1100111","1100111","1100011","1100011"],
+      'K': ["1100011","1100110","1101100","1111000","1111000","1101100","1100110","1100011","1100011"],
+      '2': ["1111111","1111111","0000011","1111111","1111111","1100000","1100000","1111111","1111111"],
+      '7': ["1111111","1111111","0000111","0001110","0011100","0011100","0111000","0111000","0111000"],
+      'F': ["1111111","1111111","1100000","1111110","1111110","1100000","1100000","1100000","1100000"],
+      'A': ["0111110","1111111","1100011","1111111","1111111","1100011","1100011","1100011","1100011"],
+      'E': ["1111111","1111111","1100000","1111110","1111110","1100000","1100000","1111111","1111111"],
+      'X': ["1100011","1110111","0111110","0011100","0011100","0111110","1110111","1100011","1100011"],
+      'Z': ["1111111","1111111","0000111","0001110","0011100","0111000","1110000","1111111","1111111"],
+      '4': ["1100011","1100011","1100011","1111111","1111111","0000011","0000011","0000011","0000011"],
+      '8': ["1111111","1100011","1100011","1111111","1111111","1100011","1100011","1111111","1111111"],
+      '9': ["1111111","1100011","1100011","1111111","1111111","0000011","0000011","1111111","1111111"],
+      'M': ["1100011","1110111","1111111","1101011","1100011","1100011","1100011","1100011","1100011"],
+      'R': ["1111110","1100011","1100011","1111110","1111100","1101110","1100111","1100011","1100011"],
+      'P': ["1111110","1111111","1100011","1111111","1111110","1100000","1100000","1100000","1100000"],
+      'Y': ["1100011","1100011","0110110","0011100","0011100","0011100","0011100","0011100","0011100"],
+      'W': ["1100011","1100011","1100011","1101011","1111111","1110111","1100011","1100011","1100011"]
+    };
+    const GLYPH_KEYS = Object.keys(MACRO_GLYPHS);
+
+    // =========================================================================
+    // 3. ARCHETYPE PALETTES EXTRACTED FROM THE 7 REFERENCE IMAGES
+    // =========================================================================
+    const ARCHETYPE_PALETTES = {
+      ref1_sh6: {
+        bg: '#0E0E10',
+        primary: '#FF1414',
+        secondary: '#EC008C',
+        accent1: '#00FF00',
+        accent2: '#00D4D4',
+        accent3: '#1822D6',
+        neutral: '#D4C8BE',
+        white: '#FFFFFF',
+        dark: '#0A0A0C'
+      },
+      ref2_city: {
+        bg: '#111114',
+        primary: '#FF1E1E',
+        secondary: '#00E600',
+        accent1: '#FFE600',
+        accent2: '#D900FF',
+        accent3: '#0033FF',
+        neutral: '#7A7C80',
+        white: '#F2F2F5',
+        dark: '#141416'
+      },
+      ref3_tartan: {
+        bg: '#101012',
+        primary: '#FF007F',
+        secondary: '#00FF1E',
+        accent1: '#FF8800',
+        accent2: '#FFEE00',
+        accent3: '#00E5FF',
+        neutral: '#EFE6E6',
+        white: '#FFFFFF',
+        dark: '#0D0D0F'
+      },
+      ref4_blueprint: {
+        bg: '#E8E6E1',
+        primary: '#141416',
+        secondary: '#00E5FF',
+        accent1: '#D4FF00',
+        accent2: '#FF00A0',
+        accent3: '#1E22E8',
+        neutral: '#686A70',
+        white: '#FFFFFF',
+        dark: '#121215'
+      },
+      ref5_slash: {
+        bg: '#161618',
+        primary: '#FF00B8',
+        secondary: '#FFE600',
+        accent1: '#E6E6EA',
+        accent2: '#73757A',
+        accent3: '#00E5FF',
+        neutral: '#2C2D30',
+        white: '#FFFFFF',
+        dark: '#0C0C0E'
+      },
+      ref6_brick: {
+        bg: '#181416',
+        primary: '#FF0066',
+        secondary: '#FFB8D9',
+        accent1: '#FFE600',
+        accent2: '#8C4A18',
+        accent3: '#FFFFFF',
+        neutral: '#221E20',
+        white: '#FFFFFF',
+        dark: '#120E10'
+      },
+      ref7_giant_glyph: {
+        bg: '#121014',
+        primary: '#D900FF',
+        secondary: '#FFFFFF',
+        accent1: '#E6B800',
+        accent2: '#FF0066',
+        accent3: '#00E5FF',
+        neutral: '#28242C',
+        white: '#FFFFFF',
+        dark: '#0A090C'
+      }
+    };
+
+    const ARCHETYPE_KEYS = Object.keys(ARCHETYPE_PALETTES);
+    const ARCHETYPE_NAMES = {
+      hybrid_all: 'HÍBRIDO MUTANTE · AUTO-MIX VARIADO',
+      ref1_sh6: 'REF 1 · CYBER-TYPO & PEINES (SH6)',
+      ref2_city: 'REF 2 · PIXEL CITY & TARJETAS PERFORADAS',
+      ref3_tartan: 'REF 3 · MALLA TARTÁN, DIAGONAL & SKYLINE',
+      ref4_blueprint: 'REF 4 · BRUTALIST BLUEPRINT & STICKERS CIAN',
+      ref5_slash: 'REF 5 · CORTE DIAGONAL V & FOTOCOPIA',
+      ref6_brick: 'REF 6 · LADRILLO ROSA & VECTORES K FILETEADOS',
+      ref7_giant_glyph: 'REF 7 · MACRO GLIFOS FILETEADOS (3.G)'
+    };
+
+    // =========================================================================
+    // 4. APPLICATION STATE & NON-REPEATING DECKS FOR HYBRID AUTO-MIX
+    // =========================================================================
+    const state = {
+      seed: 90412,
+      archetype: 'hybrid_all',
+      viewMode: 'single',
+      sourceMode: 'random',
+      paletteKey: 'hoodie_ref',
+      paletteRotation: 0,
+      fusionLevel: 85,
+      complexity: 6,
+      pixelScale: 2,
+      bandsRatio: 75,
+      ditherDensity: 85,
+      glyphsRatio: 80,
+      imgInfluence: 75,
+      exportScale: 2,
+      hasSourceImage: false,
+      sourceLumGrid: null,
+      sourceEdgeGrid: null,
+      streamInterval: null,
+      // Non-repeating shuffle bag state so consecutive seeds never repeat hero forms or layouts
+      mutationCounter: 0
+    };
+
+    const mainCanvas = document.getElementById('main-pattern-canvas');
+    const seedBadge = document.getElementById('seed-badge');
+    const batchGrid = document.getElementById('batch-grid');
+    const thumbCanvas = document.getElementById('source-thumb-canvas');
+    const thumbCtx = thumbCanvas.getContext('2d');
+
+    // =========================================================================
+    // 5. IMAGE COMPOSITION ANALYZER
+    // =========================================================================
+    function analyzeImageComposition(imgSource) {
+      const W = 64, H = 64;
+      thumbCanvas.width = W;
+      thumbCanvas.height = H;
+      thumbCtx.drawImage(imgSource, 0, 0, W, H);
+      const imgData = thumbCtx.getImageData(0, 0, W, H).data;
+
+      const lum = new Float32Array(W * H);
+      const edges = new Float32Array(W * H);
+      let sumLum = 0;
+      let weightedX = 0, weightedY = 0, totalWeight = 0;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const idx = (y * W + x) * 4;
+          const l = (0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2]) / 255;
+          lum[y * W + x] = l;
+          sumLum += l;
+          const weight = Math.abs(l - 0.5) + 0.1;
+          weightedX += x * weight;
+          weightedY += y * weight;
+          totalWeight += weight;
+        }
+      }
+
+      const meanLum = sumLum / (W * H);
+      let varianceSum = 0;
+      let edgeSum = 0;
+
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+          const l = lum[y * W + x];
+          varianceSum += (l - meanLum) * (l - meanLum);
+          const gx = (
+            -lum[(y - 1) * W + (x - 1)] + lum[(y - 1) * W + (x + 1)] +
+            -2 * lum[y * W + (x - 1)]   + 2 * lum[y * W + (x + 1)] +
+            -lum[(y + 1) * W + (x - 1)] + lum[(y + 1) * W + (x + 1)]
+          );
+          const gy = (
+            -lum[(y - 1) * W + (x - 1)] - 2 * lum[(y - 1) * W + x] - lum[(y - 1) * W + (x + 1)] +
+             lum[(y + 1) * W + (x - 1)] + 2 * lum[(y + 1) * W + x] + lum[(y + 1) * W + (x + 1)]
+          );
+          const mag = Math.min(1, Math.sqrt(gx * gx + gy * gy));
+          edges[y * W + x] = mag;
+          edgeSum += mag;
+        }
+      }
+
+      const rmsContrast = Math.sqrt(varianceSum / (W * H));
+      const avgEdge = edgeSum / ((W - 2) * (H - 2));
+      const cmX = (weightedX / totalWeight / W).toFixed(2);
+      const cmY = (weightedY / totalWeight / H).toFixed(2);
+
+      state.sourceLumGrid = lum;
+      state.sourceEdgeGrid = edges;
+      state.hasSourceImage = true;
+
+      document.getElementById('metric-contrast').textContent = `${(rmsContrast * 100 * 2.2).toFixed(1)}%`;
+      document.getElementById('metric-edges').textContent = avgEdge > 0.22 ? 'Alta (Compleja)' : 'Media (Suave)';
+      document.getElementById('metric-center').textContent = `X:${cmX} Y:${cmY}`;
+    }
+
+    function createDemoSyntheticImage() {
+      const temp = document.createElement('canvas');
+      temp.width = 64;
+      temp.height = 64;
+      const ctx = temp.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 64, 64);
+      const grad = ctx.createRadialGradient(32, 28, 4, 32, 32, 30);
+      grad.addColorStop(0, '#fff');
+      grad.addColorStop(0.5, '#888');
+      grad.addColorStop(1, '#000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(4, 4, 56, 56);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(12, 12, 40, 40);
+      analyzeImageComposition(temp);
+    }
+
+    // =========================================================================
+    // 6. PALETTE RESOLVER (SUPPORTS HYBRID MULTI-PALETTE MIXING)
+    // =========================================================================
+    function resolvePalette(archKey, rand) {
+      let base = ARCHETYPE_PALETTES[archKey] || ARCHETYPE_PALETTES.ref1_sh6;
+      if (state.paletteKey === 'aisuni_lab') {
+        base = {
+          bg: '#0C0D0E',
+          primary: '#FF5500',
+          secondary: '#00E5FF',
+          accent1: '#10B981',
+          accent2: '#F8F9FA',
+          accent3: '#7828FF',
+          neutral: '#262930',
+          white: '#FFFFFF',
+          dark: '#08090A'
+        };
+      } else if (state.paletteKey === 'mono_1bit') {
+        base = {
+          bg: '#0A0A0C',
+          primary: '#FFFFFF',
+          secondary: '#D4D4D8',
+          accent1: '#FFFFFF',
+          accent2: '#71717A',
+          accent3: '#E4E4E7',
+          neutral: '#27272A',
+          white: '#FFFFFF',
+          dark: '#000000'
+        };
+      } else if (state.paletteKey === 'thermal_synth') {
+        base = {
+          bg: '#080610',
+          primary: '#FF2A6D',
+          secondary: '#FFE600',
+          accent1: '#05D9E8',
+          accent2: '#7700FF',
+          accent3: '#FFFFFF',
+          neutral: '#1B1528',
+          white: '#FFFFFF',
+          dark: '#05040A'
+        };
+      }
+
+      const rawList = [base.primary, base.secondary, base.accent1, base.accent2, base.accent3, base.neutral, base.white];
+      // Deterministic rotation + seed permutation so even the same archetype varies its dominant color
+      const seedOffset = Math.floor(rand() * rawList.length);
+      const rot = (state.paletteRotation + seedOffset) % rawList.length;
+      const rotated = rawList.map((_, i) => rawList[(i + rot) % rawList.length]);
+
+      return {
+        bg: rand() < 0.18 && state.paletteKey !== 'mono_1bit' ? base.neutral : base.bg,
+        dark: base.dark,
+        white: base.white,
+        c0: rotated[0],
+        c1: rotated[1],
+        c2: rotated[2],
+        c3: rotated[3],
+        c4: rotated[4],
+        neutral: rotated[5],
+        all: rotated
+      };
+    }
+
+    // =========================================================================
+    // 7. NATIVE HIGH-RESOLUTION MODULAR PRIMITIVES
+    //    NOTE: All drawing runs at 100% full native resolution (W x H).
+    //    `grainUnit` (from pixelScale 1..6) scales the crisp geometric step size
+    //    so 6px is just as razor-sharp and high-res as 1px!
+    // =========================================================================
+    function snap(val, step) {
+      return Math.round(val / step) * step;
+    }
+
+    // 1. Staggered Brick / Tile Wall (Ref 6)
+    function drawBrickMatrix(ctx, x, y, w, h, brickColor, mortarColor, grain, rand) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+
+      ctx.fillStyle = mortarColor;
+      ctx.fillRect(x, y, w, h);
+
+      const brickW = snap(Math.max(24, w * (0.14 + rand() * 0.12)), grain);
+      const brickH = snap(Math.max(14, brickW * (0.38 + rand() * 0.18)), grain);
+      const mortar = Math.max(grain, snap(brickH * 0.16, grain));
+      const verticalOrientation = rand() < 0.25;
+
+      let row = 0;
+      if (!verticalOrientation) {
+        for (let py = y; py < y + h; py += brickH) {
+          const offset = (row & 1) ? Math.floor(brickW * 0.5) : 0;
+          for (let px = x - offset; px < x + w; px += brickW) {
+            ctx.fillStyle = (rand() < 0.1) ? mortarColor : brickColor;
+            ctx.fillRect(px, py, Math.max(grain, brickW - mortar), Math.max(grain, brickH - mortar));
+          }
+          row++;
+        }
+      } else {
+        for (let px = x; px < x + w; px += brickH) {
+          const offset = (row & 1) ? Math.floor(brickW * 0.5) : 0;
+          for (let py = y - offset; py < y + h; py += brickW) {
+            ctx.fillStyle = (rand() < 0.1) ? mortarColor : brickColor;
+            ctx.fillRect(px, py, Math.max(grain, brickH - mortar), Math.max(grain, brickW - mortar));
+          }
+          row++;
+        }
+      }
+      ctx.restore();
+    }
+
+    // 2. Tartan / Waffle Cross-Hatch Grid (Ref 1 & Ref 3)
+    function drawWaffleGrid(ctx, x, y, w, h, cellColor, lineColor, grain, rand) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+
+      ctx.fillStyle = lineColor;
+      ctx.fillRect(x, y, w, h);
+
+      const cellSize = snap(Math.max(grain * 4, Math.min(w, h) * (0.045 + rand() * 0.04)), grain);
+      const lineThick = Math.max(grain, snap(cellSize * 0.18, grain));
+      const warpAmp = rand() < 0.5 ? grain * 2 : 0;
+      const warpFreq = 0.015 + rand() * 0.025;
+
+      for (let py = y; py < y + h; py += cellSize) {
+        const shift = snap(Math.sin(py * warpFreq) * warpAmp, grain);
+        for (let px = x; px < x + w; px += cellSize) {
+          if (rand() < 0.9) {
+            ctx.fillStyle = cellColor;
+            ctx.fillRect(
+              px + lineThick + shift,
+              py + lineThick,
+              Math.max(grain, cellSize - lineThick * 2),
+              Math.max(grain, cellSize - lineThick * 2)
+            );
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    // 3. Brutalist Architectural Blueprint / Photocopy Micro-Grid (Ref 4 & Ref 5)
+    function drawBlueprintSchematic(ctx, x, y, w, h, bgCol, inkCol, accentCol, grain, rand) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+
+      ctx.fillStyle = bgCol;
+      ctx.fillRect(x, y, w, h);
+
+      const cols = 2 + Math.floor(rand() * 4);
+      const rows = 2 + Math.floor(rand() * 4);
+      const cw = snap(w / cols, grain);
+      const rh = snap(h / rows, grain);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const rx = x + c * cw;
+          const ry = y + r * rh;
+          const mode = rand();
+
+          if (mode < 0.35) {
+            ctx.fillStyle = inkCol;
+            ctx.fillRect(rx + grain, ry + grain, cw - grain * 2, rh - grain * 2);
+            ctx.fillStyle = rand() < 0.25 ? accentCol : bgCol;
+            const winCount = 3 + Math.floor(rand() * 5);
+            const winW = Math.max(grain, snap((cw - grain * 6) / (winCount * 2), grain));
+            for (let k = 0; k < winCount; k++) {
+              ctx.fillRect(rx + grain * 3 + k * winW * 2, ry + snap(rh * 0.32, grain), winW, snap(rh * 0.36, grain));
+            }
+          } else if (mode < 0.68) {
+            ctx.fillStyle = inkCol;
+            const thick = Math.max(grain * 2, snap(Math.min(cw, rh) * 0.24, grain));
+            ctx.fillRect(rx, ry, cw, thick);
+            ctx.fillRect(rx, ry, thick, rh);
+            const stepY = Math.max(grain * 2, snap(grain * 3, grain));
+            for (let ly = ry + thick + stepY; ly < ry + rh - grain * 2; ly += stepY) {
+              ctx.fillRect(rx + thick + grain * 2, ly, Math.max(grain, cw - thick - grain * 4), grain);
+            }
+          } else {
+            ctx.fillStyle = inkCol;
+            ctx.fillRect(rx, ry, cw, grain);
+            ctx.fillRect(rx, ry + rh - grain, cw, grain);
+            ctx.fillRect(rx, ry, grain, rh);
+            ctx.fillRect(rx + cw - grain, ry, grain, rh);
+            const stepX = Math.max(grain * 2, snap(cw / (6 + Math.floor(rand() * 6)), grain));
+            for (let lx = rx + grain * 2; lx < rx + cw - grain * 2; lx += stepX) {
+              ctx.fillRect(lx, ry + grain * 2, Math.max(grain, Math.floor(stepX * 0.5)), rh - grain * 4);
+            }
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    // 4. Crisp Ordered Dither / Checkerboard / Diagonal Matrix Patch (High-Res Grain-Snapped)
+    function drawCrispDitherPatch(ctx, x, y, w, h, fgCol, bgCol, grain, mode, rand) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+
+      ctx.fillStyle = bgCol;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = fgCol;
+
+      const cell = Math.max(2, grain * 2);
+      if (mode === 0) {
+        // Checkerboard at exact grain resolution
+        for (let py = y; py < y + h; py += cell) {
+          const oddRow = ((py / cell) & 1);
+          for (let px = x + (oddRow ? cell : 0); px < x + w; px += cell * 2) {
+            ctx.fillRect(px, py, cell, cell);
+          }
+        }
+      } else if (mode === 1) {
+        // Ordered gradient dither bands
+        const vertical = rand() < 0.5;
+        for (let py = y; py < y + h; py += cell) {
+          for (let px = x; px < x + w; px += cell) {
+            const t = vertical ? (py - y) / Math.max(1, h) : (px - x) / Math.max(1, w);
+            const hash = (((px / cell) * 3 + (py / cell) * 5) & 7) / 8;
+            if (t > hash) {
+              ctx.fillRect(px, py, cell, cell);
+            }
+          }
+        }
+      } else {
+        // Stepped diagonal pixel waves
+        const period = 4 + Math.floor(rand() * 4);
+        const dir = rand() < 0.5 ? 1 : -1;
+        for (let py = y; py < y + h; py += cell) {
+          const gy = Math.floor(py / cell);
+          for (let px = x; px < x + w; px += cell) {
+            const gx = Math.floor(px / cell);
+            if (((gx * dir + gy) % period + period) % period < Math.ceil(period * 0.45)) {
+              ctx.fillRect(px, py, cell, cell);
+            }
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    // 5. Punch-Card Perforated Cityscape Block with Chromatic Border (Ref 2)
+    function drawPunchCardBlock(ctx, x, y, w, h, fillCol, holeCol, borderCol, grain, rand) {
+      const stepSize = Math.max(grain * 2, snap(Math.min(w, h) * 0.08, grain));
+      if (borderCol) {
+        ctx.fillStyle = borderCol;
+        ctx.fillRect(x - stepSize, y - stepSize, w + stepSize * 2, h + stepSize * 2);
+      }
+      ctx.fillStyle = fillCol;
+      ctx.fillRect(x, y, w, h);
+
+      const notchW = stepSize * (1 + Math.floor(rand() * 3));
+      const notchH = stepSize * (1 + Math.floor(rand() * 3));
+      ctx.fillStyle = holeCol;
+      if (rand() < 0.65) ctx.fillRect(x, y, notchW, notchH);
+      if (rand() < 0.65) ctx.fillRect(x + w - notchW, y + h - notchH, notchW, notchH);
+
+      const gridStep = Math.max(grain * 3, stepSize * 2);
+      const dotSize = Math.max(grain, Math.floor(stepSize * 0.7));
+      const margin = stepSize * 1.5;
+
+      for (let py = y + margin; py < y + h - margin; py += gridStep) {
+        for (let px = x + margin; px < x + w - margin; px += gridStep) {
+          if (rand() < 0.8) {
+            ctx.fillRect(px, py, dotSize, dotSize);
+          }
+        }
+      }
+    }
+
+    // 6. Comb / Ladder Teeth Structure (Ref 1 & Ref 3)
+    function drawCombTeeth(ctx, x, y, w, h, toothCol, bgCol, horizontal, toothCount, grain, rand) {
+      ctx.fillStyle = bgCol;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = toothCol;
+
+      const spineThick = snap(horizontal ? w * 0.22 : h * 0.22, grain);
+      const spineAtStart = rand() < 0.5;
+      if (horizontal) {
+        ctx.fillRect(spineAtStart ? x : x + w - spineThick, y, spineThick, h);
+        const step = snap(h / toothCount, grain);
+        for (let i = 0; i < toothCount; i++) {
+          const ty = y + i * step;
+          const th = snap(step * (0.5 + rand() * 0.22), grain);
+          const tw = snap(w * (0.62 + rand() * 0.36), grain);
+          ctx.fillRect(spineAtStart ? x : x + w - tw, ty, tw, Math.max(grain, th));
+        }
+      } else {
+        ctx.fillRect(x, spineAtStart ? y : y + h - spineThick, w, spineThick);
+        const step = snap(w / toothCount, grain);
+        for (let i = 0; i < toothCount; i++) {
+          const tx = x + i * step;
+          const tw = snap(step * (0.5 + rand() * 0.22), grain);
+          const th = snap(h * (0.62 + rand() * 0.36), grain);
+          ctx.fillRect(tx, spineAtStart ? y : y + h - th, Math.max(grain, tw), th);
+        }
+      }
+    }
+
+    // 7. Stepped Skyline / Staircase Polygon (Ref 1, Ref 2, Ref 3, Ref 7)
+    function drawSteppedSkyline(ctx, x, y, w, h, fillCol, outlineCol, grain, rand) {
+      const stepPx = Math.max(grain * 3, snap(w / (6 + Math.floor(rand() * 8)), grain));
+      const cols = Math.max(4, Math.floor(w / stepPx));
+      const heights = [];
+      let curH = Math.floor(cols * (0.3 + rand() * 0.5));
+      for (let c = 0; c < cols; c++) {
+        curH += Math.floor((rand() - 0.48) * 4);
+        curH = Math.max(2, Math.min(Math.floor(h / stepPx) - 1, curH));
+        heights.push(curH * stepPx);
+      }
+
+      const orient = Math.floor(rand() * 4); // 0: bottom, 1: top, 2: left, 3: right
+      const borderPad = Math.max(grain, Math.floor(stepPx * 0.18));
+
+      for (let c = 0; c < cols; c++) {
+        const len = heights[c];
+        let bx = x, by = y, bw = stepPx, bh = len;
+        if (orient === 0) {
+          bx = x + c * stepPx;
+          by = y + h - len;
+        } else if (orient === 1) {
+          bx = x + c * stepPx;
+          by = y;
+        } else if (orient === 2) {
+          bx = x;
+          by = y + c * stepPx;
+          bw = len;
+          bh = stepPx;
+        } else {
+          bx = x + w - len;
+          by = y + c * stepPx;
+          bw = len;
+          bh = stepPx;
+        }
+
+        if (outlineCol) {
+          ctx.fillStyle = outlineCol;
+          ctx.fillRect(bx - borderPad, by - borderPad, bw + borderPad * 2, bh + borderPad * 2);
+        }
+        ctx.fillStyle = fillCol;
+        ctx.fillRect(bx, by, bw + 1, bh + 1);
+      }
+    }
+
+    // =========================================================================
+    // 8. DIVERSE PROMINENT "HERO" FORMS (10 DISTINCT FAMILIES FOR AUTO-MIX)
+    //    Ensures Híbrido Mutante NEVER repeats the same dominant shape!
+    // =========================================================================
+
+    // Hero 0: Stepped Brutalist Arch / Portal (Inspired by Ref 1 giant red stepped arch)
+    function drawHeroSteppedArch(ctx, W, H, pal, grain, rand) {
+      const step = Math.max(grain * 4, snap(W * 0.035, grain));
+      const cx = snap(W * (0.25 + rand() * 0.5), step);
+      const cy = snap(H * (0.25 + rand() * 0.5), step);
+      const outerR = snap(W * (0.26 + rand() * 0.16), step);
+      const thick = snap(outerR * (0.38 + rand() * 0.2), step);
+      const innerR = outerR - thick;
+      const archMode = Math.floor(rand() * 4); // 0: top arch, 1: bottom U, 2: left C, 3: full stepped ring
+
+      for (let py = cy - outerR; py <= cy + outerR; py += step) {
+        for (let px = cx - outerR; px <= cx + outerR; px += step) {
+          if (archMode === 0 && py > cy + step * 2) continue;
+          if (archMode === 1 && py < cy - step * 2) continue;
+          if (archMode === 2 && px > cx + step * 2) continue;
+
+          const dist = Math.hypot(px - cx, py - cy);
+          if (dist <= outerR && dist >= innerR) {
+            ctx.fillStyle = pal.white;
+            ctx.fillRect(px - grain, py - grain, step + grain * 2, step + grain * 2);
+            ctx.fillStyle = pal.c0;
+            ctx.fillRect(px, py, step, step);
+          }
+        }
+      }
+    }
+
+    // Hero 1: Labyrinth / Greek-Key Meander (Inspired by Ref 3 yellow/red maze blocks)
+    function drawHeroLabyrinthMeander(ctx, W, H, pal, grain, rand) {
+      const unit = Math.max(grain * 3, snap(W * 0.028, grain));
+      const startX = snap(W * (0.08 + rand() * 0.35), unit);
+      const startY = snap(H * (0.08 + rand() * 0.35), unit);
+      const coils = 2 + Math.floor(rand() * 2);
+
+      for (let c = 0; c < coils; c++) {
+        const ox = startX + c * unit * 9 * (rand() < 0.5 ? 1 : 0);
+        const oy = startY + c * unit * 9 * (rand() < 0.5 ? 0 : 1);
+        const size = unit * 8;
+        ctx.fillStyle = pal.c2;
+        ctx.fillRect(ox - unit, oy - unit, size + unit * 2, size + unit * 2);
+        ctx.fillStyle = pal.c0;
+        // Outer spiral turns
+        ctx.fillRect(ox, oy, size, unit);
+        ctx.fillRect(ox + size - unit, oy, unit, size);
+        ctx.fillRect(ox + unit, oy + size - unit, size - unit, unit);
+        ctx.fillRect(ox + unit, oy + unit * 2, unit, size - unit * 2);
+        ctx.fillRect(ox + unit * 2, oy + unit * 2, size - unit * 3, unit);
+        ctx.fillRect(ox + size - unit * 2, oy + unit * 2, unit, size - unit * 4);
+      }
+    }
+
+    // Hero 2: Colossal Brutalist Glyph / Stencil Pair (Rotated, Cropped, or Outlined)
+    function drawHeroColossalGlyphs(ctx, W, H, pal, grain, rand) {
+      const shuffledGlyphs = shuffleArray(GLYPH_KEYS, rand);
+      const count = 1 + Math.floor(rand() * 2);
+      const layoutStyle = Math.floor(rand() * 3); // 0: diagonal pair, 1: giant bleeding single, 2: stacked vertical
+
+      for (let i = 0; i < count; i++) {
+        const ch = shuffledGlyphs[i];
+        const scaleFactor = (count === 1 || layoutStyle === 1) ? (0.065 + rand() * 0.03) : (0.042 + rand() * 0.02);
+        const blockW = Math.max(grain * 3, snap(W * scaleFactor, grain));
+        const blockH = Math.max(grain * 3, snap(H * scaleFactor, grain));
+
+        let gx, gy;
+        if (layoutStyle === 0) {
+          gx = snap(W * (0.06 + i * 0.46 + (rand() - 0.5) * 0.1), grain);
+          gy = snap(H * (0.08 + i * 0.36 + (rand() - 0.5) * 0.1), grain);
+        } else if (layoutStyle === 1) {
+          gx = snap(W * (-0.05 + rand() * 0.45), grain);
+          gy = snap(H * (0.05 + rand() * 0.4), grain);
+        } else {
+          gx = snap(W * (0.15 + rand() * 0.45), grain);
+          gy = snap(H * (0.06 + i * 0.46), grain);
+        }
+
+        const hasKeyline = rand() < 0.7;
+        const hasScanlines = rand() < 0.55;
+        const fillCol = i % 2 === 0 ? pal.c0 : pal.c1;
+        const keyCol = hasKeyline ? (fillCol === pal.white ? pal.dark : pal.white) : null;
+        const scanCol = hasScanlines ? pal.dark : null;
+
+        const matrix = MACRO_GLYPHS[ch];
+        const pad = Math.max(grain * 2, snap(blockW * 0.16, grain));
+
+        if (keyCol) {
+          ctx.fillStyle = keyCol;
+          for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 7; c++) {
+              if (matrix[r][c] === '1') {
+                ctx.fillRect(gx + c * blockW - pad, gy + r * blockH - pad, blockW + pad * 2, blockH + pad * 2);
+              }
+            }
+          }
+        }
+
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 7; c++) {
+            if (matrix[r][c] === '1') {
+              const bx = gx + c * blockW;
+              const by = gy + r * blockH;
+              ctx.fillStyle = fillCol;
+              ctx.fillRect(bx, by, blockW + 1, blockH + 1);
+              if (scanCol) {
+                ctx.fillStyle = scanCol;
+                const ribStep = Math.max(grain * 2, snap(blockW * 0.22, grain));
+                for (let sx = bx + grain; sx < bx + blockW - grain; sx += ribStep) {
+                  ctx.fillRect(sx, by, grain, blockH + 1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Hero 3: Multi-Angle Constructivist Polygon Cuts (8 directions, never fixed to top V)
+    function drawHeroPolygonCuts(ctx, W, H, pal, grain, rand) {
+      const cutStyle = Math.floor(rand() * 5);
+      const borderW = Math.max(grain * 2, snap(W * 0.012, grain));
+
+      ctx.save();
+      ctx.beginPath();
+      if (cutStyle === 0) {
+        // Diagonal lightning / Z-band across canvas
+        const y1 = H * (0.1 + rand() * 0.3);
+        const y2 = H * (0.55 + rand() * 0.3);
+        const bandThick = H * (0.14 + rand() * 0.14);
+        ctx.moveTo(0, y1);
+        ctx.lineTo(W, y2);
+        ctx.lineTo(W, y2 + bandThick);
+        ctx.lineTo(0, y1 + bandThick);
+      } else if (cutStyle === 1) {
+        // Side chevron wedge from left or right
+        const fromLeft = rand() < 0.5;
+        const apexX = fromLeft ? W * (0.55 + rand() * 0.3) : W * (0.15 + rand() * 0.3);
+        const apexY = H * (0.2 + rand() * 0.6);
+        ctx.moveTo(fromLeft ? 0 : W, H * (0.05 + rand() * 0.25));
+        ctx.lineTo(apexX, apexY);
+        ctx.lineTo(fromLeft ? 0 : W, H * (0.7 + rand() * 0.25));
+      } else if (cutStyle === 2) {
+        // Asymmetric trapezoid island
+        ctx.moveTo(W * (0.12 + rand() * 0.2), H * (0.15 + rand() * 0.2));
+        ctx.lineTo(W * (0.65 + rand() * 0.25), H * (0.08 + rand() * 0.25));
+        ctx.lineTo(W * (0.55 + rand() * 0.3), H * (0.62 + rand() * 0.25));
+        ctx.lineTo(W * (0.08 + rand() * 0.25), H * (0.55 + rand() * 0.3));
+      } else if (cutStyle === 3) {
+        // Stepped diagonal staircase slash
+        const steps = 6 + Math.floor(rand() * 6);
+        const sw = W / steps;
+        const sh = H / steps;
+        const flip = rand() < 0.5;
+        ctx.moveTo(flip ? W : 0, 0);
+        for (let i = 0; i < steps; i++) {
+          const sx = flip ? W - i * sw : i * sw;
+          const sy = i * sh;
+          ctx.lineTo(sx + (flip ? -sw : sw), sy);
+          ctx.lineTo(sx + (flip ? -sw : sw), sy + sh);
+        }
+        ctx.lineTo(flip ? W : 0, H);
+      } else {
+        // Intersecting X-beams
+        const wBeam = W * (0.12 + rand() * 0.08);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(wBeam, 0);
+        ctx.lineTo(W, H - wBeam);
+        ctx.lineTo(W, H);
+        ctx.lineTo(W - wBeam, H);
+        ctx.lineTo(0, wBeam);
+      }
+      ctx.closePath();
+      ctx.fillStyle = pal.c0;
+      ctx.fill();
+      ctx.lineWidth = borderW;
+      ctx.strokeStyle = pal.c2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Hero 4: Concentric Stepped Diamond / Aztec Target Pyramid
+    function drawHeroSteppedDiamond(ctx, W, H, pal, grain, rand) {
+      const step = Math.max(grain * 3, snap(W * 0.025, grain));
+      const cx = snap(W * (0.25 + rand() * 0.5), step);
+      const cy = snap(H * (0.25 + rand() * 0.5), step);
+      const rings = 5 + Math.floor(rand() * 5);
+
+      for (let r = rings; r >= 1; r--) {
+        const radius = r * step * 2;
+        ctx.fillStyle = (r & 1) ? pal.c1 : pal.dark;
+        for (let dy = -radius; dy <= radius; dy += step) {
+          const spanX = radius - Math.abs(dy);
+          ctx.fillRect(cx - spanX, cy + dy, spanX * 2 + step, step);
+        }
+      }
+    }
+
+    // Hero 5: Parallel Circuit / Subway Bus Tracks with Terminal Nodes
+    function drawHeroCircuitTracks(ctx, W, H, pal, grain, rand) {
+      const trackCount = 4 + Math.floor(rand() * 5);
+      const spacing = Math.max(grain * 4, snap(W * 0.026, grain));
+      const thick = Math.max(grain * 2, Math.floor(spacing * 0.48));
+      const startX = snap(W * (0.05 + rand() * 0.4), grain);
+      const startY = snap(H * (0.1 + rand() * 0.35), grain);
+      const len1 = snap(W * (0.25 + rand() * 0.3), grain);
+      const len2 = snap(H * (0.25 + rand() * 0.35), grain);
+
+      for (let t = 0; t < trackCount; t++) {
+        const offset = t * spacing;
+        ctx.fillStyle = (t & 1) ? pal.c0 : pal.c2;
+        // Horizontal segment
+        ctx.fillRect(startX, startY + offset, len1 + offset, thick);
+        // Vertical turn segment
+        ctx.fillRect(startX + len1 + offset - thick, startY + offset, thick, len2);
+        // Terminal square node
+        ctx.fillStyle = pal.white;
+        ctx.fillRect(startX + len1 + offset - thick * 1.5, startY + offset + len2 - thick, thick * 2, thick * 2);
+      }
+    }
+
+    // Hero 6: Graffuturism Angular K-Vectors / Street-Art Beams with White Keylines (Ref 6)
+    function drawHeroGraffBeams(ctx, W, H, pal, grain, rand) {
+      const count = 2 + Math.floor(rand() * 2);
+      for (let i = 0; i < count; i++) {
+        const cx = snap(W * (0.18 + rand() * 0.64), grain);
+        const cy = snap(H * (0.18 + rand() * 0.64), grain);
+        const armLen = snap(W * (0.26 + rand() * 0.32), grain);
+        const thick = Math.max(grain * 4, snap(W * (0.035 + rand() * 0.035), grain));
+        const angle = (Math.floor(rand() * 8) * Math.PI) / 4;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+
+        const drawShape = (inflate) => {
+          ctx.beginPath();
+          ctx.rect(-thick * 0.5 - inflate, -armLen * 0.6 - inflate, thick + inflate * 2, armLen * 1.2 + inflate * 2);
+          ctx.moveTo(0, -inflate);
+          ctx.lineTo(armLen * 0.65 + inflate, -armLen * 0.55 - inflate);
+          ctx.lineTo(armLen * 0.65 + thick + inflate, -armLen * 0.55 + inflate);
+          ctx.lineTo(thick * 0.5, thick * 0.6 + inflate);
+          ctx.closePath();
+          ctx.fill();
+        };
+
+        ctx.fillStyle = pal.white;
+        drawShape(Math.max(grain * 2, 6));
+        ctx.fillStyle = i % 2 === 0 ? pal.dark : pal.c0;
+        drawShape(0);
+        ctx.restore();
+      }
+    }
+
+    // Hero 7: Stepped Pixel Cloud / Archipelago Clusters (Ref 7 white pixel clouds)
+    function drawHeroSteppedClouds(ctx, W, H, pal, grain, rand) {
+      const cell = Math.max(grain * 4, snap(W * 0.032, grain));
+      const clusters = 2 + Math.floor(rand() * 3);
+
+      for (let c = 0; c < clusters; c++) {
+        const cx = snap(W * (0.12 + rand() * 0.76), cell);
+        const cy = snap(H * (0.12 + rand() * 0.76), cell);
+        const col = c % 2 === 0 ? pal.white : pal.c1;
+        const border = pal.dark;
+
+        const blocks = [];
+        for (let row = -3; row <= 3; row++) {
+          const span = Math.max(1, 4 - Math.abs(row) + Math.floor((rand() - 0.3) * 3));
+          const offset = Math.floor((rand() - 0.5) * 3);
+          for (let colIdx = -span + offset; colIdx <= span + offset; colIdx++) {
+            blocks.push([cx + colIdx * cell, cy + row * cell]);
+          }
+        }
+
+        ctx.fillStyle = border;
+        blocks.forEach(([bx, by]) => ctx.fillRect(bx - grain * 2, by - grain * 2, cell + grain * 4, cell + grain * 4));
+        ctx.fillStyle = col;
+        blocks.forEach(([bx, by]) => ctx.fillRect(bx, by, cell + 1, cell + 1));
+      }
+    }
+
+    // Hero 8: Stepped Audio / Signal Waveform Ribbon
+    function drawHeroWaveformRibbon(ctx, W, H, pal, grain, rand) {
+      const vertical = rand() < 0.45;
+      const step = Math.max(grain * 3, snap(W * 0.02, grain));
+      const center = snap((vertical ? W : H) * (0.25 + rand() * 0.5), step);
+      const maxAmp = (vertical ? W : H) * (0.16 + rand() * 0.16);
+      const freq = 0.012 + rand() * 0.025;
+
+      for (let pos = 0; pos < (vertical ? H : W); pos += step) {
+        const amp = snap((Math.sin(pos * freq) * 0.6 + (rand() - 0.5) * 0.8) * maxAmp, step);
+        const barLen = Math.max(step * 2, Math.abs(amp) * 2);
+        ctx.fillStyle = ((pos / step) & 1) ? pal.c0 : pal.c2;
+        if (vertical) {
+          ctx.fillRect(center - barLen * 0.5, pos, barLen, step - grain);
+        } else {
+          ctx.fillRect(pos, center - barLen * 0.5, step - grain, barLen);
+        }
+      }
+    }
+
+    // VHS Glitch Dashes, Polka Dots & Cyan Stickers
+    function drawGlitchAndStickers(ctx, W, H, pal, grain, rand) {
+      // 1. VHS Dashed Scanline Patch
+      const patchX = snap(W * (rand() < 0.5 ? 0.02 : (0.52 + rand() * 0.22)), grain);
+      const patchY = snap(H * (0.12 + rand() * 0.58), grain);
+      const patchW = snap(W * (0.24 + rand() * 0.24), grain);
+      const patchH = snap(H * (0.2 + rand() * 0.28), grain);
+
+      ctx.fillStyle = pal.neutral;
+      ctx.fillRect(patchX, patchY, patchW, patchH);
+
+      ctx.fillStyle = pal.c1;
+      const rowStep = Math.max(grain * 3, snap(H * 0.012, grain));
+      for (let py = patchY + grain * 2; py < patchY + patchH - grain * 2; py += rowStep) {
+        let px = patchX + grain * 2;
+        while (px < patchX + patchW - grain * 4) {
+          const dashW = snap(12 + rand() * 56, grain);
+          const dashH = Math.max(grain, snap(rowStep * (0.35 + rand() * 0.4), grain));
+          if (rand() < 0.72) {
+            ctx.fillRect(px, py, Math.min(dashW, patchX + patchW - px - grain * 2), dashH);
+          }
+          px += dashW + snap(8 + rand() * 18, grain);
+        }
+      }
+
+      // 2. Floating Neon Pixel Stickers / Tags (Ref 4)
+      const stickerCount = 2 + Math.floor(rand() * 5);
+      for (let i = 0; i < stickerCount; i++) {
+        const sx = snap(W * (0.06 + rand() * 0.78), grain * 2);
+        const sy = snap(H * (0.06 + rand() * 0.78), grain * 2);
+        const sw = snap(W * (0.06 + rand() * 0.09), grain * 2);
+        const sh = snap(H * (0.03 + rand() * 0.05), grain * 2);
+
+        ctx.fillStyle = pal.dark;
+        ctx.fillRect(sx - grain, sy - grain, sw + grain * 2, sh + grain * 2);
+        ctx.fillStyle = i % 2 === 0 ? pal.c2 : pal.c3;
+        ctx.fillRect(sx, sy, sw, sh);
+        ctx.fillStyle = pal.c0;
+        const pSize = Math.max(grain * 2, Math.floor(sh * 0.3));
+        ctx.fillRect(sx + pSize, sy + sh - pSize * 1.5, pSize * 2, pSize);
+        ctx.fillRect(sx + sw - pSize * 2.5, sy + pSize * 0.5, pSize, pSize);
+      }
+
+      // 3. Polka-Dot / Halftone Matrix Patch (Ref 6)
+      if (rand() < 0.68) {
+        const dx = snap(W * (rand() < 0.5 ? 0.04 : 0.66), grain);
+        const dy = snap(H * (0.1 + rand() * 0.65), grain);
+        const dw = snap(W * (0.18 + rand() * 0.12), grain);
+        const dh = snap(H * (0.18 + rand() * 0.14), grain);
+        ctx.fillStyle = pal.dark;
+        ctx.fillRect(dx, dy, dw, dh);
+        ctx.fillStyle = pal.c3;
+        const cell = Math.max(grain * 3, snap(W * 0.016, grain));
+        const dot = Math.max(grain * 2, Math.floor(cell * 0.62));
+        for (let py = dy + cell * 0.5; py < dy + dh - cell * 0.5; py += cell) {
+          for (let px = dx + cell * 0.5; px < dx + dw - cell * 0.5; px += cell) {
+            ctx.fillRect(px - dot * 0.5, py - dot * 0.5, dot, dot);
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // 9. MASTER COMPOSITOR (FULL NATIVE RESOLUTION + NON-REPEATING HYBRID DECK)
+    // =========================================================================
+    function renderPatternToCanvas(targetCanvas, seedValue) {
+      const rand = createPRNG(seedValue);
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+
+      // CRISP NATIVE GRAIN RESOLUTION:
+      // Instead of downscaling the canvas and stretching blurry pixels, we render natively at W x H
+      // and scale the crisp geometric grain unit proportionally to W!
+      const resMultiplier = W / 1000;
+      const grain = Math.max(1, Math.round(state.pixelScale * resMultiplier));
+
+      // In Hybrid Mode, shuffle all 7 archetypes so different zones on the SAME canvas pull from different references!
+      const shuffledArchs = shuffleArray(ARCHETYPE_KEYS, rand);
+      const primaryArch = state.archetype === 'hybrid_all' ? shuffledArchs[0] : state.archetype;
+      const secondaryArch = state.archetype === 'hybrid_all' ? shuffledArchs[1] : state.archetype;
+
+      const pal = resolvePalette(primaryArch, rand);
+      const pal2 = resolvePalette(secondaryArch, rand);
+
+      // LAYER 0: BASE ARCHITECTURAL CANVAS
+      ctx.fillStyle = pal.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // LAYER 1: DIVERSE MACRO-TOPOLOGY PARTITION (5 DIFFERENT SPATIAL ARCHITECTURES)
+      // Pick macro-topology deterministically from seed so each seed has a distinct skeleton
+      const macroTopology = Math.floor(rand() * 5); // 0: BSP Patchwork, 1: Vertical Columns, 2: Horizontal Strata, 3: Quadrant Cross, 4: Diagonal Split Zones
+      const zones = [];
+
+      if (macroTopology === 0) {
+        // Recursive BSP asymmetric patchwork
+        function splitBSP(x, y, w, h, depth) {
+          if (depth <= 0 || (w < W * 0.24 && h < H * 0.24)) {
+            zones.push({ x, y, w, h });
+            return;
+          }
+          const horiz = (w > h * 1.3) ? false : (h > w * 1.3) ? true : (rand() < 0.5);
+          const ratio = 0.28 + rand() * 0.44;
+          if (horiz) {
+            const h1 = snap(h * ratio, grain);
+            splitBSP(x, y, w, h1, depth - 1);
+            splitBSP(x, y + h1, w, h - h1, depth - 1);
+          } else {
+            const w1 = snap(w * ratio, grain);
+            splitBSP(x, y, w1, h, depth - 1);
+            splitBSP(x + w1, y, w - w1, h, depth - 1);
+          }
+        }
+        splitBSP(0, 0, W, H, Math.min(4, Math.max(2, Math.floor(state.complexity * 0.55))));
+      } else if (macroTopology === 1) {
+        // Vertical Totem Columns with sub-splits
+        const cols = 3 + Math.floor(rand() * 3);
+        let curX = 0;
+        for (let c = 0; c < cols; c++) {
+          const cw = (c === cols - 1) ? (W - curX) : snap(W * (0.16 + rand() * 0.26), grain);
+          if (cw > 0) {
+            const splitY = snap(H * (0.25 + rand() * 0.5), grain);
+            zones.push({ x: curX, y: 0, w: cw, h: splitY });
+            zones.push({ x: curX, y: splitY, w: cw, h: H - splitY });
+            curX += cw;
+          }
+        }
+      } else if (macroTopology === 2) {
+        // Horizontal Strata Terraces
+        const rows = 3 + Math.floor(rand() * 3);
+        let curY = 0;
+        for (let r = 0; r < rows; r++) {
+          const rh = (r === rows - 1) ? (H - curY) : snap(H * (0.16 + rand() * 0.26), grain);
+          if (rh > 0) {
+            const splitX = snap(W * (0.2 + rand() * 0.6), grain);
+            zones.push({ x: 0, y: curY, w: splitX, h: rh });
+            zones.push({ x: splitX, y: curY, w: W - splitX, h: rh });
+            curY += rh;
+          }
+        }
+      } else {
+        // Asymmetric Overlapping Collage Islands
+        const count = 4 + Math.floor(state.complexity * 0.6);
+        for (let i = 0; i < count; i++) {
+          const zw = snap(W * (0.28 + rand() * 0.45), grain);
+          const zh = snap(H * (0.25 + rand() * 0.45), grain);
+          const zx = snap(rand() * (W - zw * 0.6), grain);
+          const zy = snap(rand() * (H - zh * 0.6), grain);
+          zones.push({ x: zx, y: zy, w: zw, h: zh });
+        }
+      }
+
+      // Populate zones with varied textures (Tartan, Bricks, Blueprints, Dither Matrices, Comb Bars, Punch-Cards)
+      const gridProb = state.ditherDensity / 100;
+      const zoneTypes = shuffleArray([0, 1, 2, 3, 4, 5], rand);
+
+      zones.forEach((z, idx) => {
+        if (rand() > gridProb && idx > 1) return;
+        const zPal = (state.archetype === 'hybrid_all' && (idx & 1)) ? pal2 : pal;
+        const cA = zPal.all[idx % zPal.all.length];
+        const cB = zPal.all[(idx + 2) % zPal.all.length];
+
+        let tType = zoneTypes[idx % zoneTypes.length];
+        if (state.archetype === 'ref6_brick' && idx % 2 === 0) tType = 0;
+        if (state.archetype === 'ref4_blueprint' && idx % 2 === 0) tType = 1;
+        if (state.archetype === 'ref3_tartan' && idx % 2 === 0) tType = 2;
+        if (state.archetype === 'ref2_city' && idx % 2 === 0) tType = 4;
+
+        if (tType === 0) {
+          drawBrickMatrix(ctx, z.x, z.y, z.w, z.h, cA, zPal.c1, grain, rand);
+        } else if (tType === 1) {
+          drawBlueprintSchematic(ctx, z.x, z.y, z.w, z.h, zPal.white, zPal.dark, cA, grain, rand);
+        } else if (tType === 2) {
+          drawWaffleGrid(ctx, z.x, z.y, z.w, z.h, cA, zPal.dark, grain, rand);
+        } else if (tType === 3) {
+          drawCrispDitherPatch(ctx, z.x, z.y, z.w, z.h, cA, zPal.dark, grain, idx % 3, rand);
+        } else if (tType === 4) {
+          drawPunchCardBlock(ctx, z.x, z.y, z.w, z.h, cA, zPal.dark, cB, grain, rand);
+        } else {
+          drawCombTeeth(ctx, z.x, z.y, z.w, z.h, cA, zPal.dark, rand() < 0.5, 5 + Math.floor(rand() * 6), grain, rand);
+        }
+      });
+
+      // LAYER 2: STRUCTURAL BRIDGES (SKYLINE SILHOUETTES & INTERLOCKING BANDS)
+      const slashProb = state.bandsRatio / 100;
+      const bridgeCount = 1 + Math.floor(rand() * 3);
+      for (let b = 0; b < bridgeCount; b++) {
+        if (rand() > slashProb) continue;
+        const bx = snap(rand() * W * 0.55, grain);
+        const by = snap(rand() * H * 0.55, grain);
+        const bw = snap(W * (0.25 + rand() * 0.4), grain);
+        const bh = snap(H * (0.2 + rand() * 0.35), grain);
+        drawSteppedSkyline(ctx, bx, by, bw, bh, pal.dark, pal.all[b % pal.all.length], grain, rand);
+      }
+
+      // LAYER 3: NON-REPEATING HERO FORMS DECK
+      // In Hybrid Mode, pick 2 or 3 distinct Hero Forms from a shuffled deck of 9 completely different families
+      // so consecutive seeds NEVER repeat the same prominent shape!
+      const typoProb = state.glyphsRatio / 100;
+      if (rand() < typoProb) {
+        let heroDeck;
+        if (state.archetype === 'ref1_sh6') {
+          heroDeck = [0, 2, 8];
+        } else if (state.archetype === 'ref2_city') {
+          heroDeck = [4, 5, 7];
+        } else if (state.archetype === 'ref3_tartan') {
+          heroDeck = [1, 3, 8];
+        } else if (state.archetype === 'ref4_blueprint') {
+          heroDeck = [2, 5, 7];
+        } else if (state.archetype === 'ref5_slash') {
+          heroDeck = [3, 5, 8];
+        } else if (state.archetype === 'ref6_brick') {
+          heroDeck = [6, 3, 2];
+        } else if (state.archetype === 'ref7_giant_glyph') {
+          heroDeck = [2, 7, 4];
+        } else {
+          // Híbrido Mutante: shuffle all 9 hero families using seed + mutation counter offset
+          const allHeroes = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+          const shifted = shuffleArray(allHeroes, rand);
+          heroDeck = [shifted[0], shifted[1]];
+          if (rand() < 0.45) heroDeck.push(shifted[2]);
+        }
+
+        heroDeck.forEach((hId, hIdx) => {
+          const hPal = (hIdx & 1) ? pal2 : pal;
+          if (hId === 0) drawHeroSteppedArch(ctx, W, H, hPal, grain, rand);
+          else if (hId === 1) drawHeroLabyrinthMeander(ctx, W, H, hPal, grain, rand);
+          else if (hId === 2) drawHeroColossalGlyphs(ctx, W, H, hPal, grain, rand);
+          else if (hId === 3) drawHeroPolygonCuts(ctx, W, H, hPal, grain, rand);
+          else if (hId === 4) drawHeroSteppedDiamond(ctx, W, H, hPal, grain, rand);
+          else if (hId === 5) drawHeroCircuitTracks(ctx, W, H, hPal, grain, rand);
+          else if (hId === 6) drawHeroGraffBeams(ctx, W, H, hPal, grain, rand);
+          else if (hId === 7) drawHeroSteppedClouds(ctx, W, H, hPal, grain, rand);
+          else if (hId === 8) drawHeroWaveformRibbon(ctx, W, H, hPal, grain, rand);
+        });
+      }
+
+      // LAYER 4: SEAMLESS INTERLOCKING FUSION & GLITCH STICKERS
+      if (rand() < (state.fusionLevel / 100)) {
+        drawGlitchAndStickers(ctx, W, H, pal, grain, rand);
+      }
+
+      // LAYER 5: IMAGE-GUIDED LUMINANCE & EDGE MODULATION (CRISP GRAIN-SNAPPED)
+      if (state.sourceMode === 'image' && state.hasSourceImage && state.sourceLumGrid) {
+        const inf = state.imgInfluence / 100;
+        const step = Math.max(4, grain * 4);
+        ctx.fillStyle = pal.dark;
+        for (let py = 0; py < H; py += step) {
+          const sy = Math.min(63, Math.floor((py / H) * 64));
+          for (let px = 0; px < W; px += step) {
+            const sx = Math.min(63, Math.floor((px / W) * 64));
+            const lum = state.sourceLumGrid[sy * 64 + sx];
+            if (lum < 0.35 * inf && (((px / step) + (py / step)) & 1) === 0) {
+              ctx.fillRect(px, py, step, step);
+            }
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // 10. UI RENDER & BATCH EXPLORER
+    // =========================================================================
+    function updateAllViews() {
+      seedBadge.textContent = `SEED #${state.seed}`;
+      document.getElementById('active-archetype-title').textContent = `MODO: ${ARCHETYPE_NAMES[state.archetype]}`;
+      document.getElementById('canvas-res-label').textContent = `1000 × 1000 px Nativo · Grano ${state.pixelScale}px Nítido`;
+
+      if (state.viewMode === 'single') {
+        renderPatternToCanvas(mainCanvas, state.seed);
+      } else {
+        renderBatchGrid();
+      }
+    }
+
+    function renderBatchGrid() {
+      batchGrid.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        // Large prime step so each of the 9 tiles has a completely different topology and hero form
+        const itemSeed = (state.seed + i * 15485863) % 999999;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'group relative aspect-square rounded-lg overflow-hidden border border-brand-border hover:border-brand-orange cursor-pointer bg-black transition-all';
+
+        const c = document.createElement('canvas');
+        c.width = 500;
+        c.height = 500;
+        c.className = 'w-full h-full object-contain pixelated-canvas';
+        renderPatternToCanvas(c, itemSeed);
+
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded bg-black/80 text-[10px] font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity';
+        badge.innerHTML = `<span>#${itemSeed}</span><span class="text-brand-orange">Abrir ↗</span>`;
+
+        wrapper.appendChild(c);
+        wrapper.appendChild(badge);
+
+        wrapper.addEventListener('click', () => {
+          state.seed = itemSeed;
+          switchViewMode('single');
+        });
+
+        batchGrid.appendChild(wrapper);
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const btnSingle = document.getElementById('btn-mode-single');
+      const btnBatch = document.getElementById('btn-mode-batch');
+      const singleContainer = document.getElementById('view-single-container');
+      const batchContainer = document.getElementById('view-batch-container');
+
+      if (mode === 'single') {
+        btnSingle.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnBatch.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.remove('hidden');
+        batchContainer.classList.add('hidden');
+      } else {
+        btnBatch.className = 'px-3 py-1 rounded-md bg-brand-orange text-white font-medium transition-all';
+        btnSingle.className = 'px-3 py-1 rounded-md text-neutral-400 hover:text-white transition-all';
+        singleContainer.classList.add('hidden');
+        batchContainer.classList.remove('hidden');
+      }
+      updateAllViews();
+    }
+
+    function triggerRandomSeed() {
+      state.mutationCounter++;
+      // Advance seed with golden-ratio prime jump + entropy so consecutive seeds never land on the same topology
+      state.seed = (Math.floor(10000 + Math.random() * 890000) + state.mutationCounter * 2654435761) % 999999;
+      if (state.seed < 10000) state.seed += 10000;
+      updateAllViews();
+    }
+
+    // =========================================================================
+    // 11. EVENT LISTENERS
+    // =========================================================================
+    document.getElementById('btn-mode-single').addEventListener('click', () => switchViewMode('single'));
+    document.getElementById('btn-mode-batch').addEventListener('click', () => switchViewMode('batch'));
+    document.getElementById('btn-randomize').addEventListener('click', triggerRandomSeed);
+    document.getElementById('btn-regenerate-batch').addEventListener('click', triggerRandomSeed);
+    mainCanvas.addEventListener('click', triggerRandomSeed);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        triggerRandomSeed();
+      }
+    });
+
+    // Archetype selector
+    document.querySelectorAll('.arch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.arch-btn').forEach(b => {
+          b.className = 'arch-btn flex items-center justify-between p-1.5 px-2 rounded-lg border border-brand-border bg-black/40 hover:border-neutral-600 text-neutral-300 text-left';
+        });
+        btn.className = 'arch-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/15 text-white font-semibold text-left';
+        state.archetype = btn.getAttribute('data-arch');
+        triggerRandomSeed();
+      });
+    });
+
+    // Source mode buttons
+    const btnSourceRandom = document.getElementById('btn-source-random');
+    const btnSourceImage = document.getElementById('btn-source-image');
+    const imageAnalyzerBox = document.getElementById('image-analyzer-box');
+
+    btnSourceRandom.addEventListener('click', () => {
+      state.sourceMode = 'random';
+      btnSourceRandom.className = 'py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all';
+      btnSourceImage.className = 'py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      imageAnalyzerBox.classList.add('hidden');
+      updateAllViews();
+    });
+
+    btnSourceImage.addEventListener('click', () => {
+      state.sourceMode = 'image';
+      btnSourceImage.className = 'py-2 px-3 rounded-lg border border-brand-orange bg-brand-orange/10 text-white font-medium text-center transition-all';
+      btnSourceRandom.className = 'py-2 px-3 rounded-lg border border-brand-border bg-black/30 text-neutral-400 hover:text-white text-center transition-all';
+      imageAnalyzerBox.classList.remove('hidden');
+      if (!state.hasSourceImage) {
+        createDemoSyntheticImage();
+      }
+      updateAllViews();
+    });
+
+    document.getElementById('btn-demo-image').addEventListener('click', () => {
+      createDemoSyntheticImage();
+      updateAllViews();
+    });
+
+    document.getElementById('input-upload-image').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          analyzeImageComposition(img);
+          updateAllViews();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.palette-btn').forEach(b => {
+          b.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-border bg-black/30 hover:border-neutral-600 text-left';
+        });
+        btn.className = 'palette-btn flex items-center justify-between p-2 rounded-lg border border-brand-orange bg-brand-orange/10 text-left';
+        state.paletteKey = btn.getAttribute('data-palette');
+        state.paletteRotation = 0;
+        updateAllViews();
+      });
+    });
+
+    document.getElementById('btn-shuffle-palette').addEventListener('click', () => {
+      state.paletteRotation = (state.paletteRotation + 1) % 7;
+      updateAllViews();
+    });
+
+    function bindSlider(id, labelId, stateKey, suffix = '') {
+      const el = document.getElementById(id);
+      const lbl = document.getElementById(labelId);
+      el.addEventListener('input', () => {
+        state[stateKey] = parseInt(el.value, 10);
+        lbl.textContent = `${state[stateKey]}${suffix}`;
+        updateAllViews();
+      });
+    }
+
+    bindSlider('slider-fusion', 'val-fusion', 'fusionLevel', '%');
+    bindSlider('slider-complexity', 'val-complexity', 'complexity', '');
+    bindSlider('slider-pixel-scale', 'val-pixel-scale', 'pixelScale', ' px');
+    bindSlider('slider-bands', 'val-bands', 'bandsRatio', '%');
+    bindSlider('slider-dither', 'val-dither', 'ditherDensity', '%');
+    bindSlider('slider-glyphs', 'val-glyphs', 'glyphsRatio', '%');
+    bindSlider('slider-img-influence', 'label-img-influence', 'imgInfluence', '%');
+
+    const btnToggleStream = document.getElementById('btn-toggle-stream');
+    btnToggleStream.addEventListener('click', () => {
+      if (state.streamInterval) {
+        clearInterval(state.streamInterval);
+        state.streamInterval = null;
+        btnToggleStream.textContent = '▶ Iniciar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-border bg-black/50 hover:border-brand-orange font-mono text-xs text-neutral-300 transition-colors';
+      } else {
+        state.streamInterval = setInterval(triggerRandomSeed, 650);
+        btnToggleStream.textContent = '⏸ Pausar';
+        btnToggleStream.className = 'px-3 py-1.5 rounded-lg border border-brand-orange bg-brand-orange text-white font-mono text-xs font-semibold transition-colors';
+      }
+    });
+
+    // Resolution Scale Selector (1x to 6x -> 1000px to 6000px)
+    const selectExportScale = document.getElementById('select-export-scale');
+    selectExportScale.addEventListener('change', () => {
+      state.exportScale = parseInt(selectExportScale.value, 10) || 2;
+    });
+
+    document.getElementById('btn-export-png').addEventListener('click', () => {
+      const mult = parseInt(selectExportScale.value, 10) || 2;
+      const targetDim = 1000 * mult;
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = targetDim;
+      exportCanvas.height = targetDim;
+
+      renderPatternToCanvas(exportCanvas, state.seed);
+
+      const link = document.createElement('a');
+      link.download = `aisuni-pattern-${mult}x-${targetDim}px-seed-${state.seed}.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    updateAllViews();
+  </script>
+</body>
+</html>

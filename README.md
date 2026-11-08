@@ -20,5 +20,8 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni Máscaras](Aisuni-mascaras/) — genera máscaras 3D con variaciones de forma y acabado.
   - Versión: 3.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-mascaras/
+- [Aisuni-Pattern-Synth-01](Aisuni-Pattern-Synth-01/) — sintetiza texturas y patrones gráficos algorítmicos, con variaciones por semilla y exportación PNG de alta resolución.
+  - Versión: 2.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-01/
 - [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
