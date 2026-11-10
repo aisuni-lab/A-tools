@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI / RE-TRACE — Abstracción Geométrica & Re-Trazado Vectorial</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              bg: '#121212',
+              panel: '#1E1E1E',
+              card: '#252525',
+              border: '#2F2F35',
+              accent: '#245CFF',
+              muted: '#A0A0A8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #FFFFFF;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #2F2F35;
+      height: 4px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #245CFF;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    input[type="checkbox"] {
+      accent-color: #245CFF;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #141416;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #33333A;
+      border-radius: 4px;
+    }
+    .drop-highlight {
+      border-color: #245CFF !important;
+      background-color: rgba(36, 92, 255, 0.1) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-studio-accent selection:text-white">
+
+  <!-- TOP HEADER BAR -->
+  <header class="border-b border-studio-border bg-studio-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-2.5">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <h1 class="text-sm sm:text-base tracking-tight">
+          <span class="font-bold text-white uppercase">AISUNI</span>
+          <span class="text-studio-muted mx-1.5">/</span>
+          <span class="font-medium text-neutral-300 uppercase">RE-TRACE</span>
+        </h1>
+        <span class="hidden sm:inline-block font-mono text-[11px] px-2 py-0.5 rounded bg-studio-accent/15 border border-studio-accent/35 text-[#6E96FF]">
+          FLAT GEOM · VECTOR ENGINE
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Undo / Redo -->
+        <div class="flex items-center bg-studio-bg border border-studio-border rounded-lg p-0.5">
+          <button id="btn-undo" class="w-7 h-7 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-35 transition-colors flex items-center justify-center text-sm" title="Deshacer (Ctrl+Z)" disabled>
+            ↺
+          </button>
+          <button id="btn-redo" class="w-7 h-7 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-35 transition-colors flex items-center justify-center text-sm" title="Rehacer (Ctrl+Y)" disabled>
+            ↻
+          </button>
+        </div>
+
+        <!-- Progressive Trace Replay Button -->
+        <button id="btn-play-trace" class="px-3 py-1.5 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs font-medium text-white flex items-center gap-1.5 transition-colors" title="Reproducir secuencia: Foto → Contornos → Bloques → Aislamiento">
+          <span id="play-trace-icon" class="text-[#00FF66]">▶</span>
+          <span id="play-trace-label">Animar Trazo</span>
+        </button>
+
+        <!-- Primary Top Export Action -->
+        <button id="btn-header-export" class="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+          <span>↓</span>
+          <span>Exportar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-studio-panel border border-studio-accent text-xs font-mono text-white shadow-2xl"></div>
+
+  <!-- MAIN 3-COLUMN WORKSPACE -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4">
+
+    <!-- LEFT COLUMN: 01 IMAGEN, 02 SEGMENTACIÓN, 03 GEOMETRÍA Y COLOR + RANDOM -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3 custom-scroll">
+      <div class="space-y-3">
+
+        <!-- SECTION 01: IMAGEN -->
+        <section id="dropzone-panel" class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5 transition-colors">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">01</span>
+              <span>IMAGEN</span>
+            </h2>
+            <span id="img-ratio-badge" class="font-mono text-[10px] text-studio-muted">4:3</span>
+          </div>
+
+          <label for="file-upload-input" class="w-full py-2 px-3 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs font-medium text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+            <span>↑</span>
+            <span>Cargar imagen</span>
+          </label>
+          <input id="file-upload-input" type="file" accept="image/*" class="hidden">
+
+          <div class="flex items-center gap-2.5 p-2 rounded-lg bg-studio-bg border border-studio-border">
+            <canvas id="thumb-preview-canvas" width="52" height="52" class="w-11 h-11 rounded border border-white/10 bg-black object-contain flex-shrink-0"></canvas>
+            <div class="min-w-0 flex-1">
+              <p id="img-meta-name" class="text-xs font-medium text-white truncate">Demo 1 · Arquitectura.png</p>
+              <p id="img-meta-dims" class="font-mono text-[10px] text-studio-muted">1200 × 900 px</p>
+            </div>
+          </div>
+
+          <!-- Built-in Reference Demos (Auto-syncing Segmentation & Geometry/Color controls) -->
+          <div class="grid grid-cols-3 gap-1 text-[11px]">
+            <button data-preset="demo1" class="preset-btn py-1 px-1.5 rounded bg-white text-black font-semibold text-center transition-colors">
+              Demo 1
+            </button>
+            <button data-preset="demo2" class="preset-btn py-1 px-1.5 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white text-center transition-colors">
+              Demo 2
+            </button>
+            <button data-preset="demo3" class="preset-btn py-1 px-1.5 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white text-center transition-colors">
+              Demo 3
+            </button>
+          </div>
+        </section>
+
+        <!-- SECTION 02: SEGMENTACIÓN Y FORMAS -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-3">
+          <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+            <span class="font-mono text-studio-muted">02</span>
+            <span>SEGMENTACIÓN</span>
+          </h2>
+
+          <!-- Detection Mode Pills -->
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-lg bg-studio-bg border border-studio-border text-xs">
+            <button data-detect="edges" class="detect-btn py-1 rounded-md bg-studio-accent text-white font-semibold transition-all">
+              Bordes
+            </button>
+            <button data-detect="color" class="detect-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Color
+            </button>
+            <button data-detect="silhouette" class="detect-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Silueta
+            </button>
+          </div>
+
+          <!-- Density Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Densidad de formas</span>
+              <span id="val-density" class="font-mono text-white">36</span>
+            </div>
+            <input id="slider-density" type="range" min="12" max="80" step="2" value="36" class="w-full">
+          </div>
+
+          <!-- Block Size & Scale Contrast Sliders -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Tamaño bloques</span>
+                <span id="val-block-size" class="font-mono text-white">1.0×</span>
+              </div>
+              <input id="slider-block-size" type="range" min="0.5" max="2.2" step="0.1" value="1.0" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Contraste escala</span>
+                <span id="val-scale-contrast" class="font-mono text-white">55%</span>
+              </div>
+              <input id="slider-scale-contrast" type="range" min="0" max="100" step="5" value="55" class="w-full">
+            </div>
+          </div>
+
+          <!-- Geometric Diversity & Surprise Sliders -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Diversidad geom.</span>
+                <span id="val-diversity" class="font-mono text-white">50%</span>
+              </div>
+              <input id="slider-diversity" type="range" min="0" max="100" step="5" value="50" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Sorpresa</span>
+                <span id="val-surprise" class="font-mono text-white">48%</span>
+              </div>
+              <input id="slider-surprise" type="range" min="0" max="100" step="2" value="48" class="w-full">
+            </div>
+          </div>
+
+          <!-- Primitive Shape Mix Toggles -->
+          <div class="space-y-1.5">
+            <span class="block text-[11px] text-studio-muted">Primitivas activas</span>
+            <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+              <button data-shape="rect" class="shape-toggle active py-1 px-2 rounded-md border border-studio-accent bg-studio-accent/15 text-white font-medium flex items-center justify-between">
+                <span>▭ Rectángulos</span>
+                <span class="text-[10px] text-[#6E96FF]">ON</span>
+              </button>
+              <button data-shape="poly" class="shape-toggle active py-1 px-2 rounded-md border border-studio-accent bg-studio-accent/15 text-white font-medium flex items-center justify-between">
+                <span>⏢ Trapecios</span>
+                <span class="text-[10px] text-[#6E96FF]">ON</span>
+              </button>
+              <button data-shape="line" class="shape-toggle active py-1 px-2 rounded-md border border-studio-accent bg-studio-accent/15 text-white font-medium flex items-center justify-between">
+                <span>╱ Líneas</span>
+                <span class="text-[10px] text-[#6E96FF]">ON</span>
+              </button>
+              <button data-shape="dot" class="shape-toggle active py-1 px-2 rounded-md border border-studio-accent bg-studio-accent/15 text-white font-medium flex items-center justify-between">
+                <span>● Puntos</span>
+                <span class="text-[10px] text-[#6E96FF]">ON</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 03: GEOMETRÍA Y COLOR -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">03</span>
+              <span>GEOMETRÍA Y COLOR</span>
+            </h2>
+            <button id="btn-cycle-palette" class="text-[11px] text-[#6E96FF] hover:underline font-medium">
+              Paleta ↻
+            </button>
+          </div>
+
+          <!-- Render Style Mode -->
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-lg bg-studio-bg border border-studio-border text-[11px]">
+            <button data-renderstyle="mixed" class="rstyle-btn py-1 rounded-md bg-white text-black font-semibold transition-all">
+              Bloques+Trazo
+            </button>
+            <button data-renderstyle="fills_only" class="rstyle-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Solo Bloques
+            </button>
+            <button data-renderstyle="strokes_only" class="rstyle-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Solo Trazos
+            </button>
+          </div>
+
+          <!-- Palette Selector + Live Swatches -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <select id="select-palette" class="bg-studio-bg border border-studio-border rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-studio-accent">
+                <option value="pop_reel">Pop Art Reel (Neón + Primarios)</option>
+                <option value="neon_urban">Neón Urbano (Cian + Magenta)</option>
+                <option value="swiss_bauhaus">Suizo Editorial (Rojo + Azul + Ocre)</option>
+                <option value="photo_sampled">Colores Reales de la Foto</option>
+              </select>
+              <div id="active-swatches-bar" class="flex items-center gap-1"></div>
+            </div>
+          </div>
+
+          <!-- Stroke Thickness -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Grosor de línea</span>
+              <span id="val-stroke" class="font-mono text-white">3.0 px</span>
+            </div>
+            <input id="slider-stroke" type="range" min="0.5" max="12" step="0.5" value="3.0" class="w-full">
+          </div>
+
+          <!-- Reference Image Opacity -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Opacidad foto base</span>
+              <span id="val-img-opacity" class="font-mono text-white">38%</span>
+            </div>
+            <input id="slider-img-opacity" type="range" min="0" max="100" step="2" value="38" class="w-full">
+          </div>
+
+          <!-- Visibility & Isolation Checkboxes -->
+          <div class="space-y-1.5 pt-0.5 text-xs">
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Mostrar imagen</span>
+              <input id="chk-show-image" type="checkbox" checked>
+            </label>
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Fondo blanco (Aislado Reel)</span>
+              <input id="chk-white-bg" type="checkbox">
+            </label>
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Mostrar puntos / nodos</span>
+              <input id="chk-show-nodes" type="checkbox">
+            </label>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- BOTTOM RANDOMIZER & SEED BAR -->
+      <div class="p-3 rounded-xl bg-studio-panel border border-studio-border flex items-center gap-2">
+        <button id="btn-random-seed" class="flex-1 py-2 px-3 rounded-lg bg-studio-card hover:bg-studio-accent text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-studio-border transition-colors" title="Nueva mezcla aleatoria [Espacio]">
+          <span>🎲</span>
+          <span>Random</span>
+        </button>
+        <div class="flex items-center gap-1.5 bg-studio-bg border border-studio-border rounded-lg px-2.5 py-1.5">
+          <label for="input-seed" class="text-[11px] text-studio-muted">Semilla</label>
+          <input id="input-seed" type="number" min="1" max="999999" value="18" class="w-16 bg-transparent font-mono text-xs text-white text-right focus:outline-none">
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER WORKSPACE: INTERACTIVE RE-TRACE CANVAS + REEL COLLECTION STRIP -->
+    <section class="lg:col-span-6 flex flex-col space-y-3">
+      <div class="flex-1 rounded-2xl bg-studio-panel border border-studio-border flex flex-col justify-between overflow-hidden">
+
+        <!-- Stage Viewport -->
+        <div id="canvas-viewport" class="flex-1 min-h-[520px] bg-[#0D0D0F] overflow-auto custom-scroll flex items-center justify-center p-5 relative select-none">
+          <div id="canvas-frame" class="flex-shrink-0 rounded-lg overflow-hidden shadow-2xl border border-white/10 bg-[#121212] transition-colors" style="width: 560px; height: 420px;">
+            <canvas id="main-retrace-canvas" width="1200" height="900" class="w-full h-full block cursor-pointer" title="Clic para mutar geometrías · Arrastra con zoom para desplazarte"></canvas>
+          </div>
+        </div>
+
+        <!-- Bottom Status & Zoom Bar (Matching AISUNI / TRAZOS) -->
+        <div class="px-4 py-2.5 bg-studio-panel border-t border-studio-border flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div id="status-bar-text" class="font-mono text-[11px] text-studio-muted">
+            44 formas · 5 colores · Semilla #18 · Bordes
+          </div>
+
+          <div class="flex items-center gap-1 bg-studio-bg border border-studio-border rounded-lg p-0.5 font-mono text-xs">
+            <button id="btn-zoom-minus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Alejar">−</button>
+            <button id="btn-zoom-fit" class="px-2.5 h-6 rounded hover:bg-white/10 text-neutral-200 hover:text-white text-[11px]" title="Ajustar al lienzo">Ajustar</button>
+            <button id="btn-zoom-plus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Acercar">+</button>
+            <span id="zoom-pct-badge" class="px-2 text-[11px] text-[#6E96FF]">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- REEL-STYLE HORIZONTAL COLLECTION STRIP -->
+      <div class="p-3 rounded-xl bg-studio-panel border border-studio-border space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-neutral-300">
+            Colección Aislada (Tira Estilo Reel)
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="btn-add-to-strip" class="px-2.5 py-1 rounded-md bg-studio-accent hover:bg-blue-600 text-white text-[11px] font-medium transition-colors">
+              + Añadir actual a tira
+            </button>
+            <button id="btn-export-strip-svg" class="px-2 py-1 rounded-md bg-studio-card hover:bg-white/10 border border-studio-border text-[11px] text-neutral-200 font-mono transition-colors" title="Descargar tira completa en SVG">
+              SVG Tira
+            </button>
+          </div>
+        </div>
+        <div id="reel-collection-strip" class="min-h-[78px] rounded-lg bg-white p-2 flex items-center gap-3 overflow-x-auto custom-scroll border border-white/15">
+          <!-- Isolated flat-vector mini icons injected dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: OTRAS COMPOSICIONES + EXPORT -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3">
+      <!-- Variations Gallery -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5 flex-1 flex flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold text-white">Otras composiciones</h2>
+          <button id="btn-refresh-variations" class="text-[11px] text-[#6E96FF] hover:underline font-medium">
+            Nuevas ↻
+          </button>
+        </div>
+        <p class="text-[11px] text-studio-muted leading-snug">
+          Haz clic en una variación aislada para cargarla en el lienzo principal.
+        </p>
+
+        <div id="variations-grid" class="grid grid-cols-2 gap-2.5 pt-1">
+          <!-- 4 variation cards rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- Export Panel -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-3">
+        <h2 class="text-xs font-semibold uppercase tracking-wide text-white">Export</h2>
+
+        <!-- Format Pills: JPG / PNG / SVG -->
+        <div class="grid grid-cols-3 gap-1.5 text-xs font-mono">
+          <button data-fmt="jpg" class="export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all">
+            JPG
+          </button>
+          <button data-fmt="png" class="export-fmt-btn py-1.5 rounded-lg border border-studio-accent bg-studio-accent text-white font-semibold text-center transition-all">
+            PNG
+          </button>
+          <button data-fmt="svg" class="export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all">
+            SVG
+          </button>
+        </div>
+
+        <!-- Resolution Multiplier -->
+        <div class="space-y-1">
+          <label for="select-export-scale" class="block text-[11px] text-studio-muted">Resolución</label>
+          <select id="select-export-scale" class="w-full bg-studio-bg border border-studio-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-studio-accent">
+            <option value="1">1× · Original (1200 × 900 px)</option>
+            <option value="2" selected>2× · HD (2400 × 1800 px)</option>
+            <option value="4">4× · Ultra 4K (4800 × 3600 px)</option>
+          </select>
+        </div>
+
+        <!-- Geometry Only Export Toggle -->
+        <label class="flex items-center justify-between cursor-pointer text-xs text-neutral-200 pt-0.5">
+          <span>Solo geometría (sin foto)</span>
+          <input id="chk-export-geom-only" type="checkbox" checked>
+        </label>
+
+        <button id="btn-panel-export" class="w-full py-2.5 px-4 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow">
+          <span>↓</span>
+          <span id="btn-export-label">Exportar PNG</span>
+        </button>
+      </section>
+    </aside>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG & COLOR PALETTES (INSPIRED BY @JUNSEIARITA REEL)
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = (seed >>> 0) || 1;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__toastTimeout);
+      window.__toastTimeout = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    function fmt(n) {
+      return Number(n.toFixed(2));
+    }
+
+    function rgbToHex(r, g, b) {
+      const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+      return '#' + [clamp(r), clamp(g), clamp(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    const PALETTES = {
+      pop_reel: [
+        ['#00FF55', '#FFE600', '#245CFF', '#FF1E38', '#FF14B1'],
+        ['#00E664', '#FFD500', '#1849FF', '#FF2A4B', '#E60099'],
+        ['#14FF72', '#FFF01F', '#2B6BFF', '#FF1F1F', '#FF33CC']
+      ],
+      neon_urban: [
+        ['#00F5D4', '#FF006E', '#FFBE0B', '#3A86FF', '#8338EC'],
+        ['#00BBF9', '#F15BB5', '#FEE440', '#00F5D4', '#9B5DE5']
+      ],
+      swiss_bauhaus: [
+        ['#E63946', '#1D3557', '#F4A261', '#2A9D8F', '#FFB703'],
+        ['#D62828', '#003049', '#F77F00', '#FCBF49', '#219EBC']
+      ]
+    };
+
+    // =========================================================================
+    // 2. APPLICATION STATE & UNDO/REDO HISTORY
+    // =========================================================================
+    const state = {
+      seed: 18,
+      activePreset: 'demo1',
+      paletteKey: 'pop_reel',
+      paletteVariant: 0,
+      detectMode: 'edges',       // 'edges' | 'color' | 'silhouette'
+      density: 36,
+      blockSize: 1.0,
+      scaleContrast: 0.55,
+      geomDiversity: 0.50,
+      surprise: 0.48,
+      activeShapes: new Set(['rect', 'poly', 'line', 'dot']),
+      renderStyle: 'mixed',      // 'mixed' | 'fills_only' | 'strokes_only'
+      strokeWidth: 3.0,
+      imageOpacity: 0.38,
+      showImage: true,
+      whiteBg: false,
+      showNodes: false,
+      exportFormat: 'png',
+      exportScale: 2,
+      exportGeomOnly: true,
+      zoom: 1.0,
+      baseFitW: 560,
+      baseFitH: 420,
+      isPanning: false,
+      dragMoved: false,
+      panStartX: 0,
+      panStartY: 0,
+      panScrollL: 0,
+      panScrollT: 0,
+      animProgress: 1.0,         // 1.0 = full complete render; 0..1 during playback
+      isAnimating: false,
+      sourceCanvas: document.createElement('canvas'),
+      sourceWidth: 1200,
+      sourceHeight: 900,
+      sourceName: 'Demo 1 · Arquitectura.png',
+      variationSeeds: [8203, 16122, 4091, 9347],
+      collectionStrip: [
+        { seed: 18, paletteKey: 'pop_reel', paletteVariant: 0 },
+        { seed: 8203, paletteKey: 'pop_reel', paletteVariant: 1 },
+        { seed: 16122, paletteKey: 'neon_urban', paletteVariant: 0 }
+      ]
+    };
+
+    const historyStack = [];
+    const redoStack = [];
+
+    function pushHistorySnapshot() {
+      historyStack.push(JSON.stringify({
+        seed: state.seed,
+        paletteKey: state.paletteKey,
+        paletteVariant: state.paletteVariant,
+        detectMode: state.detectMode,
+        density: state.density,
+        blockSize: state.blockSize,
+        scaleContrast: state.scaleContrast,
+        geomDiversity: state.geomDiversity,
+        surprise: state.surprise,
+        activeShapes: Array.from(state.activeShapes),
+        renderStyle: state.renderStyle,
+        strokeWidth: state.strokeWidth,
+        imageOpacity: state.imageOpacity,
+        showImage: state.showImage,
+        whiteBg: state.whiteBg,
+        showNodes: state.showNodes
+      }));
+      if (historyStack.length > 30) historyStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function restoreSnapshot(snapStr) {
+      const s = JSON.parse(snapStr);
+      state.seed = s.seed;
+      state.paletteKey = s.paletteKey;
+      state.paletteVariant = s.paletteVariant;
+      state.detectMode = s.detectMode;
+      state.density = s.density;
+      state.blockSize = s.blockSize !== undefined ? s.blockSize : 1.0;
+      state.scaleContrast = s.scaleContrast !== undefined ? s.scaleContrast : 0.55;
+      state.geomDiversity = s.geomDiversity !== undefined ? s.geomDiversity : 0.50;
+      state.surprise = s.surprise;
+      state.activeShapes = new Set(s.activeShapes);
+      state.renderStyle = s.renderStyle;
+      state.strokeWidth = s.strokeWidth;
+      state.imageOpacity = s.imageOpacity;
+      state.showImage = s.showImage;
+      state.whiteBg = s.whiteBg;
+      state.showNodes = s.showNodes;
+      syncControlsFromState();
+      renderAll();
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('btn-undo').disabled = historyStack.length === 0;
+      document.getElementById('btn-redo').disabled = redoStack.length === 0;
+    }
+
+    // =========================================================================
+    // 3. BUILT-IN FULL-COLOR ARCHITECTURAL DEMOS (AUTO-SYNCING SETTINGS)
+    // =========================================================================
+    function loadBuiltInPreset(key) {
+      const sc = state.sourceCanvas;
+      const ctx = sc.getContext('2d');
+      state.activePreset = key;
+
+      if (key === 'demo2') {
+        // DEMO 2: Full-Color Multi-Story Facade -> Syncs 'Color' + 'Solo Bloques' + 'Neón Urbano'
+        sc.width = 900;
+        sc.height = 1200;
+        state.sourceName = 'Demo 2 · Fachada.png';
+
+        state.detectMode = 'color';
+        state.density = 46;
+        state.blockSize = 1.3;
+        state.scaleContrast = 0.70;
+        state.geomDiversity = 0.45;
+        state.surprise = 0.42;
+        state.renderStyle = 'fills_only';
+        state.paletteKey = 'neon_urban';
+        state.paletteVariant = 0;
+        state.strokeWidth = 2.0;
+        state.showImage = true;
+        state.imageOpacity = 0.36;
+        state.whiteBg = false;
+
+        // Vibrant twilight gradient sky
+        const sky = ctx.createLinearGradient(0, 0, 0, 1200);
+        sky.addColorStop(0, '#1D1E2C');
+        sky.addColorStop(0.55, '#3D348B');
+        sky.addColorStop(1, '#F72585');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, 900, 1200);
+
+        // Warm coral & saffron main tower + cobalt wing + turquoise storefront
+        ctx.fillStyle = '#FF595E';
+        ctx.fillRect(150, 160, 390, 1040);
+        ctx.fillStyle = '#FFCA3A';
+        ctx.fillRect(230, 80, 320, 120);
+        ctx.fillStyle = '#1982C4';
+        ctx.fillRect(540, 160, 210, 1040);
+        ctx.fillStyle = '#2EC4B6';
+        ctx.fillRect(150, 940, 600, 260);
+
+        // Colorful windows & balconies
+        for (let row = 0; row < 5; row++) {
+          const y = 240 + row * 150;
+          ctx.fillStyle = '#141124';
+          ctx.fillRect(200, y, 120, 85);
+          ctx.fillStyle = '#00BBF9';
+          ctx.fillRect(365, y, 120, 85);
+          ctx.fillStyle = '#6A4C93';
+          ctx.fillRect(575, y + 10, 130, 75);
+          ctx.fillStyle = '#FF006E';
+          ctx.fillRect(190, y + 85, 310, 16);
+        }
+      } else if (key === 'demo3') {
+        // DEMO 3: Colorful Stepped Towers -> Syncs 'Silueta' + 'Suizo Editorial' + 'Fondo blanco'
+        sc.width = 1440;
+        sc.height = 900;
+        state.sourceName = 'Demo 3 · Edificios.png';
+
+        state.detectMode = 'silhouette';
+        state.density = 42;
+        state.blockSize = 1.1;
+        state.scaleContrast = 0.65;
+        state.geomDiversity = 0.70;
+        state.surprise = 0.38;
+        state.renderStyle = 'mixed';
+        state.paletteKey = 'swiss_bauhaus';
+        state.paletteVariant = 0;
+        state.strokeWidth = 3.5;
+        state.showImage = false;
+        state.imageOpacity = 0.35;
+        state.whiteBg = true;
+
+        const sky = ctx.createLinearGradient(0, 0, 0, 900);
+        sky.addColorStop(0, '#E0F2FE');
+        sky.addColorStop(1, '#F8FAFC');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, 1440, 900);
+
+        const buildings = [
+          { x: 120,  y: 340, w: 230, h: 560, c: '#E63946' },
+          { x: 370,  y: 200, w: 270, h: 700, c: '#1D3557' },
+          { x: 660,  y: 120, w: 240, h: 780, c: '#FFB703' },
+          { x: 920,  y: 260, w: 260, h: 640, c: '#2A9D8F' },
+          { x: 1200, y: 380, w: 170, h: 520, c: '#F77F00' }
+        ];
+        buildings.forEach(b => {
+          ctx.fillStyle = b.c;
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = '#0F172A';
+          for (let wy = b.y + 35; wy < 840; wy += 58) {
+            for (let wx = b.x + 24; wx < b.x + b.w - 30; wx += 48) {
+              ctx.fillRect(wx, wy, 26, 34);
+            }
+          }
+        });
+      } else {
+        // DEMO 1 (Default): Full-Color Sunlit House -> Syncs 'Bordes' + 'Bloques+Trazo' + 'Pop Art Reel'
+        sc.width = 1200;
+        sc.height = 900;
+        state.sourceName = 'Demo 1 · Arquitectura.png';
+
+        state.detectMode = 'edges';
+        state.density = 38;
+        state.blockSize = 1.0;
+        state.scaleContrast = 0.55;
+        state.geomDiversity = 0.55;
+        state.surprise = 0.45;
+        state.renderStyle = 'mixed';
+        state.paletteKey = 'pop_reel';
+        state.paletteVariant = 0;
+        state.strokeWidth = 3.0;
+        state.showImage = true;
+        state.imageOpacity = 0.38;
+        state.whiteBg = false;
+
+        // Golden-hour colorful sky
+        const sky = ctx.createLinearGradient(0, 0, 0, 900);
+        sky.addColorStop(0, '#90E0EF');
+        sky.addColorStop(0.65, '#FFE8D6');
+        sky.addColorStop(1, '#FCD5CE');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, 1200, 900);
+
+        // Foreground street base
+        ctx.fillStyle = '#2B2D42';
+        ctx.fillRect(0, 770, 1200, 130);
+
+        // Sunlit warm terracotta left house volume
+        ctx.fillStyle = '#F4A261';
+        ctx.fillRect(210, 260, 440, 510);
+
+        // Deep cobalt right perspective wing
+        ctx.fillStyle = '#1D3557';
+        ctx.beginPath();
+        ctx.moveTo(650, 220);
+        ctx.lineTo(930, 310);
+        ctx.lineTo(930, 770);
+        ctx.lineTo(650, 770);
+        ctx.closePath();
+        ctx.fill();
+
+        // Sloped teal & crimson roof caps
+        ctx.fillStyle = '#2A9D8F';
+        ctx.beginPath();
+        ctx.moveTo(185, 260);
+        ctx.lineTo(430, 175);
+        ctx.lineTo(665, 220);
+        ctx.lineTo(650, 265);
+        ctx.lineTo(210, 265);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#E63946';
+        ctx.beginPath();
+        ctx.moveTo(650, 205);
+        ctx.lineTo(955, 300);
+        ctx.lineTo(930, 322);
+        ctx.lineTo(650, 235);
+        ctx.closePath();
+        ctx.fill();
+
+        // Colorful windows & doors
+        ctx.fillStyle = '#00BBF9';
+        ctx.fillRect(270, 330, 145, 130);
+        ctx.fillStyle = '#FF006E';
+        ctx.fillRect(465, 330, 125, 130);
+        ctx.fillStyle = '#14161F';
+        ctx.fillRect(275, 550, 110, 220);
+        ctx.fillStyle = '#FFD166';
+        ctx.fillRect(435, 555, 165, 120);
+
+        // Side perspective windows
+        ctx.fillStyle = '#00F5D4';
+        ctx.fillRect(710, 360, 75, 115);
+        ctx.fillStyle = '#FFBE0B';
+        ctx.fillRect(815, 390, 65, 105);
+        ctx.fillStyle = '#EF476F';
+        ctx.fillRect(710, 560, 95, 145);
+
+        // Balcony railing
+        ctx.strokeStyle = '#1D3557';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(245, 445, 375, 58);
+        for (let bx = 265; bx <= 605; bx += 22) {
+          ctx.beginPath();
+          ctx.moveTo(bx, 445);
+          ctx.lineTo(bx, 503);
+          ctx.stroke();
+        }
+
+        // Utility pole & power lines
+        ctx.fillStyle = '#2B2D42';
+        ctx.fillRect(1025, 90, 18, 680);
+        ctx.strokeStyle = '#1D3557';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 135);
+        ctx.quadraticCurveTo(540, 210, 1200, 155);
+        ctx.moveTo(0, 175);
+        ctx.quadraticCurveTo(560, 250, 1200, 195);
+        ctx.stroke();
+      }
+
+      syncControlsFromState();
+      onSourceChanged();
+    }
+
+    function onSourceChanged() {
+      state.sourceWidth = state.sourceCanvas.width;
+      state.sourceHeight = state.sourceCanvas.height;
+
+      // Update thumbnail
+      const thumb = document.getElementById('thumb-preview-canvas');
+      const tctx = thumb.getContext('2d');
+      tctx.fillStyle = '#000';
+      tctx.fillRect(0, 0, 52, 52);
+      const scale = Math.min(52 / state.sourceWidth, 52 / state.sourceHeight);
+      const dw = state.sourceWidth * scale;
+      const dh = state.sourceHeight * scale;
+      tctx.drawImage(state.sourceCanvas, (52 - dw) * 0.5, (52 - dh) * 0.5, dw, dh);
+
+      const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+      const g = gcd(state.sourceWidth, state.sourceHeight);
+      const rw = Math.round(state.sourceWidth / g);
+      const rh = Math.round(state.sourceHeight / g);
+      document.getElementById('img-ratio-badge').textContent = (rw <= 25 && rh <= 25) ? `${rw}:${rh}` : (state.sourceWidth / state.sourceHeight).toFixed(2);
+      document.getElementById('img-meta-name').textContent = state.sourceName;
+      document.getElementById('img-meta-dims').textContent = `${state.sourceWidth} × ${state.sourceHeight} px`;
+
+      updateExportResLabels();
+      fitCanvasToViewport();
+      renderAll();
+    }
+
+    function updateExportResLabels() {
+      const sel = document.getElementById('select-export-scale');
+      const w = state.sourceWidth;
+      const h = state.sourceHeight;
+      sel.options[0].text = `1× · Original (${w} × ${h} px)`;
+      sel.options[1].text = `2× · HD (${w * 2} × ${h * 2} px)`;
+      sel.options[2].text = `4× · Ultra 4K (${w * 4} × ${h * 4} px)`;
+    }
+
+    // =========================================================================
+    // 4. IMAGE ANALYSIS & PLANAR GEOMETRIC RE-TRACE ENGINE
+    // =========================================================================
+    function analyzeSourceImage(cols, rows) {
+      const tmp = document.createElement('canvas');
+      tmp.width = cols;
+      tmp.height = rows;
+      const ctx = tmp.getContext('2d');
+      ctx.drawImage(state.sourceCanvas, 0, 0, cols, rows);
+      const data = ctx.getImageData(0, 0, cols, rows).data;
+
+      const grid = Array.from({ length: rows }, () => new Array(cols));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const idx = (r * cols + c) * 4;
+          const R = data[idx], G = data[idx + 1], B = data[idx + 2];
+          const lum = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+          grid[r][c] = { r: R, g: G, b: B, lum, edge: 0, gx: 0, gy: 0 };
+        }
+      }
+
+      // Compute Sobel-like edge magnitude and dominant edge angle
+      for (let r = 1; r < rows - 1; r++) {
+        for (let c = 1; c < cols - 1; c++) {
+          const gx = (grid[r][c + 1].lum - grid[r][c - 1].lum);
+          const gy = (grid[r + 1][c].lum - grid[r - 1][c].lum);
+          grid[r][c].gx = gx;
+          grid[r][c].gy = gy;
+          grid[r][c].edge = Math.min(1, Math.hypot(gx, gy) * 2.4);
+        }
+      }
+      return grid;
+    }
+
+    function getActiveInkColors(paletteKey, variantIdx) {
+      if (paletteKey === 'photo_sampled') {
+        // Sample 5 distinct high-contrast hues directly from the source image
+        const grid = analyzeSourceImage(12, 12);
+        const samples = [];
+        for (let r = 1; r < 11; r += 2) {
+          for (let c = 1; c < 11; c += 2) {
+            samples.push(grid[r][c]);
+          }
+        }
+        samples.sort((a, b) => a.lum - b.lum);
+        const picks = [0, 5, 12, 18, 23].map(i => samples[Math.min(samples.length - 1, i)]);
+        return picks.map(p => rgbToHex(p.r, p.g, p.b));
+      }
+      const list = PALETTES[paletteKey] || PALETTES.pop_reel;
+      return list[variantIdx % list.length];
+    }
+
+    function updateSwatchesPreview() {
+      const bar = document.getElementById('active-swatches-bar');
+      const colors = getActiveInkColors(state.paletteKey, state.paletteVariant);
+      bar.innerHTML = colors.map(c =>
+        `<span class="w-3.5 h-3.5 rounded-sm border border-white/25 inline-block" style="background:${c}"></span>`
+      ).join('');
+    }
+
+    // Generates deterministic, resolution-independent normalized shapes (0..1 space)
+    function buildGeometricTracePlan(seedVal, overridePalKey = null, overridePalVar = null) {
+      const rand = createPRNG(seedVal);
+      const ar = state.sourceWidth / state.sourceHeight;
+      const cols = Math.max(14, Math.min(48, Math.round(state.density * 0.72)));
+      const rows = Math.max(10, Math.round(cols / ar));
+      const grid = analyzeSourceImage(cols, rows);
+
+      const palKey = overridePalKey || state.paletteKey;
+      const palVar = overridePalVar !== null ? overridePalVar : state.paletteVariant;
+      const colors = getActiveInkColors(palKey, palVar);
+
+      // Estimate background luminance from corners for 'silhouette' mode
+      const bgLum = (grid[0][0].lum + grid[0][cols - 1].lum + grid[rows - 1][0].lum + grid[rows - 1][cols - 1].lum) * 0.25;
+
+      const occupied = Array.from({ length: rows }, () => new Uint8Array(cols));
+      const shapes = []; // { kind: 'rect'|'poly'|'line'|'dot', pts, x, y, w, h, r, color, strokeColor, hasFill, hasStroke, stageOrder }
+
+      const shapePool = Array.from(state.activeShapes);
+      if (shapePool.length === 0) shapePool.push('rect');
+
+      const surprise = state.surprise;
+      const blockSizeMult = state.blockSize;
+      const scaleContrast = state.scaleContrast;
+      const diversity = state.geomDiversity;
+      const targetBlocks = Math.round(state.density * 1.15);
+
+      // Candidate cells sorted by detection mode priority
+      const candidates = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = grid[r][c];
+          const bgDiff = Math.abs(cell.lum - bgLum);
+          let score = rand() * 0.35;
+          if (state.detectMode === 'edges') {
+            score += cell.edge * 0.85 + bgDiff * 0.25;
+          } else if (state.detectMode === 'color') {
+            const chroma = (Math.max(cell.r, cell.g, cell.b) - Math.min(cell.r, cell.g, cell.b)) / 255;
+            score += chroma * 0.75 + bgDiff * 0.45;
+          } else {
+            // silhouette
+            score += bgDiff * 1.15;
+          }
+          candidates.push({ r, c, score, cell });
+        }
+      }
+      candidates.sort((a, b) => b.score - a.score);
+
+      const cw = 1 / cols;
+      const ch = 1 / rows;
+
+      // 1. Place flat architectural blocks & perspective polygons
+      for (let i = 0; i < candidates.length && shapes.length < targetBlocks; i++) {
+        const { r, c, cell } = candidates[i];
+        if (occupied[r][c]) continue;
+
+        const bgDiff = Math.abs(cell.lum - bgLum);
+        if (state.detectMode === 'silhouette' && bgDiff < 0.14 && rand() > 0.15) continue;
+
+        // Determine block span based on Tamaño bloques, Contraste de escala & Diversidad geométrica
+        const contrastRoll = rand();
+        const isMacroHero = contrastRoll < (0.18 + scaleContrast * 0.42);
+        const spanBoost = isMacroHero
+          ? (1.6 + scaleContrast * 2.8) * blockSizeMult
+          : Math.max(0.5, (1.0 - scaleContrast * 0.45) * blockSizeMult);
+        const aspectSkew = 1 + (rand() - 0.5) * 1.4 * diversity;
+        const maxSpanW = Math.max(1, Math.min(cols - c, Math.round((1 + rand() * (2.6 + surprise * 2.0)) * spanBoost * aspectSkew)));
+        const maxSpanH = Math.max(1, Math.min(rows - r, Math.round((1 + rand() * (2.6 + surprise * 2.0)) * spanBoost / Math.max(0.55, aspectSkew))));
+
+        let spanW = 1, spanH = 1;
+        for (let sw = maxSpanW; sw >= 1; sw--) {
+          let ok = true;
+          for (let cc = c; cc < c + sw; cc++) {
+            if (occupied[r][cc]) { ok = false; break; }
+          }
+          if (ok) { spanW = sw; break; }
+        }
+        for (let sh = maxSpanH; sh >= 1; sh--) {
+          let ok = true;
+          for (let rr = r; rr < r + sh; rr++) {
+            for (let cc = c; cc < c + spanW; cc++) {
+              if (occupied[rr][cc]) { ok = false; break; }
+            }
+            if (!ok) break;
+          }
+          if (ok) { spanH = sh; break; }
+        }
+
+        for (let rr = r; rr < r + spanH; rr++) {
+          for (let cc = c; cc < c + spanW; cc++) {
+            occupied[rr][cc] = 1;
+          }
+        }
+
+        const jitterX = (rand() - 0.5) * cw * (0.35 * surprise + 0.25 * diversity);
+        const jitterY = (rand() - 0.5) * ch * (0.35 * surprise + 0.25 * diversity);
+        const x = Math.max(0.01, Math.min(0.96, c * cw + jitterX));
+        const y = Math.max(0.01, Math.min(0.96, r * ch + jitterY));
+        const microScale = (0.78 + rand() * (0.25 + 0.35 * scaleContrast));
+        const w = Math.min(0.98 - x, spanW * cw * microScale);
+        const h = Math.min(0.98 - y, spanH * ch * microScale);
+
+        const fillCol = palKey === 'photo_sampled'
+          ? rgbToHex(cell.r, cell.g, cell.b)
+          : colors[Math.floor(rand() * colors.length)];
+        const strokeCol = colors[(Math.floor(rand() * (colors.length - 1)) + 1) % colors.length];
+
+        // Choose primitive from active shape toggles
+        const blockKinds = shapePool.filter(k => k === 'rect' || k === 'poly');
+        const chosenKind = blockKinds.length > 0
+          ? blockKinds[Math.floor(rand() * blockKinds.length)]
+          : (shapePool.includes('line') ? 'line' : 'dot');
+
+        if (chosenKind === 'poly') {
+          // Perspective trapezoid / sloped roof polygon driven by Diversidad geométrica
+          const perspAmp = 0.14 + diversity * 0.42 + surprise * 0.18;
+          const skewY = (cell.gx !== 0 ? Math.sign(cell.gx) : (rand() < 0.5 ? 1 : -1)) * h * (0.15 + rand() * perspAmp);
+          const skewX = (rand() - 0.5) * w * (0.12 + diversity * 0.45);
+          const modeRoll = rand();
+          let pts;
+          if (modeRoll < 0.35) {
+            // Sloped roof / perspective side wall trapezoid
+            pts = [
+              [x, y + Math.max(0, skewY)],
+              [x + w, y + Math.max(0, -skewY)],
+              [Math.min(0.99, Math.max(0.01, x + w + skewX)), y + h],
+              [x, y + h]
+            ];
+          } else if (modeRoll < 0.70) {
+            // Bottom-angled architectural plane
+            pts = [
+              [x, y],
+              [x + w, y],
+              [x + w, Math.min(0.99, y + h + Math.max(0, -skewY))],
+              [Math.min(0.99, Math.max(0.01, x + skewX)), Math.min(0.99, y + h + Math.max(0, skewY))]
+            ];
+          } else {
+            // Symmetrical perspective frustum / facade taper
+            const inset = w * (0.12 + rand() * 0.25 * diversity);
+            pts = rand() < 0.5
+              ? [[x + inset, y], [x + w - inset, y], [x + w, y + h], [x, y + h]]
+              : [[x, y], [x + w, y], [x + w - inset, y + h], [x + inset, y + h]];
+          }
+          shapes.push({
+            kind: 'poly',
+            pts,
+            color: fillCol,
+            strokeColor: strokeCol,
+            stageOrder: rand()
+          });
+        } else if (chosenKind === 'rect') {
+          shapes.push({
+            kind: 'rect',
+            x, y, w, h,
+            color: fillCol,
+            strokeColor: strokeCol,
+            stageOrder: rand()
+          });
+        }
+      }
+
+      // 2. Add crisp structural edge lines (write-on contour strokes from Reel)
+      if (shapePool.includes('line')) {
+        const lineCount = Math.max(6, Math.round(state.density * 0.42));
+        for (let i = 0; i < lineCount && i < candidates.length; i++) {
+          const { r, c, cell } = candidates[i];
+          const x0 = (c + 0.5) * cw;
+          const y0 = (r + 0.5) * ch;
+          const spanLen = (0.06 + rand() * (0.14 + surprise * 0.14)) * (0.75 + blockSizeMult * 0.35);
+          let angle;
+          if (rand() < diversity * 0.55) {
+            // Rotated 45° / 30° / 60° architectural diagonal vectors
+            const diagAngles = [-Math.PI / 4, Math.PI / 4, -Math.PI / 6, Math.PI / 6, (3 * Math.PI) / 4];
+            angle = diagAngles[Math.floor(rand() * diagAngles.length)] + (rand() - 0.5) * 0.18 * surprise;
+          } else {
+            const isHoriz = Math.abs(cell.gy) >= Math.abs(cell.gx);
+            angle = (isHoriz ? 0 : Math.PI * 0.5) + (rand() - 0.5) * 0.35 * diversity;
+          }
+          const x1 = Math.min(0.97, Math.max(0.03, x0 + Math.cos(angle) * spanLen));
+          const y1 = Math.min(0.97, Math.max(0.03, y0 + Math.sin(angle) * spanLen));
+          const strokeCol = colors[Math.floor(rand() * colors.length)];
+
+          shapes.push({
+            kind: 'line',
+            pts: [[x0, y0], [x1, y1]],
+            color: strokeCol,
+            strokeColor: strokeCol,
+            stageOrder: rand() * 0.5
+          });
+        }
+      }
+
+      // 3. Add accent micro-circles / dots
+      if (shapePool.includes('dot')) {
+        const dotCount = Math.max(4, Math.round(state.density * 0.25));
+        for (let i = 0; i < dotCount; i++) {
+          const idx = Math.floor(rand() * Math.min(candidates.length, Math.max(8, targetBlocks)));
+          const { r, c } = candidates[idx];
+          const cx = Math.max(0.03, Math.min(0.97, (c + 0.5) * cw + (rand() - 0.5) * cw * 1.4));
+          const cy = Math.max(0.03, Math.min(0.97, (r + 0.5) * ch + (rand() - 0.5) * ch * 1.4));
+          const rad = 0.006 + rand() * (0.011 + surprise * 0.008);
+          const col = colors[Math.floor(rand() * colors.length)];
+          shapes.push({
+            kind: 'dot',
+            x: cx,
+            y: cy,
+            r: rad,
+            color: col,
+            strokeColor: col,
+            stageOrder: 0.5 + rand() * 0.5
+          });
+        }
+      }
+
+      return { shapes, colors };
+    }
+
+    // =========================================================================
+    // 5. CANVAS 2D & PURE SVG RENDERING
+    // =========================================================================
+    function renderTraceOntoCanvas(targetCanvas, seedVal, options = {}) {
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+      const minDim = Math.min(W, H);
+
+      const isolatedWhite = options.isolatedWhite !== undefined ? options.isolatedWhite : state.whiteBg;
+      const includePhoto = options.includePhoto !== undefined ? options.includePhoto : state.showImage;
+      const progress = options.progress !== undefined ? options.progress : state.animProgress;
+
+      // Progressive animation curve (0..1):
+      // 0.00..0.25: Reference photo fades in
+      // 0.20..0.60: Structural contour lines draw on
+      // 0.50..0.85: Flat color blocks pop in
+      // 0.85..1.00: Photo settles to user opacity (or fades out if isolated)
+      let photoAlpha = includePhoto ? state.imageOpacity : 0;
+      let lineReveal = 1;
+      let blockReveal = 1;
+
+      if (progress < 1.0) {
+        if (progress < 0.25) {
+          photoAlpha = Math.min(0.92, (progress / 0.25) * 0.92);
+          lineReveal = 0;
+          blockReveal = 0;
+        } else if (progress < 0.55) {
+          photoAlpha = 0.85;
+          lineReveal = (progress - 0.25) / 0.30;
+          blockReveal = 0;
+        } else if (progress < 0.85) {
+          photoAlpha = 0.85 - ((progress - 0.55) / 0.30) * 0.45;
+          lineReveal = 1;
+          blockReveal = (progress - 0.55) / 0.30;
+        } else {
+          const t = (progress - 0.85) / 0.15;
+          const targetPhoto = includePhoto ? state.imageOpacity : 0;
+          photoAlpha = 0.40 * (1 - t) + targetPhoto * t;
+          lineReveal = 1;
+          blockReveal = 1;
+        }
+      }
+
+      // Background surface
+      ctx.save();
+      ctx.fillStyle = isolatedWhite ? '#FFFFFF' : '#121212';
+      ctx.fillRect(0, 0, W, H);
+
+      // Optional Reference Photo Layer
+      if (photoAlpha > 0.005) {
+        ctx.save();
+        ctx.globalAlpha = photoAlpha;
+        ctx.drawImage(state.sourceCanvas, 0, 0, W, H);
+        ctx.restore();
+      }
+
+      const plan = buildGeometricTracePlan(seedVal, options.paletteKey || null, options.paletteVariant !== undefined ? options.paletteVariant : null);
+      const sw = Math.max(0.75, state.strokeWidth * (minDim / 900));
+      ctx.lineWidth = sw;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      const drawFills = state.renderStyle !== 'strokes_only';
+      const drawStrokes = state.renderStyle !== 'fills_only';
+
+      // Pass A: Flat Geometric Blocks (Rects & Perspective Polygons)
+      for (let i = 0; i < plan.shapes.length; i++) {
+        const sh = plan.shapes[i];
+        if (sh.kind !== 'rect' && sh.kind !== 'poly') continue;
+        if (sh.stageOrder > blockReveal && state.renderStyle !== 'strokes_only') continue;
+        if (sh.stageOrder > lineReveal && state.renderStyle === 'strokes_only') continue;
+
+        ctx.beginPath();
+        if (sh.kind === 'rect') {
+          ctx.rect(sh.x * W, sh.y * H, sh.w * W, sh.h * H);
+        } else {
+          ctx.moveTo(sh.pts[0][0] * W, sh.pts[0][1] * H);
+          for (let p = 1; p < sh.pts.length; p++) {
+            ctx.lineTo(sh.pts[p][0] * W, sh.pts[p][1] * H);
+          }
+          ctx.closePath();
+        }
+
+        if (drawFills) {
+          ctx.fillStyle = sh.color;
+          ctx.fill();
+        }
+        if (drawStrokes) {
+          ctx.strokeStyle = sh.strokeColor;
+          ctx.stroke();
+        }
+      }
+
+      // Pass B: Crisp Structural Contour Lines
+      for (let i = 0; i < plan.shapes.length; i++) {
+        const sh = plan.shapes[i];
+        if (sh.kind !== 'line') continue;
+        if (sh.stageOrder * 2 > lineReveal) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(sh.pts[0][0] * W, sh.pts[0][1] * H);
+        ctx.lineTo(sh.pts[1][0] * W, sh.pts[1][1] * H);
+        ctx.strokeStyle = sh.strokeColor;
+        ctx.stroke();
+      }
+
+      // Pass C: Accent Dots / Circles
+      for (let i = 0; i < plan.shapes.length; i++) {
+        const sh = plan.shapes[i];
+        if (sh.kind !== 'dot') continue;
+        if (sh.stageOrder > blockReveal) continue;
+
+        ctx.beginPath();
+        ctx.arc(sh.x * W, sh.y * H, sh.r * minDim, 0, Math.PI * 2);
+        ctx.fillStyle = sh.color;
+        ctx.fill();
+      }
+
+      // Optional Vector Anchor Nodes Overlay
+      if (state.showNodes && !options.hideNodes) {
+        const nodeR = Math.max(2.5, minDim * 0.004);
+        for (let i = 0; i < plan.shapes.length; i++) {
+          const sh = plan.shapes[i];
+          const verts = sh.kind === 'rect'
+            ? [[sh.x, sh.y], [sh.x + sh.w, sh.y], [sh.x + sh.w, sh.y + sh.h], [sh.x, sh.y + sh.h]]
+            : (sh.pts || []);
+          for (const [vx, vy] of verts) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#245CFF';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(vx * W, vy * H, nodeR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.restore();
+      return plan.shapes.length;
+    }
+
+    function generateCleanSvgString(seedVal, overridePalKey = null, overridePalVar = null, forceWhiteBg = null) {
+      const W = state.sourceWidth;
+      const H = state.sourceHeight;
+      const minDim = Math.min(W, H);
+      const sw = fmt(Math.max(0.75, state.strokeWidth * (minDim / 900)));
+      const useWhite = forceWhiteBg !== null ? forceWhiteBg : state.whiteBg;
+      const plan = buildGeometricTracePlan(seedVal, overridePalKey, overridePalVar);
+
+      const drawFills = state.renderStyle !== 'strokes_only';
+      const drawStrokes = state.renderStyle !== 'fills_only';
+
+      const lines = [
+        `<?xml version="1.0" encoding="UTF-8"?>`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`,
+        `  <!-- Generated by AISUNI / RE-TRACE · Seed #${seedVal} -->`
+      ];
+
+      if (!state.exportGeomOnly || useWhite) {
+        lines.push(`  <rect x="0" y="0" width="${W}" height="${H}" fill="${useWhite ? '#FFFFFF' : '#121212'}"/>`);
+      }
+
+      lines.push(`  <g id="retrace-blocks" stroke-linejoin="round" stroke-linecap="round">`);
+      for (const sh of plan.shapes) {
+        if (sh.kind === 'rect') {
+          const fillAttr = drawFills ? sh.color : 'none';
+          const strokeAttr = drawStrokes ? ` stroke="${sh.strokeColor}" stroke-width="${sw}"` : '';
+          lines.push(`    <rect x="${fmt(sh.x * W)}" y="${fmt(sh.y * H)}" width="${fmt(sh.w * W)}" height="${fmt(sh.h * H)}" fill="${fillAttr}"${strokeAttr}/>`);
+        } else if (sh.kind === 'poly') {
+          const ptsStr = sh.pts.map(p => `${fmt(p[0] * W)},${fmt(p[1] * H)}`).join(' ');
+          const fillAttr = drawFills ? sh.color : 'none';
+          const strokeAttr = drawStrokes ? ` stroke="${sh.strokeColor}" stroke-width="${sw}"` : '';
+          lines.push(`    <polygon points="${ptsStr}" fill="${fillAttr}"${strokeAttr}/>`);
+        }
+      }
+      lines.push(`  </g>`);
+
+      lines.push(`  <g id="retrace-lines" stroke-linecap="round">`);
+      for (const sh of plan.shapes) {
+        if (sh.kind === 'line') {
+          lines.push(`    <line x1="${fmt(sh.pts[0][0] * W)}" y1="${fmt(sh.pts[0][1] * H)}" x2="${fmt(sh.pts[1][0] * W)}" y2="${fmt(sh.pts[1][1] * H)}" stroke="${sh.strokeColor}" stroke-width="${sw}"/>`);
+        }
+      }
+      lines.push(`  </g>`);
+
+      lines.push(`  <g id="retrace-dots">`);
+      for (const sh of plan.shapes) {
+        if (sh.kind === 'dot') {
+          lines.push(`    <circle cx="${fmt(sh.x * W)}" cy="${fmt(sh.y * H)}" r="${fmt(sh.r * minDim)}" fill="${sh.color}"/>`);
+        }
+      }
+      lines.push(`  </g>`);
+      lines.push(`</svg>`);
+      return lines.join('\n');
+    }
+
+    // =========================================================================
+    // 6. SIDEBAR VARIATIONS, REEL STRIP & ZOOM CONTROLLER
+    // =========================================================================
+    function renderVariationsSidebar() {
+      const grid = document.getElementById('variations-grid');
+      grid.innerHTML = '';
+      const ar = state.sourceWidth / state.sourceHeight;
+      const vW = ar >= 1 ? 260 : Math.max(140, Math.round(260 * ar));
+      const vH = ar >= 1 ? Math.max(140, Math.round(260 / ar)) : 260;
+
+      state.variationSeeds.forEach((vSeed, idx) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'group rounded-xl overflow-hidden border border-studio-border hover:border-studio-accent bg-white p-1.5 flex flex-col items-center transition-all text-left';
+
+        const c = document.createElement('canvas');
+        c.width = vW;
+        c.height = vH;
+        c.className = 'w-full rounded-md object-contain bg-white';
+        renderTraceOntoCanvas(c, vSeed, {
+          isolatedWhite: true,
+          includePhoto: false,
+          progress: 1.0,
+          hideNodes: true,
+          paletteVariant: idx
+        });
+
+        const footer = document.createElement('div');
+        footer.className = 'w-full flex items-center justify-between pt-1.5 px-1 font-mono text-[10px] text-neutral-700';
+        footer.innerHTML = `<span>Var ${idx + 1}</span><span class="text-studio-accent font-semibold">#${vSeed}</span>`;
+
+        card.appendChild(c);
+        card.appendChild(footer);
+        card.addEventListener('click', () => {
+          pushHistorySnapshot();
+          state.seed = vSeed;
+          state.paletteVariant = idx;
+          document.getElementById('input-seed').value = vSeed;
+          renderAll();
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    function renderCollectionStrip() {
+      const strip = document.getElementById('reel-collection-strip');
+      strip.innerHTML = '';
+      const ar = state.sourceWidth / state.sourceHeight;
+      const itemH = 62;
+      const itemW = Math.max(46, Math.round(itemH * ar));
+
+      state.collectionStrip.forEach((entry, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'relative group flex-shrink-0 rounded-md border border-neutral-200 bg-white p-1 cursor-pointer hover:border-studio-accent transition-all';
+        wrap.title = `Cargar ícono #${entry.seed}`;
+
+        const c = document.createElement('canvas');
+        c.width = itemW * 2;
+        c.height = itemH * 2;
+        c.style.width = `${itemW}px`;
+        c.style.height = `${itemH}px`;
+        renderTraceOntoCanvas(c, entry.seed, {
+          isolatedWhite: true,
+          includePhoto: false,
+          progress: 1.0,
+          hideNodes: true,
+          paletteKey: entry.paletteKey,
+          paletteVariant: entry.paletteVariant
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '×';
+        delBtn.className = 'absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-black text-white text-[10px] leading-none hidden group-hover:flex items-center justify-center';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (state.collectionStrip.length > 1) {
+            state.collectionStrip.splice(idx, 1);
+            renderCollectionStrip();
+          }
+        });
+
+        wrap.addEventListener('click', () => {
+          pushHistorySnapshot();
+          state.seed = entry.seed;
+          state.paletteKey = entry.paletteKey;
+          state.paletteVariant = entry.paletteVariant;
+          syncControlsFromState();
+          renderAll();
+        });
+
+        wrap.appendChild(c);
+        wrap.appendChild(delBtn);
+        strip.appendChild(wrap);
+      });
+    }
+
+    function fitCanvasToViewport() {
+      const vp = document.getElementById('canvas-viewport');
+      const availW = Math.max(280, (vp.clientWidth || 680) - 44);
+      const availH = Math.max(300, (vp.clientHeight || 520) - 44);
+      const ar = state.sourceWidth / state.sourceHeight;
+      let w = availW;
+      let h = w / ar;
+      if (h > availH) {
+        h = availH;
+        w = h * ar;
+      }
+      state.baseFitW = Math.round(w);
+      state.baseFitH = Math.round(h);
+      applyViewportZoom();
+    }
+
+    function applyViewportZoom() {
+      const vp = document.getElementById('canvas-viewport');
+      const frame = document.getElementById('canvas-frame');
+      const canvas = document.getElementById('main-retrace-canvas');
+      const targetW = Math.round(state.baseFitW * state.zoom);
+      const targetH = Math.round(state.baseFitH * state.zoom);
+
+      frame.style.width = `${targetW}px`;
+      frame.style.height = `${targetH}px`;
+      frame.style.backgroundColor = state.whiteBg ? '#FFFFFF' : '#121212';
+
+      if (targetW > vp.clientWidth - 36 || targetH > vp.clientHeight - 36) {
+        vp.classList.remove('items-center', 'justify-center');
+        vp.classList.add('items-start', 'justify-start');
+        canvas.style.cursor = state.isPanning ? 'grabbing' : 'grab';
+      } else {
+        vp.classList.remove('items-start', 'justify-start');
+        vp.classList.add('items-center', 'justify-center');
+        canvas.style.cursor = 'pointer';
+      }
+
+      document.getElementById('zoom-pct-badge').textContent = `${Math.round(state.zoom * 100)}%`;
+
+      const ar = state.sourceWidth / state.sourceHeight;
+      const longest = Math.max(1200, Math.min(4800, Math.round(Math.max(targetW, targetH) * 1.6)));
+      const cW = ar >= 1 ? longest : Math.round(longest * ar);
+      const cH = ar >= 1 ? Math.round(longest / ar) : longest;
+      if (canvas.width !== cW || canvas.height !== cH) {
+        canvas.width = cW;
+        canvas.height = cH;
+      }
+      renderMainCanvas();
+    }
+
+    function renderMainCanvas() {
+      const mainCanvas = document.getElementById('main-retrace-canvas');
+      const count = renderTraceOntoCanvas(mainCanvas, state.seed);
+      const detectLabel = state.detectMode === 'edges' ? 'Bordes' : state.detectMode === 'color' ? 'Color' : 'Silueta';
+      const inkCount = getActiveInkColors(state.paletteKey, state.paletteVariant).length;
+      document.getElementById('status-bar-text').textContent =
+        `${count} formas · ${inkCount} colores · Semilla #${state.seed} · ${detectLabel}`;
+    }
+
+    function renderAll() {
+      updateSwatchesPreview();
+      renderMainCanvas();
+      renderVariationsSidebar();
+      renderCollectionStrip();
+    }
+
+    function syncControlsFromState() {
+      document.getElementById('input-seed').value = state.seed;
+      document.getElementById('slider-density').value = state.density;
+      document.getElementById('val-density').textContent = state.density;
+      document.getElementById('slider-block-size').value = state.blockSize;
+      document.getElementById('val-block-size').textContent = `${state.blockSize.toFixed(1)}×`;
+      document.getElementById('slider-scale-contrast').value = Math.round(state.scaleContrast * 100);
+      document.getElementById('val-scale-contrast').textContent = `${Math.round(state.scaleContrast * 100)}%`;
+      document.getElementById('slider-diversity').value = Math.round(state.geomDiversity * 100);
+      document.getElementById('val-diversity').textContent = `${Math.round(state.geomDiversity * 100)}%`;
+      document.getElementById('slider-surprise').value = Math.round(state.surprise * 100);
+      document.getElementById('val-surprise').textContent = `${Math.round(state.surprise * 100)}%`;
+      document.getElementById('slider-stroke').value = state.strokeWidth;
+      document.getElementById('val-stroke').textContent = `${state.strokeWidth.toFixed(1)} px`;
+      document.getElementById('slider-img-opacity').value = Math.round(state.imageOpacity * 100);
+      document.getElementById('val-img-opacity').textContent = `${Math.round(state.imageOpacity * 100)}%`;
+      document.getElementById('chk-show-image').checked = state.showImage;
+      document.getElementById('chk-white-bg').checked = state.whiteBg;
+      document.getElementById('chk-show-nodes').checked = state.showNodes;
+      document.getElementById('select-palette').value = state.paletteKey;
+      document.getElementById('canvas-frame').style.backgroundColor = state.whiteBg ? '#FFFFFF' : '#121212';
+
+      document.querySelectorAll('.detect-btn').forEach(b => {
+        const active = b.getAttribute('data-detect') === state.detectMode;
+        b.className = active
+          ? 'detect-btn py-1 rounded-md bg-studio-accent text-white font-semibold transition-all'
+          : 'detect-btn py-1 rounded-md text-studio-muted hover:text-white transition-all';
+      });
+
+      document.querySelectorAll('.rstyle-btn').forEach(b => {
+        const active = b.getAttribute('data-renderstyle') === state.renderStyle;
+        b.className = active
+          ? 'rstyle-btn py-1 rounded-md bg-white text-black font-semibold transition-all'
+          : 'rstyle-btn py-1 rounded-md text-studio-muted hover:text-white transition-all';
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        const active = b.getAttribute('data-preset') === state.activePreset;
+        b.className = active
+          ? 'preset-btn py-1 px-1.5 rounded bg-white text-black font-semibold text-center transition-colors'
+          : 'preset-btn py-1 px-1.5 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white text-center transition-colors';
+      });
+    }
+
+    // =========================================================================
+    // 7. PROGRESSIVE TRACE ANIMATION PLAYBACK (LIKE THE INSTAGRAM REEL)
+    // =========================================================================
+    function playTraceAnimation() {
+      if (state.isAnimating) return;
+      state.isAnimating = true;
+      state.animProgress = 0;
+      document.getElementById('play-trace-icon').textContent = '◼';
+      document.getElementById('play-trace-label').textContent = 'Trazando...';
+
+      const duration = 2200;
+      const start = performance.now();
+
+      function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        state.animProgress = t;
+        renderMainCanvas();
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          state.isAnimating = false;
+          state.animProgress = 1.0;
+          document.getElementById('play-trace-icon').textContent = '▶';
+          document.getElementById('play-trace-label').textContent = 'Animar Trazo';
+          renderMainCanvas();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // =========================================================================
+    // 8. EVENT HANDLERS & EXPORTERS (JPG, PNG, SVG)
+    // =========================================================================
+    function randomizeSeed() {
+      pushHistorySnapshot();
+      state.seed = Math.floor(10 + Math.random() * 99980);
+      state.paletteVariant = (state.paletteVariant + 1) % 3;
+      document.getElementById('input-seed').value = state.seed;
+      renderAll();
+    }
+
+    document.getElementById('btn-random-seed').addEventListener('click', randomizeSeed);
+    document.getElementById('input-seed').addEventListener('change', (e) => {
+      pushHistorySnapshot();
+      state.seed = Math.max(1, parseInt(e.target.value, 10) || 18);
+      renderAll();
+    });
+
+    document.getElementById('btn-undo').addEventListener('click', () => {
+      if (historyStack.length === 0) return;
+      redoStack.push(JSON.stringify({
+        seed: state.seed,
+        paletteKey: state.paletteKey,
+        paletteVariant: state.paletteVariant,
+        detectMode: state.detectMode,
+        density: state.density,
+        surprise: state.surprise,
+        activeShapes: Array.from(state.activeShapes),
+        renderStyle: state.renderStyle,
+        strokeWidth: state.strokeWidth,
+        imageOpacity: state.imageOpacity,
+        showImage: state.showImage,
+        whiteBg: state.whiteBg,
+        showNodes: state.showNodes
+      }));
+      restoreSnapshot(historyStack.pop());
+      updateHistoryButtons();
+    });
+
+    document.getElementById('btn-redo').addEventListener('click', () => {
+      if (redoStack.length === 0) return;
+      historyStack.push(JSON.stringify({
+        seed: state.seed,
+        paletteKey: state.paletteKey,
+        paletteVariant: state.paletteVariant,
+        detectMode: state.detectMode,
+        density: state.density,
+        surprise: state.surprise,
+        activeShapes: Array.from(state.activeShapes),
+        renderStyle: state.renderStyle,
+        strokeWidth: state.strokeWidth,
+        imageOpacity: state.imageOpacity,
+        showImage: state.showImage,
+        whiteBg: state.whiteBg,
+        showNodes: state.showNodes
+      }));
+      restoreSnapshot(redoStack.pop());
+      updateHistoryButtons();
+    });
+
+    document.getElementById('btn-play-trace').addEventListener('click', playTraceAnimation);
+
+    // File Upload & Drag/Drop
+    function handleUploadedFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showToast('Sube un archivo de imagen válido (PNG, JPG o WebP).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.sourceCanvas.width = img.naturalWidth || img.width;
+          state.sourceCanvas.height = img.naturalHeight || img.height;
+          const ctx = state.sourceCanvas.getContext('2d');
+          ctx.clearRect(0, 0, state.sourceCanvas.width, state.sourceCanvas.height);
+          ctx.drawImage(img, 0, 0);
+          state.sourceName = file.name;
+          onSourceChanged();
+          showToast(`Imagen cargada: ${file.name}`);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('file-upload-input').addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleUploadedFile(e.target.files[0]);
+    });
+
+    const dropPanel = document.getElementById('dropzone-panel');
+    ['dragenter', 'dragover'].forEach(evName => {
+      dropPanel.addEventListener(evName, (e) => {
+        e.preventDefault();
+        dropPanel.classList.add('drop-highlight');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evName => {
+      dropPanel.addEventListener(evName, (e) => {
+        e.preventDefault();
+        dropPanel.classList.remove('drop-highlight');
+      });
+    });
+    dropPanel.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleUploadedFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // Presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => {
+          b.className = 'preset-btn py-1 px-1.5 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white text-center transition-colors';
+        });
+        btn.className = 'preset-btn py-1 px-1.5 rounded bg-white text-black font-semibold text-center transition-colors';
+        loadBuiltInPreset(btn.getAttribute('data-preset'));
+      });
+    });
+
+    // Detection Mode
+    document.querySelectorAll('.detect-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pushHistorySnapshot();
+        state.detectMode = btn.getAttribute('data-detect');
+        syncControlsFromState();
+        renderAll();
+      });
+    });
+
+    // Sliders
+    document.getElementById('slider-density').addEventListener('input', (e) => {
+      state.density = parseInt(e.target.value, 10);
+      document.getElementById('val-density').textContent = state.density;
+      renderAll();
+    });
+
+    document.getElementById('slider-block-size').addEventListener('input', (e) => {
+      state.blockSize = parseFloat(e.target.value);
+      document.getElementById('val-block-size').textContent = `${state.blockSize.toFixed(1)}×`;
+      renderAll();
+    });
+
+    document.getElementById('slider-scale-contrast').addEventListener('input', (e) => {
+      state.scaleContrast = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-scale-contrast').textContent = `${e.target.value}%`;
+      renderAll();
+    });
+
+    document.getElementById('slider-diversity').addEventListener('input', (e) => {
+      state.geomDiversity = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-diversity').textContent = `${e.target.value}%`;
+      renderAll();
+    });
+
+    document.getElementById('slider-surprise').addEventListener('input', (e) => {
+      state.surprise = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-surprise').textContent = `${e.target.value}%`;
+      renderAll();
+    });
+
+    document.getElementById('slider-stroke').addEventListener('input', (e) => {
+      state.strokeWidth = parseFloat(e.target.value);
+      document.getElementById('val-stroke').textContent = `${state.strokeWidth.toFixed(1)} px`;
+      renderAll();
+    });
+
+    document.getElementById('slider-img-opacity').addEventListener('input', (e) => {
+      state.imageOpacity = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-img-opacity').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+
+    // Primitive Shape Toggles
+    document.querySelectorAll('.shape-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-shape');
+        if (state.activeShapes.has(key)) {
+          if (state.activeShapes.size <= 1) {
+            showToast('Mantén al menos 1 tipo de forma activa.');
+            return;
+          }
+          state.activeShapes.delete(key);
+          btn.className = 'shape-toggle py-1 px-2 rounded-md border border-studio-border bg-studio-bg text-studio-muted font-medium flex items-center justify-between';
+          btn.querySelector('span:last-child').textContent = 'OFF';
+          btn.querySelector('span:last-child').className = 'text-[10px] text-studio-muted';
+        } else {
+          state.activeShapes.add(key);
+          btn.className = 'shape-toggle active py-1 px-2 rounded-md border border-studio-accent bg-studio-accent/15 text-white font-medium flex items-center justify-between';
+          btn.querySelector('span:last-child').textContent = 'ON';
+          btn.querySelector('span:last-child').className = 'text-[10px] text-[#6E96FF]';
+        }
+        renderAll();
+      });
+    });
+
+    // Render Style
+    document.querySelectorAll('.rstyle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pushHistorySnapshot();
+        state.renderStyle = btn.getAttribute('data-renderstyle');
+        syncControlsFromState();
+        renderAll();
+      });
+    });
+
+    // Palette
+    document.getElementById('select-palette').addEventListener('change', (e) => {
+      pushHistorySnapshot();
+      state.paletteKey = e.target.value;
+      state.paletteVariant = 0;
+      renderAll();
+    });
+
+    document.getElementById('btn-cycle-palette').addEventListener('click', () => {
+      pushHistorySnapshot();
+      state.paletteVariant = (state.paletteVariant + 1) % 3;
+      renderAll();
+    });
+
+    // Checkboxes
+    document.getElementById('chk-show-image').addEventListener('change', (e) => {
+      state.showImage = e.target.checked;
+      renderMainCanvas();
+    });
+
+    document.getElementById('chk-white-bg').addEventListener('change', (e) => {
+      state.whiteBg = e.target.checked;
+      document.getElementById('canvas-frame').style.backgroundColor = state.whiteBg ? '#FFFFFF' : '#121212';
+      renderMainCanvas();
+    });
+
+    document.getElementById('chk-show-nodes').addEventListener('change', (e) => {
+      state.showNodes = e.target.checked;
+      renderMainCanvas();
+    });
+
+    // Zoom & Pan Controls
+    document.getElementById('btn-zoom-plus').addEventListener('click', () => {
+      state.zoom = Math.min(5.0, state.zoom + 0.25);
+      applyViewportZoom();
+    });
+    document.getElementById('btn-zoom-minus').addEventListener('click', () => {
+      state.zoom = Math.max(1.0, state.zoom - 0.25);
+      applyViewportZoom();
+    });
+    document.getElementById('btn-zoom-fit').addEventListener('click', () => {
+      state.zoom = 1.0;
+      applyViewportZoom();
+    });
+
+    const viewport = document.getElementById('canvas-viewport');
+    const mainCanvasEl = document.getElementById('main-retrace-canvas');
+
+    mainCanvasEl.addEventListener('mousedown', (e) => {
+      state.isPanning = true;
+      state.dragMoved = false;
+      state.panStartX = e.clientX;
+      state.panStartY = e.clientY;
+      state.panScrollL = viewport.scrollLeft;
+      state.panScrollT = viewport.scrollTop;
+      if (state.zoom > 1.01) mainCanvasEl.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!state.isPanning) return;
+      const dx = e.clientX - state.panStartX;
+      const dy = e.clientY - state.panStartY;
+      if (Math.hypot(dx, dy) > 4) state.dragMoved = true;
+      if (state.zoom > 1.01) {
+        viewport.scrollLeft = state.panScrollL - dx;
+        viewport.scrollTop = state.panScrollT - dy;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!state.isPanning) return;
+      const wasClick = !state.dragMoved;
+      state.isPanning = false;
+      mainCanvasEl.style.cursor = state.zoom > 1.01 ? 'grab' : 'pointer';
+      if (wasClick) randomizeSeed();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        randomizeSeed();
+      }
+    });
+
+    window.addEventListener('resize', fitCanvasToViewport);
+
+    // Variations & Reel Collection Strip
+    document.getElementById('btn-refresh-variations').addEventListener('click', () => {
+      state.variationSeeds = Array.from({ length: 4 }, () => Math.floor(100 + Math.random() * 98000));
+      renderVariationsSidebar();
+    });
+
+    document.getElementById('btn-add-to-strip').addEventListener('click', () => {
+      state.collectionStrip.push({
+        seed: state.seed,
+        paletteKey: state.paletteKey,
+        paletteVariant: state.paletteVariant
+      });
+      if (state.collectionStrip.length > 10) state.collectionStrip.shift();
+      renderCollectionStrip();
+      showToast(`Semilla #${state.seed} añadida a la tira de colección`);
+    });
+
+    document.getElementById('btn-export-strip-svg').addEventListener('click', () => {
+      const itemW = 320;
+      const itemH = Math.round(itemW / (state.sourceWidth / state.sourceHeight));
+      const pad = 24;
+      const totalW = state.collectionStrip.length * (itemW + pad) + pad;
+      const totalH = itemH + pad * 2;
+
+      const parts = [
+        `<?xml version="1.0" encoding="UTF-8"?>`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}">`,
+        `  <rect x="0" y="0" width="${totalW}" height="${totalH}" fill="#FFFFFF"/>`
+      ];
+
+      state.collectionStrip.forEach((entry, idx) => {
+        const innerSvg = generateCleanSvgString(entry.seed, entry.paletteKey, entry.paletteVariant, true)
+          .replace(/<\?xml[\s\S]*?<svg[^>]*>/, '')
+          .replace(/<\/svg>/, '');
+        const scale = itemW / state.sourceWidth;
+        const tx = pad + idx * (itemW + pad);
+        parts.push(`  <g transform="translate(${tx}, ${pad}) scale(${scale.toFixed(4)})">${innerSvg}</g>`);
+      });
+
+      parts.push(`</svg>`);
+      const blob = new Blob([parts.join('\n')], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `aisuni-retrace-coleccion-${state.collectionStrip.length}-items.svg`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Tira de colección exportada en SVG');
+    });
+
+    // Export Format & Download
+    document.querySelectorAll('.export-fmt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.export-fmt-btn').forEach(b => {
+          b.className = 'export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all';
+        });
+        btn.className = 'export-fmt-btn py-1.5 rounded-lg border border-studio-accent bg-studio-accent text-white font-semibold text-center transition-all';
+        state.exportFormat = btn.getAttribute('data-fmt');
+        document.getElementById('btn-export-label').textContent = `Exportar ${state.exportFormat.toUpperCase()}`;
+      });
+    });
+
+    document.getElementById('select-export-scale').addEventListener('change', (e) => {
+      state.exportScale = parseInt(e.target.value, 10) || 2;
+    });
+
+    document.getElementById('chk-export-geom-only').addEventListener('change', (e) => {
+      state.exportGeomOnly = e.target.checked;
+    });
+
+    function triggerDownloadExport() {
+      const fmtType = state.exportFormat;
+      if (fmtType === 'svg') {
+        const svgStr = generateCleanSvgString(state.seed);
+        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `aisuni-retrace-seed-${state.seed}.svg`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Exportado SVG vectorial (Semilla #${state.seed})`);
+        return;
+      }
+
+      const scale = state.exportScale;
+      const outW = state.sourceWidth * scale;
+      const outH = state.sourceHeight * scale;
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = outW;
+      expCanvas.height = outH;
+
+      const isJpg = fmtType === 'jpg';
+      renderTraceOntoCanvas(expCanvas, state.seed, {
+        isolatedWhite: isJpg ? true : state.whiteBg,
+        includePhoto: !state.exportGeomOnly && state.showImage,
+        progress: 1.0,
+        hideNodes: true
+      });
+
+      const dataUrl = isJpg
+        ? expCanvas.toDataURL('image/jpeg', 0.94)
+        : expCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.download = `aisuni-retrace-${outW}x${outH}-seed-${state.seed}.${fmtType}`;
+      a.href = dataUrl;
+      a.click();
+      showToast(`Exportado ${fmtType.toUpperCase()} (${outW} × ${outH} px)`);
+    }
+
+    document.getElementById('btn-panel-export').addEventListener('click', triggerDownloadExport);
+    document.getElementById('btn-header-export').addEventListener('click', triggerDownloadExport);
+
+    // Boot Application
+    loadBuiltInPreset('demo1');
+  </script>
+</body>
+</html>
