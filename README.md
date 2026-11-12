@@ -45,3 +45,6 @@ Herramientas generativas de AISUNI. Exploraciones con código.
 - [Aisuni-Re-Trace-Geometrica](Aisuni-Re-Trace-Geometrica/) — reinterpreta imágenes como composiciones geométricas generativas y exporta resultados en PNG, JPG o SVG.
   - Versión: 1.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Re-Trace-Geometrica/
+- [Aisuni-Type-Trace](Aisuni-Type-Trace/) — transforma imágenes en composiciones tipográficas geométricas generativas y exporta PNG, JPG o SVG.
+  - Versión: 1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Trace/
