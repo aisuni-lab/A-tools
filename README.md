@@ -2,49 +2,49 @@
 
 Herramientas generativas de AISUNI. Exploraciones con código.
 
-- [Aisuni Image Lab](Aisuni-image-lab/) — generative collage made with custom images within multiple grids.
-  - Versión: 2.3
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-image-lab/
-- [Aisuni Blend Lab](Aisuni-blend-lab/) — combina imágenes en composiciones visuales y explora variaciones con capas editables.
-  - Versión: 1.1.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-blend-lab/
-- [Aisuni Collage](Aisuni-collage/) — fragmenta imágenes y PDF y reorganiza las piezas para crear collages.
-  - Versión: 1.1
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-collage/
-- [Aisuni-Combinus](Aisuni-Combinus/) — fragmenta imágenes y combina el collage con efectos reordenables.
-  - Versión: 1.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Combinus/
-- [Aisuni-Mix](Aisuni-Mix/) — recombina fragmentos específicos para crear composiciones gráficas.
-  - Formato de proyectos: v1
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Mix/
-- [Aisuni Máscaras](Aisuni-mascaras/) — genera máscaras 3D con variaciones de forma y acabado.
-  - Versión: 3.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-mascaras/
-- [Aisuni-Image-Synth](Aisuni-Image-Synth/) — reinterpreta imágenes con patrones generativos y exporta resultados en PNG de alta resolución o SVG editable.
-  - Versión: 2.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Image-Synth/
-- [Aisuni-Pattern-Synth-01](Aisuni-Pattern-Synth-01/) — sintetiza texturas y patrones gráficos algorítmicos, con variaciones por semilla y exportación PNG de alta resolución.
-  - Versión: 2.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-01/
-- [Aisuni-Pattern-Synth-02](Aisuni-Pattern-Synth-02/) — sintetiza texturas de píxeles fusionados mediante dithering, matrices Bayer y módulos geométricos.
-  - Versión: 1.2
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-02/
-- [Aisuni-Type-Synth](Aisuni-Type-Synth/) — convierte palabras y glifos en composiciones tipográficas cinéticas; exporta PNG y SVG.
-  - Versión: 6.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Synth/
-- [Aisuni-Symbol](Aisuni-Symbol/) — genera variaciones del símbolo AISUNI ajustando proporciones geométricas y color, con exportación SVG y PNG.
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Symbol/
-- [AISUNI Glyph Synth](AISUNI-Glyph-Synth/) — combina 12 símbolos AISUNI en composiciones generativas con variaciones cromáticas, mitosis animada y exportación PNG y WebM.
-  - Versión: 1.6
-  - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glyph-Synth/
-- [Aisuni-glyph-image-synth](Aisuni-glyph-image-synth/) — reinterpreta imágenes con una retícula adaptativa de glifos AISUNI y exporta composiciones como PNG, JPG o SVG.
-  - Versión: 1.6
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-glyph-image-synth/
-- [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
-- [Aisuni-Re-Trace-Geometrica](Aisuni-Re-Trace-Geometrica/) — reinterpreta imágenes como composiciones geométricas generativas y exporta resultados en PNG, JPG o SVG.
-  - Versión: 1.0
-  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Re-Trace-Geometrica/
 - [Aisuni-Type-Trace](Aisuni-Type-Trace/) — transforma imágenes en composiciones tipográficas geométricas generativas y exporta PNG, JPG o SVG.
   - Versión: 1.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Trace/
+- [Aisuni-Re-Trace-Geometrica](Aisuni-Re-Trace-Geometrica/) — reinterpreta imágenes como composiciones geométricas generativas y exporta resultados en PNG, JPG o SVG.
+  - Versión: 1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Re-Trace-Geometrica/
+- [Aisuni-glyph-image-synth](Aisuni-glyph-image-synth/) — reinterpreta imágenes con una retícula adaptativa de glifos AISUNI y exporta composiciones como PNG, JPG o SVG.
+  - Versión: 1.6
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-glyph-image-synth/
+- [AISUNI Glyph Synth](AISUNI-Glyph-Synth/) — combina 12 símbolos AISUNI en composiciones generativas con variaciones cromáticas, mitosis animada y exportación PNG y WebM.
+  - Versión: 1.6
+  - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glyph-Synth/
+- [Aisuni-Symbol](Aisuni-Symbol/) — genera variaciones del símbolo AISUNI ajustando proporciones geométricas y color, con exportación SVG y PNG.
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Symbol/
+- [Aisuni-Type-Synth](Aisuni-Type-Synth/) — convierte palabras y glifos en composiciones tipográficas cinéticas; exporta PNG y SVG.
+  - Versión: 6.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Synth/
+- [Aisuni-Image-Synth](Aisuni-Image-Synth/) — reinterpreta imágenes con patrones generativos y exporta resultados en PNG de alta resolución o SVG editable.
+  - Versión: 2.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Image-Synth/
+- [Aisuni-Pattern-Synth-02](Aisuni-Pattern-Synth-02/) — sintetiza texturas de píxeles fusionados mediante dithering, matrices Bayer y módulos geométricos.
+  - Versión: 1.2
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-02/
+- [Aisuni-Pattern-Synth-01](Aisuni-Pattern-Synth-01/) — sintetiza texturas y patrones gráficos algorítmicos, con variaciones por semilla y exportación PNG de alta resolución.
+  - Versión: 2.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Pattern-Synth-01/
+- [Aisuni-Trazos](Aisuni-Trazos/) — genera trazos vectoriales a partir de bordes, contrastes, colores o la silueta principal de una imagen.
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Trazos/
+- [Aisuni Máscaras](Aisuni-mascaras/) — genera máscaras 3D con variaciones de forma y acabado.
+  - Versión: 3.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-mascaras/
+- [Aisuni-Mix](Aisuni-Mix/) — recombina fragmentos específicos para crear composiciones gráficas.
+  - Formato de proyectos: v1
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Mix/
+- [Aisuni-Combinus](Aisuni-Combinus/) — fragmenta imágenes y combina el collage con efectos reordenables.
+  - Versión: 1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Combinus/
+- [Aisuni Collage](Aisuni-collage/) — fragmenta imágenes y PDF y reorganiza las piezas para crear collages.
+  - Versión: 1.1
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-collage/
+- [Aisuni Blend Lab](Aisuni-blend-lab/) — combina imágenes en composiciones visuales y explora variaciones con capas editables.
+  - Versión: 1.1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-blend-lab/
+- [Aisuni Image Lab](Aisuni-image-lab/) — generative collage made with custom images within multiple grids.
+  - Versión: 2.3
+  - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-image-lab/
