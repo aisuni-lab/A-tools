@@ -2,6 +2,9 @@
 
 Herramientas generativas de AISUNI. Exploraciones con código.
 
+- [AISUNI / GLITCH-CODE](AISUNI-Glitch-Code/) — transforma imágenes y archivos SVG mediante databending binario, corrupción de código y efectos algorítmicos; exporta PNG, JPG o SVG.
+  - Versión: 1.0
+  - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glitch-Code/
 - [Aisuni-Type-Trace](Aisuni-Type-Trace/) — transforma imágenes en composiciones tipográficas geométricas generativas y exporta PNG, JPG o SVG.
   - Versión: 1.0
   - Probar: https://aisuni-lab.github.io/A-tools/Aisuni-Type-Trace/

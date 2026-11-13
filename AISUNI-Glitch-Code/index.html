@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI / GLITCH-CODE — Databending Binario & Corrupción de Código</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              bg: '#121212',
+              panel: '#1E1E1E',
+              card: '#252525',
+              border: '#2F2F35',
+              accent: '#245CFF',
+              neon: '#00FF66',
+              muted: '#A0A0A8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #FFFFFF;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #2F2F35;
+      height: 4px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #245CFF;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    input[type="range"].master-slider::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: #00FF66;
+      border: 2px solid #121212;
+    }
+    input[type="checkbox"] {
+      accent-color: #245CFF;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #141416;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #33333A;
+      border-radius: 4px;
+    }
+    .drop-highlight {
+      border-color: #00FF66 !important;
+      background-color: rgba(0, 255, 102, 0.08) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-studio-accent selection:text-white">
+
+  <!-- TOP HEADER BAR -->
+  <header class="border-b border-studio-border bg-studio-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-2.5">
+    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <h1 class="text-sm sm:text-base tracking-tight">
+          <span class="font-bold text-white uppercase">AISUNI</span>
+          <span class="text-studio-muted mx-1.5">/</span>
+          <span class="font-medium text-neutral-300 uppercase">GLITCH-CODE</span>
+        </h1>
+        <span id="format-engine-badge" class="hidden sm:inline-block font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/35 text-[#00FF66]">
+          BINARY HEX · DATABEND ENGINE
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Undo / Redo -->
+        <div class="flex items-center bg-studio-bg border border-studio-border rounded-lg p-0.5">
+          <button id="btn-undo" class="w-7 h-7 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-35 transition-colors flex items-center justify-center text-sm" title="Deshacer" disabled>
+            ↺
+          </button>
+          <button id="btn-redo" class="w-7 h-7 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-35 transition-colors flex items-center justify-center text-sm" title="Rehacer" disabled>
+            ↻
+          </button>
+        </div>
+
+        <!-- Quick Destruction Presets -->
+        <div class="flex items-center bg-studio-bg border border-studio-border rounded-lg p-0.5 font-mono text-[11px]">
+          <button data-level="18" class="quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-white transition-colors">Bajo</button>
+          <button data-level="48" class="quick-lvl-btn px-2.5 py-1 rounded bg-studio-accent text-white font-semibold transition-colors">Medio</button>
+          <button data-level="96" class="quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-[#00FF66] transition-colors">Total</button>
+        </div>
+
+        <!-- Primary Top Export Action -->
+        <button id="btn-header-export" class="px-3.5 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+          <span>↓</span>
+          <span>Exportar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-studio-panel border border-[#00FF66] text-xs font-mono text-white shadow-2xl"></div>
+
+  <!-- MAIN 3-COLUMN WORKSPACE -->
+  <main class="flex-1 max-w-[1640px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4">
+
+    <!-- LEFT COLUMN: 01 IMAGEN, 02 CORRUPCIÓN DE CÓDIGO, 03 SUPER GLITCH + RANDOM -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3 custom-scroll">
+      <div class="space-y-3">
+
+        <!-- SECTION 01: IMAGEN (PNG, JPG, WebP, GIF, SVG) -->
+        <section id="dropzone-panel" class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5 transition-colors">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">01</span>
+              <span>IMAGEN / CÓDIGO FUENTE</span>
+            </h2>
+            <span id="img-ratio-badge" class="font-mono text-[10px] text-studio-muted">4:3</span>
+          </div>
+
+          <label for="file-upload-input" class="w-full py-2 px-3 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs font-medium text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+            <span>↑</span>
+            <span>Cargar imagen (PNG / JPG / WebP / SVG)</span>
+          </label>
+          <input id="file-upload-input" type="file" accept="image/*,.svg" class="hidden">
+
+          <div class="flex items-center gap-2.5 p-2 rounded-lg bg-studio-bg border border-studio-border">
+            <canvas id="thumb-preview-canvas" width="52" height="52" class="w-11 h-11 rounded border border-white/10 bg-black object-contain flex-shrink-0"></canvas>
+            <div class="min-w-0 flex-1">
+              <p id="img-meta-name" class="text-xs font-medium text-white truncate">Demo · Retrato Claroscuro.jpg</p>
+              <p id="img-meta-dims" class="font-mono text-[10px] text-studio-muted">1200 × 900 px · JPEG Stream</p>
+            </div>
+            <button id="btn-load-demo" type="button" class="px-2.5 py-1 rounded bg-white text-black hover:bg-neutral-200 text-[11px] font-semibold transition-colors flex-shrink-0">
+              Demo
+            </button>
+          </div>
+        </section>
+
+        <!-- SECTION 02: CORRUPCIÓN DE CÓDIGO (MASTER DESTRUCTION SLIDER + BYTE CONTROLS) -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">02</span>
+              <span>CORRUPCIÓN DE CÓDIGO</span>
+            </h2>
+            <span id="stage-tier-badge" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-studio-accent/20 text-[#6E96FF] font-semibold">
+              MEDIO · FRAGMENTOS
+            </span>
+          </div>
+
+          <!-- MASTER DESTRUCTION SLIDER: Bajo (0-30%) -> Medio (31-70%) -> Total (71-100%) -->
+          <div class="p-2.5 rounded-lg bg-studio-bg border border-studio-border space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-white">Nivel de Distorsión</span>
+              <span id="val-master-glitch" class="font-mono text-[#00FF66] font-bold">48%</span>
+            </div>
+            <input id="slider-master-glitch" type="range" min="0" max="100" step="1" value="48" class="w-full master-slider">
+            <div class="flex justify-between font-mono text-[9px] text-studio-muted pt-0.5">
+              <span>0% Original</span>
+              <span>Bajo</span>
+              <span>Medio</span>
+              <span class="text-[#00FF66]">100% Total</span>
+            </div>
+          </div>
+
+          <!-- EFFECT SCALE / ZOOM SLIDER: Magnifies distortion artifacts while keeping source image unzoomed -->
+          <div class="p-2.5 rounded-lg bg-studio-bg border border-studio-border space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-white" title="Amplía el tamaño y grosor de los artefactos de código sin hacer zoom sobre la imagen cargada">Escala / Zoom de Efectos</span>
+              <span id="val-effect-scale" class="font-mono text-[#6E96FF] font-bold">100%</span>
+            </div>
+            <input id="slider-effect-scale" type="range" min="50" max="500" step="5" value="100" class="w-full">
+            <div class="flex justify-between font-mono text-[9px] text-studio-muted pt-0.5">
+              <span>50% Fino</span>
+              <span>100% Base</span>
+              <span>250% Amplio</span>
+              <span>500% Macro</span>
+            </div>
+          </div>
+
+          <!-- RANDOM SOURCE IMAGE PRESENCE SLIDER: Randomly reveals source image fragments mixed with all distortions -->
+          <div class="p-2.5 rounded-lg bg-studio-bg border border-studio-border space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-white" title="Controla aleatoriamente cuánto aparece la imagen cargada entremezclada con las distorsiones activas">Presencia Imagen Origen</span>
+              <span id="val-source-mix" class="font-mono text-amber-300 font-bold">35%</span>
+            </div>
+            <input id="slider-source-mix" type="range" min="0" max="100" step="1" value="35" class="w-full">
+            <div class="flex justify-between font-mono text-[9px] text-studio-muted pt-0.5">
+              <span>0% Oculta</span>
+              <span>35% Mezcla</span>
+              <span>70% Alta</span>
+              <span>100% Visible</span>
+            </div>
+          </div>
+
+          <!-- Byte Corruption & Hex Injection -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Corrupción Bytes</span>
+                <span id="val-byte-corrupt" class="font-mono text-white">52%</span>
+              </div>
+              <input id="slider-byte-corrupt" type="range" min="0" max="100" step="2" value="52" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Inyección Hex</span>
+                <span id="val-hex-inject" class="font-mono text-white">40%</span>
+              </div>
+              <input id="slider-hex-inject" type="range" min="0" max="100" step="2" value="40" class="w-full">
+            </div>
+          </div>
+
+          <!-- Macroblock Tearing & Scanline Shift -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Fractura Bloques</span>
+                <span id="val-block-tear" class="font-mono text-white">45%</span>
+              </div>
+              <input id="slider-block-tear" type="range" min="0" max="100" step="2" value="45" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Desfase Scanlines</span>
+                <span id="val-scan-shift" class="font-mono text-white">50%</span>
+              </div>
+              <input id="slider-scan-shift" type="range" min="0" max="100" step="2" value="50" class="w-full">
+            </div>
+          </div>
+
+          <!-- Bit-Flip Entropy -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Bit-Flip Entropía (Huffman / Vector)</span>
+              <span id="val-bit-flip" class="font-mono text-white">36%</span>
+            </div>
+            <input id="slider-bit-flip" type="range" min="0" max="100" step="2" value="36" class="w-full">
+          </div>
+        </section>
+
+        <!-- SECTION 03: SUPER GLITCH & CHROMATIC DESYNC -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">03</span>
+              <span>SUPER GLITCH</span>
+            </h2>
+            <span class="font-mono text-[10px] text-studio-muted">YCbCr / RGB</span>
+          </div>
+
+          <!-- Algorithmic Code Interpretation Mode -->
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-lg bg-studio-bg border border-studio-border text-[11px]">
+            <button data-gmode="jpeg_stream" class="gmode-btn py-1 rounded-md bg-white text-black font-semibold transition-all" title="Combina databending binario con 6 kernels algorítmicos (Pixel Sort, Ondas, Bayer Dither, Halftone, XOR)">
+              Ciber-Tapiz
+            </button>
+            <button data-gmode="hex_splice" class="gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all" title="Prioriza deformación de ondas senoidales, zigzags y pixel sorting direccional">
+              Ondas / Sort
+            </button>
+            <button data-gmode="collapse" class="gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all" title="Colapso extremo en micro-tramas Bayer 1-bit, matrices halftone y cenefas binarias">
+              Micro-Trama
+            </button>
+          </div>
+
+          <!-- RGB / YUV Channel Desync -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Desfase Cromático RGB / YUV</span>
+              <span id="val-rgb-desync" class="font-mono text-white">44%</span>
+            </div>
+            <input id="slider-rgb-desync" type="range" min="0" max="100" step="2" value="44" class="w-full">
+          </div>
+
+          <!-- Cross-Quadrant Unstructured Pixel Sort & Random Pixel Jump Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300" title="Salta píxeles al azar y aplica pixel sorting en 8 direcciones (izquierda, derecha, arriba, abajo y diagonal) entre cuadrantes sin estructura">Salto / Pixel Sort Cruzado</span>
+              <span id="val-grid-fusion" class="font-mono text-[#00FF66]">44%</span>
+            </div>
+            <input id="slider-grid-fusion" type="range" min="0" max="100" step="2" value="44" class="w-full">
+            <div class="flex justify-between font-mono text-[9px] text-studio-muted pt-0.5">
+              <span>0% Celdas</span>
+              <span>45% Cruzado</span>
+              <span>100% Disperso</span>
+            </div>
+          </div>
+
+          <!-- Header Protection & Freeze Toggles -->
+          <div class="space-y-1.5 pt-0.5 text-xs">
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Proteger cabecera de archivo</span>
+              <input id="chk-protect-header" type="checkbox" checked>
+            </label>
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Forzar colapso neón extremo</span>
+              <input id="chk-neon-entropy" type="checkbox">
+            </label>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- BOTTOM RANDOMIZER & SEED BAR -->
+      <div class="p-3 rounded-xl bg-studio-panel border border-studio-border flex items-center gap-2">
+        <button id="btn-random-seed" class="flex-1 py-2 px-3 rounded-lg bg-studio-accent hover:bg-blue-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow" title="Mutar bytes y código al azar">
+          <span>🎲</span>
+          <span>Corromper Random</span>
+        </button>
+        <div class="flex items-center gap-1.5 bg-studio-bg border border-studio-border rounded-lg px-2.5 py-1.5">
+          <label for="input-seed" class="text-[11px] text-studio-muted">Semilla</label>
+          <input id="input-seed" type="number" min="1" max="999999" value="404" class="w-16 bg-transparent font-mono text-xs text-white text-right focus:outline-none">
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER WORKSPACE: LIVE CORRUPTED BUFFER PREVIEW + ZOOM BAR -->
+    <section class="lg:col-span-6 flex flex-col space-y-3">
+      <div class="flex-1 rounded-2xl bg-studio-panel border border-studio-border flex flex-col justify-between overflow-hidden">
+
+        <!-- Stage Viewport -->
+        <div id="canvas-viewport" class="flex-1 min-h-[540px] bg-[#0B0C0E] overflow-auto custom-scroll flex items-center justify-center p-5 relative select-none">
+          <div id="canvas-frame" class="flex-shrink-0 rounded-lg overflow-hidden shadow-2xl border border-white/15 bg-black transition-all" style="width: 560px; height: 420px;">
+            <canvas id="main-glitch-canvas" width="1200" height="900" class="w-full h-full block cursor-pointer" title="Clic para mutar código · Arrastra con zoom para inspeccionar artefactos"></canvas>
+          </div>
+        </div>
+
+        <!-- Bottom Status & Zoom Bar -->
+        <div class="px-4 py-2.5 bg-studio-panel border-t border-studio-border flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div id="status-bar-text" class="font-mono text-[11px] text-studio-muted">
+            BUFFER: 142.8 KB · 618 bytes corrompidos · Semilla #404
+          </div>
+
+          <div class="flex items-center gap-1 bg-studio-bg border border-studio-border rounded-lg p-0.5 font-mono text-xs">
+            <button id="btn-zoom-minus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Alejar">−</button>
+            <button id="btn-zoom-fit" class="px-2.5 h-6 rounded hover:bg-white/10 text-neutral-200 hover:text-white text-[11px]" title="Ajustar al lienzo">Ajustar</button>
+            <button id="btn-zoom-plus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Acercar">+</button>
+            <span id="zoom-pct-badge" class="px-2 text-[11px] text-[#00FF66]">100%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: LIVE HEX / SVG CODE INSPECTOR + VARIATIONS + EXPORT -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3">
+
+      <!-- 04 LIVE HEX / SOURCE CODE INSPECTOR -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+            <span class="font-mono text-studio-muted">04</span>
+            <span id="inspector-title">INSPECTOR HEX / BINARIO</span>
+          </h2>
+          <button id="btn-inject-burst" class="px-2 py-0.5 rounded bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/40 font-mono text-[10px] font-semibold transition-colors">
+            + Inyectar Bytes
+          </button>
+        </div>
+
+        <div id="hex-stream-viewer" class="h-[195px] overflow-y-auto custom-scroll rounded-lg bg-[#0B0C0E] border border-studio-border p-2.5 font-mono text-[10px] leading-relaxed text-neutral-400 select-all">
+          <!-- Live mutated hex bytes or corrupted SVG XML source rendered here -->
+        </div>
+      </section>
+
+      <!-- 05 VARIACIONES -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2 flex-1 flex flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold text-white">05 · Variaciones de Código</h2>
+          <button id="btn-refresh-variations" class="text-[11px] text-[#6E96FF] hover:underline font-medium">
+            Nuevas ↻
+          </button>
+        </div>
+
+        <div id="variations-grid" class="grid grid-cols-2 gap-2 pt-0.5">
+          <!-- 4 variation thumbnails rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- EXPORT PANEL (Preserving full multi-resolution JPG / PNG / SVG exports) -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5">
+        <h2 class="text-xs font-semibold uppercase tracking-wide text-white">Export</h2>
+
+        <!-- Format Pills: JPG / PNG / SVG -->
+        <div class="grid grid-cols-3 gap-1.5 text-xs font-mono">
+          <button data-fmt="jpg" class="export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all">
+            JPG
+          </button>
+          <button data-fmt="png" class="export-fmt-btn py-1.5 rounded-lg border border-studio-accent bg-studio-accent text-white font-semibold text-center transition-all">
+            PNG
+          </button>
+          <button data-fmt="svg" class="export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all">
+            SVG
+          </button>
+        </div>
+
+        <!-- Resolution Multiplier up to 8K -->
+        <div class="space-y-1">
+          <label for="select-export-scale" class="block text-[11px] text-studio-muted">Resolución</label>
+          <select id="select-export-scale" class="w-full bg-studio-bg border border-studio-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-studio-accent">
+            <option value="1">1× · Original (1200 × 900 px)</option>
+            <option value="2" selected>2× · HD (2400 × 1800 px)</option>
+            <option value="4">4× · Ultra 4K (4800 × 3600 px)</option>
+            <option value="8k">8K · Máxima (7680 × 5760 px)</option>
+          </select>
+        </div>
+
+        <button id="btn-panel-export" class="w-full py-2.5 px-4 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow">
+          <span>↓</span>
+          <span id="btn-export-label">Exportar PNG</span>
+        </button>
+      </section>
+    </aside>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG & UTILITIES
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = (seed >>> 0) || 1;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__toastTimeout);
+      window.__toastTimeout = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // =========================================================================
+    // 2. APPLICATION STATE & UNDO/REDO HISTORY
+    // =========================================================================
+    const state = {
+      seed: 404,
+      masterGlitch: 0.48,
+      effectScale: 1.00,
+      sourceMix: 0.35,        // 0.00 = intact original, 0.30 = low, 0.50 = half fragments, 1.00 = total destruction
+      byteCorrupt: 0.52,
+      hexInject: 0.40,
+      blockTear: 0.45,
+      scanShift: 0.50,
+      bitFlip: 0.36,
+      rgbDesync: 0.44,
+      gridFusion: 0.44,
+      glitchMode: 'jpeg_stream', // 'jpeg_stream' | 'hex_splice' | 'collapse'
+      protectHeader: true,
+      neonEntropy: false,
+      exportFormat: 'png',
+      exportScale: '2',
+      zoom: 1.0,
+      baseFitW: 560,
+      baseFitH: 420,
+      isPanning: false,
+      dragMoved: false,
+      panStartX: 0,
+      panStartY: 0,
+      panScrollL: 0,
+      panScrollT: 0,
+      sourceCanvas: document.createElement('canvas'),
+      masterOutputCanvas: document.createElement('canvas'),
+      sourceWidth: 1200,
+      sourceHeight: 900,
+      sourceName: 'Demo · Retrato Claroscuro.jpg',
+      isSvgSource: false,
+      rawSvgText: '',
+      corruptedSvgText: '',
+      baseJpegBytes: null,       // Uint8Array of real JPEG encoded bytes
+      sosOffset: 24,             // Byte offset right after JPEG Start-Of-Scan (FF DA) marker
+      lastMutatedOffsets: new Set(),
+      lastMutatedBytes: null,
+      variationSeeds: [1024, 2048, 4096, 8192]
+    };
+
+    const historyStack = [];
+    const redoStack = [];
+
+    function pushHistorySnapshot() {
+      historyStack.push(JSON.stringify({
+        seed: state.seed,
+        masterGlitch: state.masterGlitch,
+        effectScale: state.effectScale,
+        sourceMix: state.sourceMix,
+        byteCorrupt: state.byteCorrupt,
+        hexInject: state.hexInject,
+        blockTear: state.blockTear,
+        scanShift: state.scanShift,
+        bitFlip: state.bitFlip,
+        rgbDesync: state.rgbDesync,
+        gridFusion: state.gridFusion,
+        glitchMode: state.glitchMode,
+        protectHeader: state.protectHeader,
+        neonEntropy: state.neonEntropy
+      }));
+      if (historyStack.length > 30) historyStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function restoreSnapshot(snapStr) {
+      const s = JSON.parse(snapStr);
+      Object.assign(state, s);
+      syncControlsFromState();
+      renderAll();
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('btn-undo').disabled = historyStack.length === 0;
+      document.getElementById('btn-redo').disabled = redoStack.length === 0;
+    }
+
+    // =========================================================================
+    // 3. DEMO IMAGE & UNIVERSAL FILE LOADER (PNG, JPG, WebP, GIF, BMP, SVG)
+    // =========================================================================
+    const DEMO_PORTRAIT_SRC = "user_uploaded_files/ttl=63d/tool_generated/watermarked_img_18281255093137676834.jpg";
+
+    function loadBuiltInDemo() {
+      state.isSvgSource = false;
+      state.rawSvgText = '';
+      state.corruptedSvgText = '';
+      const sc = state.sourceCanvas;
+      const ctx = sc.getContext('2d');
+      sc.width = 1200;
+      sc.height = 900;
+      state.sourceName = 'Demo · Retrato Claroscuro.jpg';
+
+      // Immediate chiaroscuro backdrop while image decodes
+      const bgGrad = ctx.createRadialGradient(540, 420, 60, 600, 450, 760);
+      bgGrad.addColorStop(0, '#2A2F38');
+      bgGrad.addColorStop(0.55, '#17191E');
+      bgGrad.addColorStop(1, '#0E1013');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1200, 900);
+      onSourceChanged();
+
+      const img = new Image();
+      img.onload = () => {
+        sc.width = img.naturalWidth || 1200;
+        sc.height = img.naturalHeight || 900;
+        ctx.clearRect(0, 0, sc.width, sc.height);
+        ctx.drawImage(img, 0, 0, sc.width, sc.height);
+        onSourceChanged();
+      };
+      img.src = DEMO_PORTRAIT_SRC;
+    }
+
+    function encodeSourceToJpegBytes() {
+      // Encode source image into a working JPEG byte buffer (max 960px on longest side for snappy real-time databending)
+      const ar = state.sourceWidth / state.sourceHeight;
+      const encMax = Math.min(960, Math.max(state.sourceWidth, state.sourceHeight));
+      const encW = ar >= 1 ? encMax : Math.max(64, Math.round(encMax * ar));
+      const encH = ar >= 1 ? Math.max(64, Math.round(encMax / ar)) : encMax;
+
+      const encCanvas = document.createElement('canvas');
+      encCanvas.width = encW;
+      encCanvas.height = encH;
+      const ectx = encCanvas.getContext('2d');
+      ectx.drawImage(state.sourceCanvas, 0, 0, encW, encH);
+
+      const dataUrl = encCanvas.toDataURL('image/jpeg', 0.86);
+      const b64 = dataUrl.split(',')[1];
+      const binStr = atob(b64);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) {
+        bytes[i] = binStr.charCodeAt(i);
+      }
+
+      // Locate JPEG Start-Of-Scan marker (0xFF 0xDA) so header protection knows exact entropy data start
+      let sos = 32;
+      for (let i = 2; i < bytes.length - 12; i++) {
+        if (bytes[i] === 0xFF && bytes[i + 1] === 0xDA) {
+          const hdrLen = (bytes[i + 2] << 8) | bytes[i + 3];
+          sos = i + 2 + hdrLen;
+          break;
+        }
+      }
+      state.baseJpegBytes = bytes;
+      state.sosOffset = Math.min(bytes.length - 32, Math.max(20, sos));
+    }
+
+    function onSourceChanged() {
+      state.sourceWidth = state.sourceCanvas.width;
+      state.sourceHeight = state.sourceCanvas.height;
+      encodeSourceToJpegBytes();
+
+      const thumb = document.getElementById('thumb-preview-canvas');
+      const tctx = thumb.getContext('2d');
+      tctx.fillStyle = '#000';
+      tctx.fillRect(0, 0, 52, 52);
+      const scale = Math.min(52 / state.sourceWidth, 52 / state.sourceHeight);
+      const dw = state.sourceWidth * scale;
+      const dh = state.sourceHeight * scale;
+      tctx.drawImage(state.sourceCanvas, (52 - dw) * 0.5, (52 - dh) * 0.5, dw, dh);
+
+      const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+      const g = gcd(state.sourceWidth, state.sourceHeight);
+      const rw = Math.round(state.sourceWidth / g);
+      const rh = Math.round(state.sourceHeight / g);
+      document.getElementById('img-ratio-badge').textContent = (rw <= 25 && rh <= 25) ? `${rw}:${rh}` : (state.sourceWidth / state.sourceHeight).toFixed(2);
+      document.getElementById('img-meta-name').textContent = state.sourceName;
+      document.getElementById('img-meta-dims').textContent =
+        `${state.sourceWidth} × ${state.sourceHeight} px · ${state.isSvgSource ? 'SVG XML + Binary' : 'Binary Stream'}`;
+
+      document.getElementById('inspector-title').textContent =
+        state.isSvgSource ? 'INSPECTOR CÓDIGO SVG / HEX' : 'INSPECTOR HEX / BINARIO';
+      document.getElementById('format-engine-badge').textContent =
+        state.isSvgSource ? 'SVG XML + BINARY · DATABEND' : 'BINARY HEX · DATABEND ENGINE';
+
+      updateExportResLabels();
+      fitCanvasToViewport();
+      renderAll();
+    }
+
+    function updateExportResLabels() {
+      const sel = document.getElementById('select-export-scale');
+      const w = state.sourceWidth;
+      const h = state.sourceHeight;
+      const ar = w / h;
+      const w8k = ar >= 1 ? 7680 : Math.round(7680 * ar);
+      const h8k = ar >= 1 ? Math.round(7680 / ar) : 7680;
+      sel.options[0].text = `1× · Original (${w} × ${h} px)`;
+      sel.options[1].text = `2× · HD (${w * 2} × ${h * 2} px)`;
+      sel.options[2].text = `4× · Ultra 4K (${w * 4} × ${h * 4} px)`;
+      sel.options[3].text = `8K · Máxima (${w8k} × ${h8k} px)`;
+    }
+
+    // =========================================================================
+    // 4. REAL BINARY BYTE CORRUPTOR & SVG XML CODE MUTATOR
+    // =========================================================================
+    function corruptJpegByteBuffer(seedVal, masterLvl) {
+      const src = state.baseJpegBytes;
+      if (!src) return { bytes: new Uint8Array(0), mutatedCount: 0, offsets: new Set() };
+
+      const rand = createPRNG(seedVal);
+      const out = new Uint8Array(src);
+      const offsets = new Set();
+
+      if (masterLvl <= 0.005) {
+        return { bytes: out, mutatedCount: 0, offsets };
+      }
+
+      const startIdx = state.protectHeader ? state.sosOffset : 4;
+      const endIdx = Math.max(startIdx + 16, out.length - 4);
+      const span = endIdx - startIdx;
+
+      // Scale mutation intensity smoothly from subtle (0.01) to extreme (1.0)
+      const intensity = Math.pow(masterLvl, 1.15);
+      const byteOps = Math.round(span * 0.0045 * intensity * (0.3 + state.byteCorrupt * 1.4));
+      const injectOps = Math.round(28 * intensity * (0.25 + state.hexInject * 1.4));
+      const blockOps = Math.round(24 * intensity * (0.25 + state.blockTear * 1.4));
+      const flipOps = Math.round(span * 0.003 * intensity * (0.25 + state.bitFlip * 1.5));
+
+      // 1. Direct Byte Substitution (avoiding accidental 0xFF 0xD9 EOI termination when protectHeader is ON)
+      for (let i = 0; i < byteOps; i++) {
+        const idx = startIdx + Math.floor(rand() * span);
+        if (state.protectHeader && out[idx] === 0xFF) continue;
+        let val = Math.floor(rand() * 255);
+        if (state.protectHeader && val === 0xFF) val = 0xFE;
+        out[idx] = val;
+        offsets.add(idx);
+      }
+
+      // 2. Hex Chunk Injection / Shifting (shifts downstream scanlines horizontally)
+      for (let i = 0; i < injectOps; i++) {
+        const pos = startIdx + Math.floor(rand() * (span - 48));
+        const chunkLen = 4 + Math.floor(rand() * (12 + 28 * intensity));
+        const shift = (rand() < 0.5 ? 1 : -1) * (1 + Math.floor(rand() * 6));
+        for (let k = 0; k < chunkLen && pos + k + Math.abs(shift) < endIdx; k++) {
+          const targetIdx = pos + k;
+          const srcIdx = Math.max(startIdx, Math.min(endIdx - 1, targetIdx + shift));
+          if (state.protectHeader && (out[targetIdx] === 0xFF || out[srcIdx] === 0xFF)) continue;
+          out[targetIdx] = out[srcIdx];
+          offsets.add(targetIdx);
+        }
+      }
+
+      // 3. Macroblock Slice Swaps
+      for (let i = 0; i < blockOps; i++) {
+        const a = startIdx + Math.floor(rand() * (span - 64));
+        const b = startIdx + Math.floor(rand() * (span - 64));
+        const len = 8 + Math.floor(rand() * 32);
+        for (let k = 0; k < len; k++) {
+          if (state.protectHeader && (out[a + k] === 0xFF || out[b + k] === 0xFF)) continue;
+          const tmp = out[a + k];
+          out[a + k] = out[b + k];
+          out[b + k] = tmp;
+          offsets.add(a + k);
+          offsets.add(b + k);
+        }
+      }
+
+      // 4. Bit-Flip Entropy Corruption
+      for (let i = 0; i < flipOps; i++) {
+        const idx = startIdx + Math.floor(rand() * span);
+        if (state.protectHeader && out[idx] === 0xFF) continue;
+        const bit = 1 << Math.floor(rand() * 7);
+        const flipped = out[idx] ^ bit;
+        if (state.protectHeader && flipped === 0xFF) continue;
+        out[idx] = flipped;
+        offsets.add(idx);
+      }
+
+      return { bytes: out, mutatedCount: offsets.size, offsets };
+    }
+
+    // Mutates actual SVG XML path coordinates, colors & transforms when an SVG file is loaded
+    function corruptSvgSourceCode(svgText, seedVal, masterLvl) {
+      if (!svgText || masterLvl <= 0.005) return svgText;
+      const rand = createPRNG(seedVal);
+      const amp = Math.pow(masterLvl, 1.25);
+
+      // Mutate numeric coordinates inside path d="..." and shape attributes
+      let glitched = svgText.replace(/(-?\d+\.?\d*)/g, (match, numStr, offset) => {
+        // Skip XML version/encoding numbers near top of file
+        if (offset < 80) return match;
+        if (rand() > (0.12 + amp * 0.65)) return match;
+        const val = parseFloat(numStr);
+        if (!Number.isFinite(val)) return match;
+        const delta = (rand() - 0.5) * Math.max(4, Math.abs(val) * 0.45) * amp * (0.4 + state.scanShift + state.blockTear);
+        const nextVal = val + delta;
+        return Number.isInteger(val) ? String(Math.round(nextVal)) : nextVal.toFixed(2);
+      });
+
+      // Mutate hex fill/stroke colors at medium/high entropy
+      if (state.bitFlip > 0.15 && amp > 0.2) {
+        const neonPool = ['#00FF66', '#FF006E', '#00F5D4', '#FFE600', '#245CFF', '#FF1E38'];
+        glitched = glitched.replace(/#[0-9a-fA-F]{6}/g, (hex) => {
+          return rand() < amp * state.bitFlip * 0.75
+            ? neonPool[Math.floor(rand() * neonPool.length)]
+            : hex;
+        });
+      }
+
+      return glitched;
+    }
+
+    // =========================================================================
+    // 4B. MULTI-KERNEL ALGORITHMIC CODE-TAPESTRY & PIXEL-MATRIX SYNTHESIZER
+    //     Restores the crisp multi-kernel algorithmic synthesis + unstructured
+    //     8-direction cross-quadrant pixel sorting, with Effect Scale / Zoom
+    //     magnifying the size of all generated glitch structures over the image.
+    // =========================================================================
+    const BAYER_4X4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ];
+
+    const SEED_ART_PALETTES = [
+      [[8, 10, 14], [248, 250, 252], [0, 255, 136], [255, 20, 147], [36, 92, 255]],
+      [[10, 12, 18], [255, 250, 240], [255, 88, 24], [0, 229, 255], [168, 85, 247]],
+      [[8, 10, 14], [250, 252, 255], [255, 230, 0], [255, 24, 56], [0, 245, 212]],
+      [[10, 12, 18], [245, 248, 252], [132, 255, 0], [255, 0, 110], [58, 134, 255]],
+      [[8, 8, 10], [254, 254, 254], [255, 115, 0], [0, 187, 249], [241, 91, 181]],
+      [[10, 12, 16], [248, 248, 244], [0, 255, 102], [255, 255, 255], [36, 92, 255]]
+    ];
+
+    // Reconstructs any flat #808080 neutral gray blocks emitted by libjpeg-turbo
+    // using real byte-stream offset jumps into the intact source image.
+    // 100% Resolution-Invariant Gray-MCU Recovery (canonical 1000-row table so 260px, 1200px, and 8K match identically!)
+    function eliminateUndecodedJpegGray(corruptedDst, cleanSrc, W, H, mutatedBytes, seedVal, masterLvl) {
+      if (!mutatedBytes || mutatedBytes.length < 32) return;
+      const rand = createPRNG(seedVal ^ 0x51ED270B);
+      const bLen = mutatedBytes.length;
+      const startOff = Math.min(bLen - 16, Math.max(16, state.sosOffset || 32));
+      const span = Math.max(16, bLen - startOff);
+      const eScale = state.effectScale || 1.0;
+
+      const NORM_H = 1000;
+      const normShiftX = new Float32Array(NORM_H);
+      const normShiftY = new Float32Array(NORM_H);
+      const normRgbOff = new Float32Array(NORM_H);
+      let blockShiftX = 0;
+      let blockShiftY = 0;
+      let blockRgbOff = 0;
+      const rowStep = Math.max(3, Math.round(7 * eScale));
+
+      for (let ny = 0; ny < NORM_H; ny++) {
+        if ((ny % rowStep) === 0 || rand() < 0.14) {
+          const b0 = mutatedBytes[startOff + ((ny * 17 + seedVal) % span)];
+          const b1 = mutatedBytes[startOff + ((ny * 31 + seedVal * 3) % span)];
+          const b2 = mutatedBytes[startOff + ((ny * 53 + seedVal * 7) % span)];
+          const amp = (0.18 + masterLvl * 0.82) * Math.min(2.2, 0.7 + eScale * 0.35);
+          blockShiftX = ((b0 - 128) / 128) * 0.42 * amp;
+          blockShiftY = ((b1 - 128) / 128) * 0.28 * amp;
+          blockRgbOff = ((b2 - 128) / 128) * 0.08 * amp;
+        }
+        normShiftX[ny] = blockShiftX;
+        normShiftY[ny] = blockShiftY;
+        normRgbOff[ny] = blockRgbOff;
+      }
+
+      for (let y = 0; y < H; y++) {
+        const ny = Math.min(NORM_H - 1, Math.floor((y / H) * NORM_H));
+        const sxOff = Math.round(normShiftX[ny] * W);
+        const syOff = Math.round(normShiftY[ny] * H);
+        const rgbOff = Math.round(normRgbOff[ny] * W);
+        const sy = ((y + syOff) % H + H) % H;
+
+        for (let x = 0; x < W; x++) {
+          const idx = (y * W + x) * 4;
+          const r = corruptedDst[idx];
+          const g = corruptedDst[idx + 1];
+          const b = corruptedDst[idx + 2];
+
+          if (Math.abs(r - 128) <= 3 && Math.abs(g - 128) <= 3 && Math.abs(b - 128) <= 3) {
+            const sr0 = cleanSrc[idx];
+            const sg0 = cleanSrc[idx + 1];
+            const sb0 = cleanSrc[idx + 2];
+            if (Math.abs(sr0 - 128) > 8 || Math.abs(sg0 - 128) > 8 || Math.abs(sb0 - 128) > 8) {
+              const sx = ((x + sxOff) % W + W) % W;
+              const rx = ((sx + rgbOff) % W + W) % W;
+              const bx = ((sx - rgbOff) % W + W) % W;
+              corruptedDst[idx]     = cleanSrc[(sy * W + rx) * 4];
+              corruptedDst[idx + 1] = cleanSrc[(sy * W + sx) * 4 + 1];
+              corruptedDst[idx + 2] = cleanSrc[(sy * W + bx) * 4 + 2];
+            }
+          }
+        }
+      }
+    }
+
+    // 100% Resolution-Invariant Synthesis Engine:
+    // Guarantees identical layout, scanline tears, staggered rips, tonal textures,
+    // and pixel-sorting cascades across Variations (260px), Main Canvas (1200px),
+    // High-Res Exports (2x, 4K, 8K), and Pure-Vector SVG!
+    function applyBitstreamAndScanlinePostProcess(ctx, W, H, seedVal, masterLvl, cleanSrcData) {
+      if (masterLvl <= 0.005) return;
+      const rand = createPRNG(seedVal ^ 0x9E3779B9);
+      const eScale = state.effectScale || 1.0;
+      const resScale = Math.max(0.15, W / 1200);
+
+      // Seed-unique palette, frequencies, XOR masks & kernel weights (resolution-independent)
+      const pal = SEED_ART_PALETTES[Math.floor(rand() * SEED_ART_PALETTES.length)];
+      const sortAngleMode = Math.floor(rand() * 4);
+      const waveFreqBase = (16 + rand() * 58) / Math.max(0.5, eScale);
+      const waveFreqCross = (10 + rand() * 42) / Math.max(0.5, eScale);
+      const waveIsZigzag = rand() < 0.58;
+      const xorMaskR = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const xorMaskG = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const xorMaskB = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const phaseGlobalA = rand() * Math.PI * 2;
+      const phaseGlobalB = rand() * Math.PI * 2;
+      const baseWeaveRand = rand();
+
+      const allKernels = ['SINE_ZIGZAG', 'BAYER_DITHER', 'HALFTONE_LOOM', 'CHANNEL_FOLD', 'LOOM_WEAVE'];
+      const kernelWeights = allKernels.map((k) => {
+        let w = 0.35 + rand() * 1.45;
+        if (state.glitchMode === 'hex_splice' && k === 'SINE_ZIGZAG') w += 2.0;
+        if (state.glitchMode === 'collapse' && (k === 'BAYER_DITHER' || k === 'HALFTONE_LOOM' || k === 'LOOM_WEAVE')) w += 2.0;
+        if (k === 'SINE_ZIGZAG') w *= (0.4 + state.hexInject * 1.4);
+        if (k === 'BAYER_DITHER' || k === 'HALFTONE_LOOM') w *= (0.4 + state.bitFlip * 1.4);
+        if (k === 'CHANNEL_FOLD') w *= (0.4 + state.rgbDesync * 1.4);
+        return w;
+      });
+      const weightSum = kernelWeights.reduce((a, b) => a + b, 0) || 1;
+      function pickWeightedKernel(localRand) {
+        let r = localRand() * weightSum;
+        for (let i = 0; i < allKernels.length; i++) {
+          r -= kernelWeights[i];
+          if (r <= 0) return allKernels[i];
+        }
+        return allKernels[0];
+      }
+
+      const srcImg = ctx.getImageData(0, 0, W, H);
+      const src = srcImg.data;
+      const outImg = ctx.createImageData(W, H);
+      const dst = outImg.data;
+      dst.set(src);
+
+      const getProceduralSignal = (nx, ny, phase) => {
+        const w1 = Math.sin(nx * waveFreqBase + ny * waveFreqCross * 0.6 + phase);
+        const w2 = Math.cos(ny * waveFreqBase * 0.85 - nx * waveFreqCross + phase * 1.7);
+        const w3 = Math.sin((nx + ny) * (waveFreqBase + waveFreqCross) * 0.5 + seedVal * 0.01);
+        return 0.5 + 0.5 * ((w1 * 0.45 + w2 * 0.35 + w3 * 0.20));
+      };
+
+      // =====================================================================
+      // 1. IMAGE TONAL/CHROMA RANGES + CANONICAL 1000-ROW SCANLINE TABLE
+      //    (Decoupled from W/H so PRNG state never drifts across resolutions!)
+      // =====================================================================
+      const TONAL_BANDS = 8;
+      const tonalKernels = new Array(TONAL_BANDS);
+      const tonalActive = new Uint8Array(TONAL_BANDS);
+      const tonalSubMode = new Uint8Array(TONAL_BANDS);
+      const tonalPalIdxA = new Uint8Array(TONAL_BANDS);
+      const tonalPalIdxB = new Uint8Array(TONAL_BANDS);
+      const tonalBitPlane = new Uint8Array(TONAL_BANDS);
+
+      const interventionRatio = masterLvl < 0.70
+        ? Math.pow(masterLvl / 0.70, 0.90) * 0.78
+        : 0.78 + ((masterLvl - 0.70) / 0.30) * 0.22;
+
+      for (let t = 0; t < TONAL_BANDS; t++) {
+        tonalKernels[t] = pickWeightedKernel(rand);
+        tonalActive[t] = (rand() < interventionRatio || masterLvl >= 0.95) ? 1 : 0;
+        tonalSubMode[t] = Math.floor(rand() * 3);
+        tonalPalIdxA[t] = Math.floor(rand() * pal.length);
+        tonalPalIdxB[t] = 1 + Math.floor(rand() * (pal.length - 1));
+        tonalBitPlane[t] = 1 + Math.floor(rand() * 6);
+      }
+
+      // Build Canonical 1000-row normalized scanline tear table
+      const NORM_ROWS = 1000;
+      const normShiftX = new Float32Array(NORM_ROWS);
+      const normShiftR = new Float32Array(NORM_ROWS);
+      const normShiftB = new Float32Array(NORM_ROWS);
+      const normBurstKernel = new Int8Array(NORM_ROWS);
+      const normSourceKeep = new Uint8Array(NORM_ROWS);
+
+      const normMaxScanShift = (0.04 + masterLvl * 0.34) * (0.3 + state.scanShift * 1.2) * Math.min(2.2, eScale);
+      const normMaxRgbShift = (0.01 + masterLvl * 0.06) * (0.3 + state.rgbDesync * 1.4) * eScale;
+      const normBandBaseH = Math.max(2, Math.round((2 + state.blockTear * 14) * eScale));
+
+      let nyCur = 0;
+      while (nyCur < NORM_ROWS) {
+        const stripH = Math.max(2, Math.round(2 + rand() * normBandBaseH * 2.2));
+        const doShift = rand() < (0.22 + masterLvl * 0.62);
+        const sX = doShift ? (rand() - 0.5) * normMaxScanShift * 2 : 0;
+        const doChroma = rand() < (0.28 + state.rgbDesync * 0.65);
+        const sR = doChroma ? (rand() - 0.5) * normMaxRgbShift * 2.2 : 0;
+        const sB = doChroma ? (rand() - 0.5) * normMaxRgbShift * 2.2 : 0;
+
+        const burstRoll = rand();
+        let burstK = -1;
+        if (burstRoll < (0.14 + masterLvl * 0.38)) {
+          burstK = allKernels.indexOf(pickWeightedKernel(rand));
+        }
+
+        const keepRow = (state.sourceMix > 0.005 && rand() < state.sourceMix * 0.85) ? 1 : 0;
+
+        for (let ny = nyCur; ny < Math.min(NORM_ROWS, nyCur + stripH); ny++) {
+          normShiftX[ny] = sX;
+          normShiftR[ny] = sR;
+          normShiftB[ny] = sB;
+          normBurstKernel[ny] = burstK;
+          normSourceKeep[ny] = keepRow;
+        }
+        nyCur += stripH;
+      }
+
+      // Scale pattern steps proportionally to resScale = W / 1200 so 260px, 1200px, and 8K look identical!
+      const ditherStep = Math.max(1, Math.round((1.5 + (1 - state.bitFlip) * 2.2) * eScale * resScale));
+      const halftoneStep = Math.max(2, Math.round((6 + (1 - state.bitFlip) * 7) * eScale * resScale));
+      const weaveTile = Math.max(2, Math.round((6 + baseWeaveRand * 6) * eScale * resScale));
+      const bitStep = Math.max(1, Math.round(1.5 * eScale * resScale));
+      const totalCollapseMix = Math.max(0, (masterLvl - 0.55) / 0.45);
+      const subtleDatabend = Math.min(0.26, masterLvl * 0.30);
+
+      const waveFn = (t) => {
+        if (!waveIsZigzag) return Math.sin(t);
+        const norm = ((t / (Math.PI * 2)) % 1 + 1) % 1;
+        return norm < 0.5 ? (norm * 4 - 1) : (3 - norm * 4);
+      };
+      const zigAmpX = W * (0.08 + masterLvl * 0.28) * (0.45 + state.hexInject) * Math.min(2.2, eScale);
+      const zigAmpY = H * (0.05 + masterLvl * 0.18) * (0.45 + state.scanShift) * Math.min(2.2, eScale);
+
+      // 2. Evaluate Every Pixel Continuously Across Full-Width Scanlines & Tonal Ranges
+      for (let y = 0; y < H; y++) {
+        const nyIdx = Math.min(NORM_ROWS - 1, Math.floor((y / H) * NORM_ROWS));
+        const nyNorm = y / H;
+        const sX = Math.round(normShiftX[nyIdx] * W);
+        const sR = Math.round(normShiftR[nyIdx] * W);
+        const sB = Math.round(normShiftB[nyIdx] * W);
+        const burstK = normBurstKernel[nyIdx];
+        const keepRow = normSourceKeep[nyIdx];
+        const wy = waveFn(nyNorm * waveFreqBase * Math.PI * 2 + phaseGlobalA);
+
+        for (let x = 0; x < W; x++) {
+          const nxNorm = x / W;
+          const dIdx = (y * W + x) * 4;
+          const bx = ((x + sX) % W + W) % W;
+          const rx = ((bx + sR) % W + W) % W;
+          const bxx = ((bx + sB) % W + W) % W;
+
+          const r = src[(y * W + rx) * 4];
+          const g = src[(y * W + bx) * 4 + 1];
+          const b = src[(y * W + bxx) * 4 + 2];
+
+          const sr = cleanSrcData[dIdx];
+          const sg = cleanSrcData[dIdx + 1];
+          const sb = cleanSrcData[dIdx + 2];
+          const sLum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
+          const chromaBias = ((sr - sb) > 28) ? 1 : 0;
+          const tBand = Math.min(TONAL_BANDS - 1, Math.max(0, ((sLum * 4) | 0) * 2 + chromaBias));
+
+          const tonalKeep = state.sourceMix > 0.005 && (((tBand * 37 + (seedVal % 19)) % 100) < state.sourceMix * 88);
+          if ((keepRow && tonalKeep) || (state.sourceMix > 0.72 && (keepRow || tonalKeep))) {
+            dst[dIdx]     = Math.round(sr * (1 - subtleDatabend) + r * subtleDatabend);
+            dst[dIdx + 1] = Math.round(sg * (1 - subtleDatabend) + g * subtleDatabend);
+            dst[dIdx + 2] = Math.round(sb * (1 - subtleDatabend) + b * subtleDatabend);
+            dst[dIdx + 3] = 255;
+            continue;
+          }
+
+          let activeK = null;
+          if (burstK >= 0) {
+            activeK = allKernels[burstK];
+          } else if (tonalActive[tBand]) {
+            activeK = tonalKernels[tBand];
+          }
+
+          if (!activeK) {
+            dst[dIdx] = r;
+            dst[dIdx + 1] = g;
+            dst[dIdx + 2] = b;
+            dst[dIdx + 3] = 255;
+            continue;
+          }
+
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          const palA = pal[tonalPalIdxA[tBand]];
+          const palB = pal[tonalPalIdxB[tBand]];
+
+          if (activeK === 'SINE_ZIGZAG') {
+            const wx = waveFn(nxNorm * waveFreqCross * Math.PI * 2 + phaseGlobalB);
+            const sx = ((Math.round(bx + wy * zigAmpX) % W) + W) % W;
+            const sy = ((Math.round(y + wx * zigAmpY) % H) + H) % H;
+            const zIdx = (sy * W + sx) * 4;
+            dst[dIdx] = src[zIdx];
+            dst[dIdx + 1] = src[zIdx + 1];
+            dst[dIdx + 2] = src[zIdx + 2];
+          } else if (activeK === 'BAYER_DITHER') {
+            const isMono = ((tBand + seedVal) % 3 === 0) || state.neonEntropy;
+            const darkCol = pal[0];
+            const lightCol = isMono ? pal[1] : palB;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalA + tBand);
+            const waveWeight = 0.25 + totalCollapseMix * 0.45;
+            const effLum = lum * (1 - waveWeight) + procLum * waveWeight;
+            const thresh = (BAYER_4X4[(y / ditherStep | 0) & 3][(x / ditherStep | 0) & 3] + 0.5) / 16;
+            const col = effLum > thresh ? lightCol : darkCol;
+            dst[dIdx] = col[0];
+            dst[dIdx + 1] = col[1];
+            dst[dIdx + 2] = col[2];
+          } else if (activeK === 'HALFTONE_LOOM') {
+            const subMode = tonalSubMode[tBand];
+            const bgCol = (tBand % 3 === 0) ? pal[1] : pal[0];
+            const fgCol = palB;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalB + tBand);
+            const effLum = lum * (1 - totalCollapseMix * 0.5) + procLum * (totalCollapseMix * 0.5);
+            const gx = Math.floor(x / halftoneStep) * halftoneStep + halftoneStep * 0.5;
+            const gy = Math.floor(y / halftoneStep) * halftoneStep + halftoneStep * 0.5;
+            const radius = halftoneStep * 0.50 * Math.max(0.16, effLum);
+            let hit = false;
+            if (subMode === 0) {
+              hit = Math.hypot(x - gx, y - gy) <= radius;
+            } else if (subMode === 1) {
+              hit = ((x + y) % halftoneStep) <= Math.max(1, Math.round(halftoneStep * effLum * 0.85));
+            } else {
+              const cheb = Math.max(Math.abs(x - gx), Math.abs(y - gy));
+              hit = Math.abs(cheb - radius) <= Math.max(1, 1.25 * eScale * resScale);
+            }
+            const col = hit ? fgCol : bgCol;
+            dst[dIdx] = col[0];
+            dst[dIdx + 1] = col[1];
+            dst[dIdx + 2] = col[2];
+          } else if (activeK === 'CHANNEL_FOLD') {
+            const mR = (xorMaskR ^ (tBand * 37)) & 0xFF;
+            const mG = (xorMaskG ^ (tBand * 73)) & 0xFF;
+            const mB = (xorMaskB ^ (tBand * 19)) & 0xFF;
+            let xr = (r ^ mR) & 0xFF;
+            let xg = (g ^ mG) & 0xFF;
+            let xb = (b ^ mB) & 0xFF;
+            if ((((x / bitStep | 0) ^ (y / bitStep | 0)) >> tonalBitPlane[tBand]) & 1) {
+              xr = 255 - xr;
+              xb = (xb ^ 0xA5) & 0xFF;
+            }
+            dst[dIdx] = xr;
+            dst[dIdx + 1] = xg;
+            dst[dIdx + 2] = xb;
+          } else {
+            const tx = (x / weaveTile) | 0;
+            const ty = (y / weaveTile) | 0;
+            const px = x % weaveTile;
+            const py = y % weaveTile;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalA);
+            const effLum = lum * 0.65 + procLum * 0.35;
+            const bitHash = ((tx * 7 + ty * 13 + ((effLum * 12) | 0) + seedVal) & 7);
+            const pick = (px === 0 || py === 0) ? pal[0]
+              : (bitHash < 3 ? palA : (bitHash < 6 ? palB : pal[1]));
+            dst[dIdx] = pick[0];
+            dst[dIdx + 1] = pick[1];
+            dst[dIdx + 2] = pick[2];
+          }
+          dst[dIdx + 3] = 255;
+        }
+      }
+
+      // =====================================================================
+      // 3. RESOLUTION-INVARIANT MULTI-DIRECTIONAL PIXEL SORTING CASCADES
+      // =====================================================================
+      const sortRand = createPRNG((seedVal ^ 0x3C6EF372) >>> 0);
+      const sortDensity = (state.glitchMode === 'hex_splice' ? 1.55 : 1.0) * (0.25 + state.scanShift * 1.15) * masterLvl;
+      const reverseSort = ((seedVal >> 2) & 1) === 1;
+      const streakThick = Math.max(1, Math.round(1.6 * eScale * resScale));
+      const maxSpanLen = Math.max(8, Math.round(Math.min(W, H) * (0.14 + masterLvl * 0.38) * Math.min(2.2, 0.7 + eScale * 0.4)));
+      const cascadeCount = Math.round((110 + sortDensity * 560) / Math.max(0.7, eScale * 0.65));
+
+      for (let c = 0; c < cascadeCount; c++) {
+        const sx = Math.floor(sortRand() * W);
+        const sy = Math.floor(sortRand() * H);
+        const spanLen = Math.max(4, Math.round(14 * resScale) + Math.floor(sortRand() * maxSpanLen));
+        const axis = sortRand() < 0.72 ? sortAngleMode : Math.floor(sortRand() * 4);
+        const dx = axis === 1 ? 1 : (axis === 2 ? 1 : (axis === 3 ? -1 : 0));
+        const dy = axis === 0 ? 1 : (axis === 2 || axis === 3 ? 1 : 0);
+
+        for (let wOff = 0; wOff < streakThick; wOff++) {
+          const ox = sx + (dx === 0 ? wOff : 0);
+          const oy = sy + (dy === 0 ? wOff : 0);
+          if (ox < 0 || ox >= W || oy < 0 || oy >= H) continue;
+
+          const pixels = [];
+          const idxs = [];
+          for (let s = 0; s < spanLen; s++) {
+            const px = ox + dx * s;
+            const py = oy + dy * s;
+            if (px < 0 || px >= W || py < 0 || py >= H) break;
+            const dIdx = (py * W + px) * 4;
+            const r = dst[dIdx], g = dst[dIdx + 1], b = dst[dIdx + 2];
+            const lum = r * 0.3 + g * 0.59 + b * 0.11;
+            pixels.push({ r, g, b, lum });
+            idxs.push(dIdx);
+          }
+
+          if (pixels.length > 3) {
+            pixels.sort((a, b) => reverseSort ? (b.lum - a.lum) : (a.lum - b.lum));
+            for (let i = 0; i < pixels.length; i++) {
+              const dIdx = idxs[i];
+              dst[dIdx] = pixels[i].r;
+              dst[dIdx + 1] = pixels[i].g;
+              dst[dIdx + 2] = pixels[i].b;
+            }
+          }
+        }
+      }
+
+      // =====================================================================
+      // 4. RESOLUTION-INVARIANT 8-DIRECTION PIXEL JUMPS & CROSS-TONAL SORT RAYS
+      // =====================================================================
+      const crossAmt = state.gridFusion;
+      if (crossAmt > 0.01) {
+        const jumpRand = createPRNG((seedVal ^ 0xA53C9E17) >>> 0);
+        const dirs8 = [
+          [-1, 0], [1, 0], [0, -1], [0, 1],
+          [-1, -1], [1, -1], [-1, 1], [1, 1]
+        ];
+
+        const rayCount = Math.round(360 + crossAmt * 3800);
+        const maxRayLen = Math.max(4, Math.round(Math.min(W, H) * (0.025 + crossAmt * 0.12) * Math.min(2.4, eScale)));
+
+        for (let r = 0; r < rayCount; r++) {
+          const sx = Math.floor(jumpRand() * W);
+          const sy = Math.floor(jumpRand() * H);
+          const [dx, dy] = dirs8[Math.floor(jumpRand() * 8)];
+          const len = Math.max(3, Math.round(5 * resScale) + Math.floor(jumpRand() * maxRayLen));
+          const rev = jumpRand() < 0.5;
+          const sortMode = Math.floor(jumpRand() * 4);
+
+          const rayPixels = [];
+          const coords = [];
+          for (let step = 0; step < len; step++) {
+            const px = sx + dx * step;
+            const py = sy + dy * step;
+            if (px < 0 || px >= W || py < 0 || py >= H) break;
+            const idx = (py * W + px) * 4;
+            const pr = dst[idx], pg = dst[idx + 1], pb = dst[idx + 2];
+            const key = sortMode === 0 ? (pr * 0.3 + pg * 0.59 + pb * 0.11)
+              : sortMode === 1 ? pr : sortMode === 2 ? pg : pb;
+            rayPixels.push({ r: pr, g: pg, b: pb, key });
+            coords.push(idx);
+          }
+
+          if (rayPixels.length > 3) {
+            rayPixels.sort((a, b) => rev ? (b.key - a.key) : (a.key - b.key));
+            for (let i = 0; i < rayPixels.length; i++) {
+              const dIdx = coords[i];
+              dst[dIdx] = rayPixels[i].r;
+              dst[dIdx + 1] = rayPixels[i].g;
+              dst[dIdx + 2] = rayPixels[i].b;
+            }
+          }
+        }
+
+        const maxJumpDist = Math.max(1, Math.round((4 + crossAmt * Math.min(W, H) * 0.06) * Math.min(2.2, eScale)));
+        const swapCount = Math.round(W * H * crossAmt * 0.045);
+        for (let k = 0; k < swapCount; k++) {
+          const px = Math.floor(jumpRand() * W);
+          const py = Math.floor(jumpRand() * H);
+          const [ddx, ddy] = dirs8[Math.floor(jumpRand() * 8)];
+          const dist = 1 + Math.floor(jumpRand() * maxJumpDist);
+          const qx = Math.min(W - 1, Math.max(0, px + ddx * dist));
+          const qy = Math.min(H - 1, Math.max(0, py + ddy * dist));
+          const idxA = (py * W + px) * 4;
+          const idxB = (qy * W + qx) * 4;
+          const tr = dst[idxA], tg = dst[idxA + 1], tb = dst[idxA + 2];
+          dst[idxA] = dst[idxB];
+          dst[idxA + 1] = dst[idxB + 1];
+          dst[idxA + 2] = dst[idxB + 2];
+          dst[idxB] = tr;
+          dst[idxB + 1] = tg;
+          dst[idxB + 2] = tb;
+        }
+      }
+
+      // =====================================================================
+      // 5. RESOLUTION-INVARIANT STAGGERED JAGGED GLITCH TEARS (Desgarros Saltados al Azar)
+      // =====================================================================
+      const tearRand = createPRNG((seedVal ^ 0x7F4A7C15) >>> 0);
+      const tearCount = Math.round((8 + masterLvl * 28 + state.blockTear * 22) / Math.max(0.7, eScale * 0.55));
+      const tearSnap = new Uint8ClampedArray(dst);
+
+      for (let t = 0; t < tearCount; t++) {
+        const baseW = Math.max(4, Math.round(W * (0.04 + tearRand() * 0.28) * Math.min(2.0, 0.65 + eScale * 0.45)));
+        const baseH = Math.max(3, Math.round(H * (0.02 + tearRand() * 0.14) * Math.min(2.0, 0.65 + eScale * 0.45)));
+        const centerX = Math.floor(tearRand() * W);
+        const centerY = Math.floor(tearRand() * H);
+        const y0 = Math.max(0, centerY - (baseH >> 1));
+        const y1 = Math.min(H, y0 + baseH);
+
+        const obliqueSlope = (tearRand() - 0.5) * 2.2 * (W / Math.max(1, H));
+        const jumpDX = Math.round((tearRand() - 0.5) * W * (0.14 + masterLvl * 0.45));
+        const jumpDY = Math.round((tearRand() - 0.5) * H * (0.12 + masterLvl * 0.38));
+        const splitR = Math.round((tearRand() - 0.5) * normMaxRgbShift * W * 2.8);
+        const splitB = Math.round((tearRand() - 0.5) * normMaxRgbShift * W * 2.8);
+        const tearMode = Math.floor(tearRand() * 4);
+        const tPalCol = pal[1 + Math.floor(tearRand() * (pal.length - 1))];
+        const tXorR = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+        const tXorG = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+        const tXorB = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+
+        let curLeft = centerX - (baseW >> 1);
+        let curRight = centerX + (baseW >> 1);
+        const stepH = Math.max(1, Math.round(2.5 * eScale * resScale));
+
+        for (let y = y0; y < y1; y++) {
+          if ((y - y0) % stepH === 0) {
+            const jagL = Math.round((tearRand() - 0.5) * baseW * 0.42 + obliqueSlope * stepH);
+            const jagR = Math.round((tearRand() - 0.5) * baseW * 0.42 + obliqueSlope * stepH);
+            curLeft += jagL;
+            curRight += jagR;
+            const minSpan = Math.max(2, Math.round(8 * resScale));
+            if (curRight - curLeft < minSpan) curRight = curLeft + minSpan;
+          }
+
+          const xStart = Math.max(0, Math.min(W - 1, curLeft));
+          const xEnd = Math.max(xStart + 1, Math.min(W, curRight));
+          const sy = ((y + jumpDY) % H + H) % H;
+
+          for (let x = xStart; x < xEnd; x++) {
+            const dIdx = (y * W + x) * 4;
+            const sx = ((x + jumpDX) % W + W) % W;
+            const rx = ((sx + splitR) % W + W) % W;
+            const bx = ((sx + splitB) % W + W) % W;
+
+            const sr = tearSnap[(sy * W + rx) * 4];
+            const sg = tearSnap[(sy * W + sx) * 4 + 1];
+            const sb = tearSnap[(sy * W + bx) * 4 + 2];
+
+            if (tearMode === 0) {
+              dst[dIdx] = sr;
+              dst[dIdx + 1] = sg;
+              dst[dIdx + 2] = sb;
+            } else if (tearMode === 1) {
+              dst[dIdx] = (sr ^ tXorR) & 0xFF;
+              dst[dIdx + 1] = (sg ^ tXorG) & 0xFF;
+              dst[dIdx + 2] = (sb ^ tXorB) & 0xFF;
+            } else if (tearMode === 2) {
+              const lum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
+              const thresh = (BAYER_4X4[(y / ditherStep | 0) & 3][(x / ditherStep | 0) & 3] + 0.5) / 16;
+              const col = lum > thresh ? tPalCol : pal[0];
+              dst[dIdx] = col[0];
+              dst[dIdx + 1] = col[1];
+              dst[dIdx + 2] = col[2];
+            } else {
+              const normYInTear = (y - y0) / Math.max(1, H);
+              const zig = Math.round(Math.sin(normYInTear * 450 / Math.max(0.5, eScale)) * baseW * 0.35);
+              const zx = ((sx + zig) % W + W) % W;
+              const zIdx = (sy * W + zx) * 4;
+              dst[dIdx] = tearSnap[zIdx];
+              dst[dIdx + 1] = tearSnap[zIdx + 1];
+              dst[dIdx + 2] = tearSnap[zIdx + 2];
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(outImg, 0, 0);
+    }
+
+    // Renders a corrupted image onto any target canvas (Main Viewport, Variations, or High-Res Export)
+    function renderGlitchedBufferOntoCanvas(targetCanvas, seedVal, masterLvl, updateInspector = false) {
+      const W = targetCanvas.width;
+      const H = targetCanvas.height;
+      const ctx = targetCanvas.getContext('2d');
+
+      // Draw clean base first & capture clean source pixels for gray-MCU recovery
+      ctx.save();
+      ctx.fillStyle = '#0B0C0E';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(state.sourceCanvas, 0, 0, W, H);
+      ctx.restore();
+      const cleanSrcData = ctx.getImageData(0, 0, W, H).data;
+
+      if (masterLvl <= 0.005 || !state.baseJpegBytes) {
+        if (updateInspector) {
+          state.lastMutatedOffsets = new Set();
+          state.lastMutatedBytes = state.baseJpegBytes;
+          renderCodeInspector(0);
+        }
+        return Promise.resolve(0);
+      }
+
+      const effectiveLvl = state.glitchMode === 'hex_splice'
+        ? Math.min(1, masterLvl * 1.18)
+        : masterLvl;
+
+      const { bytes, mutatedCount, offsets } = corruptJpegByteBuffer(seedVal, effectiveLvl);
+
+      if (updateInspector) {
+        state.lastMutatedOffsets = offsets;
+        state.lastMutatedBytes = bytes;
+        if (state.isSvgSource) {
+          state.corruptedSvgText = corruptSvgSourceCode(state.rawSvgText, seedVal, effectiveLvl);
+        }
+        renderCodeInspector(mutatedCount);
+      }
+
+      // Decode the real corrupted JPEG binary buffer via Blob URL!
+      return new Promise((resolve) => {
+        const blob = new Blob([bytes], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          ctx.clearRect(0, 0, W, H);
+          ctx.drawImage(img, 0, 0, W, H);
+
+          // Scrub any flat #808080 undecoded JPEG MCU regions BEFORE kernel synthesis
+          const decodedImg = ctx.getImageData(0, 0, W, H);
+          eliminateUndecodedJpegGray(decodedImg.data, cleanSrcData, W, H, bytes, seedVal, effectiveLvl);
+          ctx.putImageData(decodedImg, 0, 0);
+
+          applyBitstreamAndScanlinePostProcess(ctx, W, H, seedVal, effectiveLvl, cleanSrcData);
+          resolve(mutatedCount);
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          // Reconstruct byte-stream shifted buffer directly on cleanSrcData when JPEG header collapses
+          const fallbackImg = ctx.getImageData(0, 0, W, H);
+          for (let i = 0; i < fallbackImg.data.length; i += 4) {
+            fallbackImg.data[i] = 128;
+            fallbackImg.data[i + 1] = 128;
+            fallbackImg.data[i + 2] = 128;
+          }
+          eliminateUndecodedJpegGray(fallbackImg.data, cleanSrcData, W, H, bytes, seedVal, Math.max(0.75, effectiveLvl));
+          ctx.putImageData(fallbackImg, 0, 0);
+          applyBitstreamAndScanlinePostProcess(ctx, W, H, seedVal, Math.max(0.75, effectiveLvl), cleanSrcData);
+          resolve(mutatedCount);
+        };
+
+        img.src = url;
+      });
+    }
+
+    // =========================================================================
+    // 5. LIVE HEXADECIMAL & SVG XML CODE INSPECTOR
+    // =========================================================================
+    function renderCodeInspector(mutatedCount) {
+      const viewer = document.getElementById('hex-stream-viewer');
+
+      if (state.isSvgSource && state.corruptedSvgText) {
+        const snippet = state.corruptedSvgText.slice(0, 2600);
+        viewer.innerHTML = `<pre class="whitespace-pre-wrap break-all text-[10px] text-emerald-300/90">${escapeHtml(snippet)}</pre>`;
+        return;
+      }
+
+      const bytes = state.lastMutatedBytes || state.baseJpegBytes;
+      if (!bytes || bytes.length === 0) {
+        viewer.textContent = 'Esperando buffer binario...';
+        return;
+      }
+
+      // Show header bytes + active corrupted entropy window
+      const startSample = Math.max(0, state.sosOffset - 16);
+      const sampleLen = Math.min(bytes.length - startSample, 320);
+      const rows = [];
+
+      for (let i = 0; i < sampleLen; i += 8) {
+        const addr = (startSample + i).toString(16).toUpperCase().padStart(6, '0');
+        const hexCells = [];
+        for (let b = 0; b < 8 && i + b < sampleLen; b++) {
+          const idx = startSample + i + b;
+          const hex = bytes[idx].toString(16).toUpperCase().padStart(2, '0');
+          if (state.lastMutatedOffsets.has(idx)) {
+            hexCells.push(`<span class="px-0.5 rounded bg-red-500/30 text-[#00FF66] font-bold">${hex}</span>`);
+          } else {
+            hexCells.push(`<span>${hex}</span>`);
+          }
+        }
+        rows.push(`<div class="flex gap-2"><span class="text-neutral-600">${addr}</span><span class="flex gap-1.5">${hexCells.join('')}</span></div>`);
+      }
+
+      viewer.innerHTML = rows.join('');
+    }
+
+    // =========================================================================
+    // 6. VARIATIONS GALLERY & WHOLE-CANVAS ZOOM CONTROLLER
+    // =========================================================================
+    let varRenderSeq = 0;
+    async function renderVariationsSidebar() {
+      const seq = ++varRenderSeq;
+      const grid = document.getElementById('variations-grid');
+      grid.innerHTML = '';
+      const ar = state.sourceWidth / state.sourceHeight;
+      const vW = ar >= 1 ? 260 : Math.max(140, Math.round(260 * ar));
+      const vH = ar >= 1 ? Math.max(140, Math.round(260 / ar)) : 260;
+
+      // Exact same canonical 2400px master dimensions used by Main Canvas & Exports
+      const masterLongest = 2400;
+      const mW = ar >= 1 ? masterLongest : Math.max(120, Math.round(masterLongest * ar));
+      const mH = ar >= 1 ? Math.max(120, Math.round(masterLongest / ar)) : masterLongest;
+
+      const items = state.variationSeeds.map((vSeed, idx) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'group rounded-xl overflow-hidden border border-studio-border hover:border-[#00FF66] bg-black p-1 flex flex-col items-center transition-all text-left';
+
+        const c = document.createElement('canvas');
+        c.width = vW;
+        c.height = vH;
+        c.className = 'w-full rounded-md object-contain bg-black';
+        const varLevel = Number(Math.min(1, Math.max(0.15, state.masterGlitch + (idx - 1.5) * 0.14)).toFixed(2));
+
+        const footer = document.createElement('div');
+        footer.className = 'w-full flex items-center justify-between pt-1 px-1 font-mono text-[10px] text-neutral-400';
+        footer.innerHTML = `<span>Var ${idx + 1} (${Math.round(varLevel * 100)}%)</span><span class="text-[#00FF66]">#${vSeed}</span>`;
+
+        card.appendChild(c);
+        card.appendChild(footer);
+        grid.appendChild(card);
+
+        const item = { vSeed, varLevel, thumbCanvas: c, masterCache: null };
+        card.addEventListener('click', () => {
+          pushHistorySnapshot();
+          state.seed = item.vSeed;
+          state.masterGlitch = item.varLevel;
+          syncControlsFromState();
+
+          if (item.masterCache) {
+            // Immediately copy the exact cached 2400px master buffer onto state.masterOutputCanvas & Main Canvas
+            state.masterOutputCanvas.width = mW;
+            state.masterOutputCanvas.height = mH;
+            const octx = state.masterOutputCanvas.getContext('2d');
+            octx.imageSmoothingEnabled = false;
+            octx.clearRect(0, 0, mW, mH);
+            octx.drawImage(item.masterCache, 0, 0, mW, mH);
+
+            const mainCanvas = document.getElementById('main-glitch-canvas');
+            const mctx = mainCanvas.getContext('2d');
+            mctx.imageSmoothingEnabled = false;
+            mctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            mctx.drawImage(item.masterCache, 0, 0, mainCanvas.width, mainCanvas.height);
+          }
+          // Also update Hex/SVG inspector & confirm exact sync
+          renderMainCanvas();
+        });
+        return item;
+      });
+
+      // Render each variation through the exact 2400px master buffer so thumbnail == Main Canvas 1:1
+      for (let i = 0; i < items.length; i++) {
+        if (seq !== varRenderSeq) return;
+        const item = items[i];
+        const vMaster = document.createElement('canvas');
+        vMaster.width = mW;
+        vMaster.height = mH;
+        await renderGlitchedBufferOntoCanvas(vMaster, item.vSeed, item.varLevel, false);
+        if (seq !== varRenderSeq) return;
+        item.masterCache = vMaster;
+
+        const tctx = item.thumbCanvas.getContext('2d');
+        tctx.clearRect(0, 0, vW, vH);
+        tctx.drawImage(vMaster, 0, 0, vW, vH);
+      }
+    }
+
+    function fitCanvasToViewport() {
+      const vp = document.getElementById('canvas-viewport');
+      const availW = Math.max(280, (vp.clientWidth || 680) - 44);
+      const availH = Math.max(300, (vp.clientHeight || 540) - 44);
+      const ar = state.sourceWidth / state.sourceHeight;
+      let w = availW;
+      let h = w / ar;
+      if (h > availH) {
+        h = availH;
+        w = h * ar;
+      }
+      state.baseFitW = Math.round(w);
+      state.baseFitH = Math.round(h);
+      applyViewportZoom();
+    }
+
+    function applyViewportZoom() {
+      const vp = document.getElementById('canvas-viewport');
+      const frame = document.getElementById('canvas-frame');
+      const canvas = document.getElementById('main-glitch-canvas');
+      const targetW = Math.round(state.baseFitW * state.zoom);
+      const targetH = Math.round(state.baseFitH * state.zoom);
+
+      frame.style.width = `${targetW}px`;
+      frame.style.height = `${targetH}px`;
+
+      if (targetW > vp.clientWidth - 36 || targetH > vp.clientHeight - 36) {
+        vp.classList.remove('items-center', 'justify-center');
+        vp.classList.add('items-start', 'justify-start');
+        canvas.style.cursor = state.isPanning ? 'grabbing' : 'grab';
+      } else {
+        vp.classList.remove('items-start', 'justify-start');
+        vp.classList.add('items-center', 'justify-center');
+        canvas.style.cursor = 'pointer';
+      }
+
+      document.getElementById('zoom-pct-badge').textContent = `${Math.round(state.zoom * 100)}%`;
+
+      const ar = state.sourceWidth / state.sourceHeight;
+      const longest = Math.max(1100, Math.min(4400, Math.round(Math.max(targetW, targetH) * 1.45)));
+      const cW = ar >= 1 ? longest : Math.round(longest * ar);
+      const cH = ar >= 1 ? Math.round(longest / ar) : longest;
+      if (canvas.width !== cW || canvas.height !== cH) {
+        canvas.width = cW;
+        canvas.height = cH;
+      }
+      renderMainCanvas();
+    }
+
+    function ensureMasterOutputBuffer(updateInspector = false) {
+      const ar = state.sourceWidth / state.sourceHeight;
+      const masterLongest = 2400;
+      const mW = ar >= 1 ? masterLongest : Math.max(120, Math.round(masterLongest * ar));
+      const mH = ar >= 1 ? Math.max(120, Math.round(masterLongest / ar)) : masterLongest;
+      if (state.masterOutputCanvas.width !== mW || state.masterOutputCanvas.height !== mH) {
+        state.masterOutputCanvas.width = mW;
+        state.masterOutputCanvas.height = mH;
+      }
+      return renderGlitchedBufferOntoCanvas(state.masterOutputCanvas, state.seed, state.masterGlitch, updateInspector);
+    }
+
+    let renderSeq = 0;
+    function renderMainCanvas() {
+      const seq = ++renderSeq;
+      const mainCanvas = document.getElementById('main-glitch-canvas');
+      ensureMasterOutputBuffer(true).then((mutatedCount) => {
+        if (seq !== renderSeq) return;
+        const mctx = mainCanvas.getContext('2d');
+        mctx.save();
+        mctx.imageSmoothingEnabled = false;
+        mctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+        mctx.drawImage(state.masterOutputCanvas, 0, 0, mainCanvas.width, mainCanvas.height);
+        mctx.restore();
+
+        const kb = state.baseJpegBytes ? (state.baseJpegBytes.length / 1024).toFixed(1) : '0.0';
+        document.getElementById('status-bar-text').textContent =
+          `BUFFER: ${kb} KB · ${mutatedCount} bytes corrompidos · Semilla #${state.seed}`;
+      });
+    }
+
+    function renderAll() {
+      renderMainCanvas();
+      renderVariationsSidebar();
+    }
+
+    function updateStageTierBadge(pct) {
+      const badge = document.getElementById('stage-tier-badge');
+      if (pct === 0) {
+        badge.textContent = '0% · INTACTO';
+        badge.className = 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 font-semibold';
+      } else if (pct <= 30) {
+        badge.textContent = 'BAJO · SUTIL';
+        badge.className = 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold';
+      } else if (pct <= 70) {
+        badge.textContent = 'MEDIO · FRAGMENTOS';
+        badge.className = 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-studio-accent/20 text-[#6E96FF] font-semibold';
+      } else {
+        badge.textContent = 'TOTAL · COLAPSO';
+        badge.className = 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-[#00FF66] font-semibold';
+      }
+    }
+
+    function syncControlsFromState() {
+      document.getElementById('input-seed').value = state.seed;
+      const pct = Math.round(state.masterGlitch * 100);
+      document.getElementById('slider-master-glitch').value = pct;
+      document.getElementById('val-master-glitch').textContent = `${pct}%`;
+      const scalePct = Math.round(state.effectScale * 100);
+      document.getElementById('slider-effect-scale').value = scalePct;
+      document.getElementById('val-effect-scale').textContent = `${scalePct}%`;
+      const mixPct = Math.round(state.sourceMix * 100);
+      document.getElementById('slider-source-mix').value = mixPct;
+      document.getElementById('val-source-mix').textContent = `${mixPct}%`;
+      updateStageTierBadge(pct);
+
+      document.getElementById('slider-byte-corrupt').value = Math.round(state.byteCorrupt * 100);
+      document.getElementById('val-byte-corrupt').textContent = `${Math.round(state.byteCorrupt * 100)}%`;
+      document.getElementById('slider-hex-inject').value = Math.round(state.hexInject * 100);
+      document.getElementById('val-hex-inject').textContent = `${Math.round(state.hexInject * 100)}%`;
+      document.getElementById('slider-block-tear').value = Math.round(state.blockTear * 100);
+      document.getElementById('val-block-tear').textContent = `${Math.round(state.blockTear * 100)}%`;
+      document.getElementById('slider-scan-shift').value = Math.round(state.scanShift * 100);
+      document.getElementById('val-scan-shift').textContent = `${Math.round(state.scanShift * 100)}%`;
+      document.getElementById('slider-bit-flip').value = Math.round(state.bitFlip * 100);
+      document.getElementById('val-bit-flip').textContent = `${Math.round(state.bitFlip * 100)}%`;
+      document.getElementById('slider-rgb-desync').value = Math.round(state.rgbDesync * 100);
+      document.getElementById('val-rgb-desync').textContent = `${Math.round(state.rgbDesync * 100)}%`;
+      document.getElementById('slider-grid-fusion').value = Math.round(state.gridFusion * 100);
+      document.getElementById('val-grid-fusion').textContent = `${Math.round(state.gridFusion * 100)}%`;
+
+      document.getElementById('chk-protect-header').checked = state.protectHeader;
+      document.getElementById('chk-neon-entropy').checked = state.neonEntropy;
+
+      document.querySelectorAll('.gmode-btn').forEach(b => {
+        const active = b.getAttribute('data-gmode') === state.glitchMode;
+        b.className = active
+          ? 'gmode-btn py-1 rounded-md bg-white text-black font-semibold transition-all'
+          : 'gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all';
+      });
+    }
+
+    // =========================================================================
+    // 7. EVENT HANDLERS & UNIVERSAL MULTI-RESOLUTION EXPORTERS (JPG, PNG, SVG)
+    // =========================================================================
+    function randomizeCorruption() {
+      pushHistorySnapshot();
+      state.seed = Math.floor(10 + Math.random() * 99980);
+      document.getElementById('input-seed').value = state.seed;
+      renderAll();
+    }
+
+    document.getElementById('btn-random-seed').addEventListener('click', randomizeCorruption);
+    document.getElementById('btn-inject-burst').addEventListener('click', () => {
+      pushHistorySnapshot();
+      state.seed = (state.seed + 7919) % 999999;
+      state.masterGlitch = Math.min(1.0, state.masterGlitch + 0.08);
+      syncControlsFromState();
+      renderAll();
+      showToast('Inyección de bytes aplicada al bitstream');
+    });
+
+    document.getElementById('input-seed').addEventListener('change', (e) => {
+      pushHistorySnapshot();
+      state.seed = Math.max(1, parseInt(e.target.value, 10) || 404);
+      renderAll();
+    });
+
+    document.querySelectorAll('.quick-lvl-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pushHistorySnapshot();
+        document.querySelectorAll('.quick-lvl-btn').forEach(b => {
+          b.className = 'quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-white transition-colors';
+        });
+        btn.className = 'quick-lvl-btn px-2.5 py-1 rounded bg-studio-accent text-white font-semibold transition-colors';
+        state.masterGlitch = parseInt(btn.getAttribute('data-level'), 10) / 100;
+        syncControlsFromState();
+        renderAll();
+      });
+    });
+
+    document.getElementById('slider-master-glitch').addEventListener('input', (e) => {
+      const pct = parseInt(e.target.value, 10);
+      state.masterGlitch = pct / 100;
+      document.getElementById('val-master-glitch').textContent = `${pct}%`;
+      updateStageTierBadge(pct);
+      renderMainCanvas();
+    });
+    document.getElementById('slider-master-glitch').addEventListener('change', renderVariationsSidebar);
+    document.getElementById('slider-effect-scale').addEventListener('input', (e) => {
+      const pct = parseInt(e.target.value, 10);
+      state.effectScale = pct / 100;
+      document.getElementById('val-effect-scale').textContent = `${pct}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-effect-scale').addEventListener('change', renderVariationsSidebar);
+    document.getElementById('slider-source-mix').addEventListener('input', (e) => {
+      const pct = parseInt(e.target.value, 10);
+      state.sourceMix = pct / 100;
+      document.getElementById('val-source-mix').textContent = `${pct}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-source-mix').addEventListener('change', renderVariationsSidebar);
+
+    document.getElementById('slider-byte-corrupt').addEventListener('input', (e) => {
+      state.byteCorrupt = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-byte-corrupt').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-hex-inject').addEventListener('input', (e) => {
+      state.hexInject = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-hex-inject').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-block-tear').addEventListener('input', (e) => {
+      state.blockTear = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-block-tear').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-scan-shift').addEventListener('input', (e) => {
+      state.scanShift = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-scan-shift').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-bit-flip').addEventListener('input', (e) => {
+      state.bitFlip = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-bit-flip').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-rgb-desync').addEventListener('input', (e) => {
+      state.rgbDesync = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-rgb-desync').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-grid-fusion').addEventListener('input', (e) => {
+      state.gridFusion = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-grid-fusion').textContent = `${e.target.value}%`;
+      renderMainCanvas();
+    });
+    document.getElementById('slider-grid-fusion').addEventListener('change', renderVariationsSidebar);
+
+    document.querySelectorAll('.gmode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pushHistorySnapshot();
+        state.glitchMode = btn.getAttribute('data-gmode');
+        syncControlsFromState();
+        renderAll();
+      });
+    });
+
+    document.getElementById('chk-protect-header').addEventListener('change', (e) => {
+      state.protectHeader = e.target.checked;
+      renderAll();
+    });
+
+    document.getElementById('chk-neon-entropy').addEventListener('change', (e) => {
+      state.neonEntropy = e.target.checked;
+      renderAll();
+    });
+
+    // Undo / Redo
+    document.getElementById('btn-undo').addEventListener('click', () => {
+      if (historyStack.length === 0) return;
+      redoStack.push(JSON.stringify({
+        seed: state.seed, masterGlitch: state.masterGlitch,
+        effectScale: state.effectScale,
+        sourceMix: state.sourceMix, byteCorrupt: state.byteCorrupt,
+        hexInject: state.hexInject, blockTear: state.blockTear, scanShift: state.scanShift,
+        bitFlip: state.bitFlip, rgbDesync: state.rgbDesync,
+        gridFusion: state.gridFusion, glitchMode: state.glitchMode,
+        protectHeader: state.protectHeader, neonEntropy: state.neonEntropy
+      }));
+      restoreSnapshot(historyStack.pop());
+      updateHistoryButtons();
+    });
+
+    document.getElementById('btn-redo').addEventListener('click', () => {
+      if (redoStack.length === 0) return;
+      historyStack.push(JSON.stringify({
+        seed: state.seed, masterGlitch: state.masterGlitch,
+        effectScale: state.effectScale,
+        sourceMix: state.sourceMix, byteCorrupt: state.byteCorrupt,
+        hexInject: state.hexInject, blockTear: state.blockTear, scanShift: state.scanShift,
+        bitFlip: state.bitFlip, rgbDesync: state.rgbDesync,
+        gridFusion: state.gridFusion, glitchMode: state.glitchMode,
+        protectHeader: state.protectHeader, neonEntropy: state.neonEntropy
+      }));
+      restoreSnapshot(redoStack.pop());
+      updateHistoryButtons();
+    });
+
+    // Universal Image & SVG Uploader
+    function handleUploadedFile(file) {
+      if (!file) return;
+      const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+
+      if (isSvg) {
+        const textReader = new FileReader();
+        textReader.onload = (ev) => {
+          const svgStr = ev.target.result;
+          state.isSvgSource = true;
+          state.rawSvgText = svgStr;
+          const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            const natW = img.naturalWidth || 1200;
+            const natH = img.naturalHeight || 900;
+            state.sourceCanvas.width = natW;
+            state.sourceCanvas.height = natH;
+            const ctx = state.sourceCanvas.getContext('2d');
+            ctx.clearRect(0, 0, natW, natH);
+            ctx.drawImage(img, 0, 0, natW, natH);
+            state.sourceName = file.name;
+            onSourceChanged();
+            showToast(`SVG cargado (${natW}×${natH}) · Código XML listo para intervenir`);
+          };
+          img.src = url;
+        };
+        textReader.readAsText(file);
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        showToast('Sube un archivo de imagen válido (PNG, JPG, WebP, GIF o SVG).');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.isSvgSource = false;
+          state.rawSvgText = '';
+          state.corruptedSvgText = '';
+          state.sourceCanvas.width = img.naturalWidth || img.width;
+          state.sourceCanvas.height = img.naturalHeight || img.height;
+          const ctx = state.sourceCanvas.getContext('2d');
+          ctx.clearRect(0, 0, state.sourceCanvas.width, state.sourceCanvas.height);
+          ctx.drawImage(img, 0, 0);
+          state.sourceName = file.name;
+          onSourceChanged();
+          showToast(`Imagen cargada (${state.sourceWidth}×${state.sourceHeight} px)`);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('file-upload-input').addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleUploadedFile(e.target.files[0]);
+    });
+
+    const dropPanel = document.getElementById('dropzone-panel');
+    ['dragenter', 'dragover'].forEach(evName => {
+      dropPanel.addEventListener(evName, (e) => {
+        e.preventDefault();
+        dropPanel.classList.add('drop-highlight');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evName => {
+      dropPanel.addEventListener(evName, (e) => {
+        e.preventDefault();
+        dropPanel.classList.remove('drop-highlight');
+      });
+    });
+    dropPanel.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleUploadedFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    document.getElementById('btn-load-demo').addEventListener('click', () => {
+      loadBuiltInDemo();
+      showToast('Imagen Demo cargada');
+    });
+
+    // Zoom & Pan Controls (100% -> 500%)
+    document.getElementById('btn-zoom-plus').addEventListener('click', () => {
+      state.zoom = Math.min(5.0, state.zoom + 0.25);
+      applyViewportZoom();
+    });
+    document.getElementById('btn-zoom-minus').addEventListener('click', () => {
+      state.zoom = Math.max(1.0, state.zoom - 0.25);
+      applyViewportZoom();
+    });
+    document.getElementById('btn-zoom-fit').addEventListener('click', () => {
+      state.zoom = 1.0;
+      applyViewportZoom();
+    });
+
+    const viewport = document.getElementById('canvas-viewport');
+    const mainCanvasEl = document.getElementById('main-glitch-canvas');
+
+    mainCanvasEl.addEventListener('mousedown', (e) => {
+      state.isPanning = true;
+      state.dragMoved = false;
+      state.panStartX = e.clientX;
+      state.panStartY = e.clientY;
+      state.panScrollL = viewport.scrollLeft;
+      state.panScrollT = viewport.scrollTop;
+      if (state.zoom > 1.01) mainCanvasEl.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!state.isPanning) return;
+      const dx = e.clientX - state.panStartX;
+      const dy = e.clientY - state.panStartY;
+      if (Math.hypot(dx, dy) > 4) state.dragMoved = true;
+      if (state.zoom > 1.01) {
+        viewport.scrollLeft = state.panScrollL - dx;
+        viewport.scrollTop = state.panScrollT - dy;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!state.isPanning) return;
+      const wasClick = !state.dragMoved;
+      state.isPanning = false;
+      mainCanvasEl.style.cursor = state.zoom > 1.01 ? 'grab' : 'pointer';
+      if (wasClick) randomizeCorruption();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        randomizeCorruption();
+      }
+    });
+
+    window.addEventListener('resize', fitCanvasToViewport);
+
+    document.getElementById('btn-refresh-variations').addEventListener('click', () => {
+      state.variationSeeds = Array.from({ length: 4 }, () => Math.floor(100 + Math.random() * 98000));
+      renderVariationsSidebar();
+    });
+
+    // Export Format & Multi-Resolution Download (JPG, PNG, SVG up to 8K)
+    document.querySelectorAll('.export-fmt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.export-fmt-btn').forEach(b => {
+          b.className = 'export-fmt-btn py-1.5 rounded-lg border border-studio-border bg-studio-bg text-studio-muted hover:text-white text-center transition-all';
+        });
+        btn.className = 'export-fmt-btn py-1.5 rounded-lg border border-studio-accent bg-studio-accent text-white font-semibold text-center transition-all';
+        state.exportFormat = btn.getAttribute('data-fmt');
+        document.getElementById('btn-export-label').textContent = `Exportar ${state.exportFormat.toUpperCase()}`;
+      });
+    });
+
+    document.getElementById('select-export-scale').addEventListener('change', (e) => {
+      state.exportScale = e.target.value;
+    });
+
+    async function triggerDownloadExport() {
+      const fmtType = state.exportFormat;
+      const ar = state.sourceWidth / state.sourceHeight;
+      let outW, outH;
+      if (state.exportScale === '8k') {
+        outW = ar >= 1 ? 7680 : Math.round(7680 * ar);
+        outH = ar >= 1 ? Math.round(7680 / ar) : 7680;
+      } else {
+        const mult = parseInt(state.exportScale, 10) || 2;
+        outW = state.sourceWidth * mult;
+        outH = state.sourceHeight * mult;
+      }
+
+      // Always guarantee state.masterOutputCanvas is freshly synchronized with current state
+      await ensureMasterOutputBuffer(false);
+
+      if (fmtType === 'svg') {
+        if (state.isSvgSource && state.corruptedSvgText && state.masterGlitch <= 0.35) {
+          const blob = new Blob([state.corruptedSvgText], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.download = `aisuni-glitch-code-vector-xml-seed-${state.seed}.svg`;
+          a.href = url;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast(`Exportado SVG vectorial XML mutado (Semilla #${state.seed})`);
+          return;
+        }
+
+        showToast('Vectorizando geometría SVG real 1:1 (sin raster)...');
+        // Sample directly from the exact state.masterOutputCanvas so SVG matches 2K, 4K, 8K, and Canvas 1:1!
+        const baseGrid = (state.exportScale === '4' || state.exportScale === '8k') ? 480 : 360;
+        const vecW = ar >= 1 ? baseGrid : Math.max(120, Math.round(baseGrid * ar));
+        const vecH = ar >= 1 ? Math.max(120, Math.round(baseGrid / ar)) : baseGrid;
+
+        const vecCanvas = document.createElement('canvas');
+        vecCanvas.width = vecW;
+        vecCanvas.height = vecH;
+        const vctx = vecCanvas.getContext('2d');
+        vctx.imageSmoothingEnabled = false;
+        vctx.drawImage(state.masterOutputCanvas, 0, 0, vecW, vecH);
+
+        const imgData = vctx.getImageData(0, 0, vecW, vecH).data;
+        const toHex = (r, g, b) => {
+          const qr = (r & 0xF8) | (r >> 5);
+          const qg = (g & 0xF8) | (g >> 5);
+          const qb = (b & 0xF8) | (b >> 5);
+          return '#' + ((1 << 24) + (qr << 16) + (qg << 8) + qb).toString(16).slice(1).toUpperCase();
+        };
+
+        const shapes = [];
+        shapes.push(`  <rect x="0" y="0" width="${vecW}" height="${vecH}" fill="#0B0C0E"/>`);
+
+        for (let y = 0; y < vecH; y++) {
+          let runX = 0;
+          let idx0 = (y * vecW) * 4;
+          let runHex = toHex(imgData[idx0], imgData[idx0 + 1], imgData[idx0 + 2]);
+
+          for (let x = 1; x <= vecW; x++) {
+            let curHex = null;
+            if (x < vecW) {
+              const idx = (y * vecW + x) * 4;
+              curHex = toHex(imgData[idx], imgData[idx + 1], imgData[idx + 2]);
+            }
+            if (curHex !== runHex) {
+              const runW = x - runX;
+              if (runHex !== '#0B0C0E') {
+                shapes.push(`  <rect x="${runX}" y="${y}" width="${runW}" height="1.05" fill="${runHex}"/>`);
+              }
+              runX = x;
+              runHex = curHex;
+            }
+          }
+        }
+
+        const svgDoc = [
+          `<?xml version="1.0" encoding="UTF-8"?>`,
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vecW} ${vecH}" width="${outW}" height="${outH}" shape-rendering="crispEdges">`,
+          `  <!-- Pure Vector SVG generated by AISUNI / GLITCH-CODE · Seed #${state.seed} · Nivel ${Math.round(state.masterGlitch * 100)}% (Zero raster image embeds) -->`,
+          shapes.join('\n'),
+          `</svg>`
+        ].join('\n');
+
+        const blob = new Blob([svgDoc], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `aisuni-glitch-code-pure-vector-${outW}x${outH}-seed-${state.seed}.svg`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Exportado SVG 100% vectorial (${shapes.length} trazos nativos)`);
+        return;
+      }
+
+      showToast(`Exportando ${fmtType.toUpperCase()} (${outW} × ${outH} px)...`);
+      // Blit the exact same state.masterOutputCanvas onto target resolution (1x, 2x, 4K, or 8K)
+      // with imageSmoothingEnabled = false so 2K, 4K, and 8K are 100% identical and razor-sharp!
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = outW;
+      expCanvas.height = outH;
+      const ectx = expCanvas.getContext('2d');
+      ectx.imageSmoothingEnabled = false;
+      ectx.drawImage(state.masterOutputCanvas, 0, 0, outW, outH);
+
+      const isJpg = fmtType === 'jpg';
+      const dataUrl = isJpg
+        ? expCanvas.toDataURL('image/jpeg', 0.94)
+        : expCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.download = `aisuni-glitch-code-${outW}x${outH}-seed-${state.seed}.${fmtType}`;
+      a.href = dataUrl;
+      a.click();
+      showToast(`Exportado ${fmtType.toUpperCase()} (${outW} × ${outH} px)`);
+    }
+
+    document.getElementById('btn-panel-export').addEventListener('click', triggerDownloadExport);
+    document.getElementById('btn-header-export').addEventListener('click', triggerDownloadExport);
+
+    // Boot Application
+    loadBuiltInDemo();
+  </script>
+</body>
+</html>
