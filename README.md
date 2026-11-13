@@ -2,6 +2,11 @@
 
 Herramientas generativas de AISUNI. Exploraciones con código.
 
+- [AISUNI / GLITCH-MOTION](AISUNI-Glitch-Motion/) — anima la corrupción visual de GLITCH-CODE o genera distorsiones desde cero; exporta MP4, GIF y fotogramas PNG.
+  - Versión: 1.0
+  - Derivada de: [AISUNI / GLITCH-CODE](AISUNI-Glitch-Code/)
+  - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glitch-Motion/
+
 - [AISUNI / GLITCH-CODE](AISUNI-Glitch-Code/) — transforma imágenes y archivos SVG mediante databending binario, corrupción de código y efectos algorítmicos; exporta PNG, JPG o SVG.
   - Versión: 1.0
   - Probar: https://aisuni-lab.github.io/A-tools/AISUNI-Glitch-Code/

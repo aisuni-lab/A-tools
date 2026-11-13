@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISUNI / GLITCH-MOTION — Animación de Corrupción de Código &amp; Exportación MP4 / GIF</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              bg: '#121212',
+              panel: '#1E1E1E',
+              card: '#252525',
+              border: '#2F2F35',
+              accent: '#245CFF',
+              neon: '#00FF66',
+              muted: '#A0A0A8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #FFFFFF;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #2F2F35;
+      height: 4px;
+      border-radius: 999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #245CFF;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    input[type="range"].master-slider::-webkit-slider-thumb {
+      width: 16px;
+      height: 16px;
+      background: #00FF66;
+      border: 2px solid #121212;
+    }
+    input[type="range"].timeline-slider::-webkit-slider-thumb {
+      width: 14px;
+      height: 14px;
+      background: #FFFFFF;
+      border: 2px solid #245CFF;
+    }
+    input[type="checkbox"] {
+      accent-color: #245CFF;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #141416;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #33333A;
+      border-radius: 4px;
+    }
+    .drop-highlight {
+      border-color: #00FF66 !important;
+      background-color: rgba(0, 255, 102, 0.08) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-studio-accent selection:text-white">
+
+  <!-- TOP HEADER BAR -->
+  <header class="border-b border-studio-border bg-studio-panel/95 backdrop-blur sticky top-0 z-30 px-4 sm:px-6 py-2.5">
+    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <h1 class="text-sm sm:text-base tracking-tight">
+          <span class="font-bold text-white uppercase">AISUNI</span>
+          <span class="text-studio-muted mx-1.5">/</span>
+          <span class="font-medium text-neutral-300 uppercase">GLITCH-MOTION</span>
+        </h1>
+        <span id="workflow-header-badge" class="hidden sm:inline-block font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/35 text-[#00FF66]">
+          MOTOR TEMPORAL · MP4 HQ &amp; GIF
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Quick Destruction Presets -->
+        <div class="flex items-center bg-studio-bg border border-studio-border rounded-lg p-0.5 font-mono text-[11px]">
+          <button data-level="20" class="quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-white transition-colors">Bajo</button>
+          <button data-level="50" class="quick-lvl-btn px-2.5 py-1 rounded bg-studio-accent text-white font-semibold transition-colors">Medio</button>
+          <button data-level="96" class="quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-[#00FF66] transition-colors">Total</button>
+        </div>
+
+        <!-- Play / Pause Top Shortcut -->
+        <button id="btn-header-play" class="px-3 py-1.5 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs font-semibold text-white flex items-center gap-1.5 transition-colors">
+          <span id="header-play-icon">⏸</span>
+          <span id="header-play-label">Pausa</span>
+        </button>
+
+        <!-- Primary Top Export MP4 Action -->
+        <button id="btn-header-export" class="px-3.5 py-1.5 rounded-lg bg-[#00FF66] text-black hover:bg-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+          <span>▶</span>
+          <span>Exportar MP4</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-studio-panel border border-[#00FF66] text-xs font-mono text-white shadow-2xl"></div>
+
+  <!-- MAIN 3-COLUMN WORKSPACE -->
+  <main class="flex-1 max-w-[1640px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4">
+
+    <!-- LEFT COLUMN: 01 ORIGEN Y FLUJO, 02 MOTOR GLITCH-CODE, 03 ESTILO & SALTO PIXEL -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3 custom-scroll">
+      <div class="space-y-3">
+
+        <!-- SECTION 01: TWO CLEAR WORKFLOWS + FILE LOADER -->
+        <section id="dropzone-panel" class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5 transition-colors">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">01</span>
+              <span>ORIGEN Y FLUJO</span>
+            </h2>
+            <span id="img-ratio-badge" class="font-mono text-[10px] text-studio-muted">4:3</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-studio-bg border border-studio-border text-[11px]">
+            <button data-workflow="import_glitch" class="workflow-btn py-1.5 px-2 rounded-md text-studio-muted hover:text-white transition-all leading-tight text-center" title="Importa una imagen ya exportada desde GLITCH-CODE para animar sus artefactos sin taparla">
+              Importar Glitch-Code
+            </button>
+            <button data-workflow="from_scratch" class="workflow-btn py-1.5 px-2 rounded-md bg-studio-accent text-white font-semibold transition-all leading-tight text-center" title="Crea desde cero el efecto GLITCH-CODE y la animación sobre cualquier imagen o SVG">
+              Crear de Cero
+            </button>
+          </div>
+
+          <p id="workflow-hint" class="text-[11px] text-studio-muted leading-snug">
+            Modo <strong class="text-white">Crear de Cero</strong>: carga cualquier foto o SVG y genera distorsión + animación en vivo.
+          </p>
+
+          <label for="file-upload-input" class="w-full py-2 px-3 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs font-medium text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+            <span>↑</span>
+            <span id="upload-btn-label">Cargar imagen (PNG / JPG / SVG)</span>
+          </label>
+          <input id="file-upload-input" type="file" accept="image/*,.svg" class="hidden">
+
+          <div class="flex items-center gap-2.5 p-2 rounded-lg bg-studio-bg border border-studio-border">
+            <canvas id="thumb-preview-canvas" width="52" height="52" class="w-11 h-11 rounded border border-white/10 bg-black object-contain flex-shrink-0"></canvas>
+            <div class="min-w-0 flex-1">
+              <p id="img-meta-name" class="text-xs font-medium text-white truncate">Demo · Retrato Claroscuro.jpg</p>
+              <p id="img-meta-dims" class="font-mono text-[10px] text-studio-muted">1200 × 900 px · Listo</p>
+            </div>
+            <button id="btn-load-demo" type="button" class="px-2.5 py-1 rounded bg-white text-black hover:bg-neutral-200 text-[11px] font-semibold transition-colors flex-shrink-0">
+              Demo
+            </button>
+          </div>
+        </section>
+
+        <!-- SECTION 02: GLITCH-CODE ENGINE PARAMETERS -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">02</span>
+              <span>MOTOR GLITCH-CODE</span>
+            </h2>
+            <span id="stage-tier-badge" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-studio-accent/20 text-[#6E96FF] font-semibold">
+              MEDIO · FRAGMENTOS
+            </span>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-studio-bg border border-studio-border space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-white">Nivel de Distorsión</span>
+              <span id="val-master-glitch" class="font-mono text-[#00FF66] font-bold">50%</span>
+            </div>
+            <input id="slider-master-glitch" type="range" min="0" max="100" step="1" value="50" class="w-full master-slider">
+            <div class="flex justify-between font-mono text-[9px] text-studio-muted pt-0.5">
+              <span>0% Original</span>
+              <span>Bajo</span>
+              <span>Medio</span>
+              <span class="text-[#00FF66]">100% Total</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Escala Efectos</span>
+                <span id="val-effect-scale" class="font-mono text-[#6E96FF]">100%</span>
+              </div>
+              <input id="slider-effect-scale" type="range" min="50" max="500" step="5" value="100" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Imagen Origen</span>
+                <span id="val-source-mix" class="font-mono text-amber-300">35%</span>
+              </div>
+              <input id="slider-source-mix" type="range" min="0" max="100" step="1" value="35" class="w-full">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Corrupción Bytes</span>
+                <span id="val-byte-corrupt" class="font-mono text-white">52%</span>
+              </div>
+              <input id="slider-byte-corrupt" type="range" min="0" max="100" step="2" value="52" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Inyección Hex</span>
+                <span id="val-hex-inject" class="font-mono text-white">40%</span>
+              </div>
+              <input id="slider-hex-inject" type="range" min="0" max="100" step="2" value="40" class="w-full">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Desgarros Saltados</span>
+                <span id="val-block-tear" class="font-mono text-white">45%</span>
+              </div>
+              <input id="slider-block-tear" type="range" min="0" max="100" step="2" value="45" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Desfase Scanlines</span>
+                <span id="val-scan-shift" class="font-mono text-white">50%</span>
+              </div>
+              <input id="slider-scan-shift" type="range" min="0" max="100" step="2" value="50" class="w-full">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Bit-Flip / Trama</span>
+                <span id="val-bit-flip" class="font-mono text-white">36%</span>
+              </div>
+              <input id="slider-bit-flip" type="range" min="0" max="100" step="2" value="36" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-neutral-300">Desfase RGB/YUV</span>
+                <span id="val-rgb-desync" class="font-mono text-white">44%</span>
+              </div>
+              <input id="slider-rgb-desync" type="range" min="0" max="100" step="2" value="44" class="w-full">
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 03: SYNTHESIS MODES & 8-DIR PIXEL SORT -->
+        <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+              <span class="font-mono text-studio-muted">03</span>
+              <span>ESTILO &amp; SALTO PIXEL</span>
+            </h2>
+            <span class="font-mono text-[10px] text-studio-muted">8-DIR SORT</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-lg bg-studio-bg border border-studio-border text-[11px]">
+            <button data-gmode="jpeg_stream" class="gmode-btn py-1 rounded-md bg-white text-black font-semibold transition-all">
+              Ciber-Tapiz
+            </button>
+            <button data-gmode="hex_splice" class="gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Ondas / Sort
+            </button>
+            <button data-gmode="collapse" class="gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all">
+              Micro-Trama
+            </button>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-neutral-300">Salto / Pixel Sort Cruzado</span>
+              <span id="val-grid-fusion" class="font-mono text-[#00FF66]">44%</span>
+            </div>
+            <input id="slider-grid-fusion" type="range" min="0" max="100" step="2" value="44" class="w-full">
+          </div>
+
+          <div class="space-y-1.5 pt-0.5 text-xs">
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Proteger cabecera binaria</span>
+              <input id="chk-protect-header" type="checkbox" checked>
+            </label>
+            <label class="flex items-center justify-between cursor-pointer text-neutral-200">
+              <span>Forzar colapso neón extremo</span>
+              <input id="chk-neon-entropy" type="checkbox">
+            </label>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- BOTTOM RANDOMIZER & SEED BAR -->
+      <div class="p-3 rounded-xl bg-studio-panel border border-studio-border flex items-center gap-2">
+        <button id="btn-random-seed" class="flex-1 py-2 px-3 rounded-lg bg-studio-accent hover:bg-blue-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow">
+          <span>🎲</span>
+          <span>Mutar Semilla</span>
+        </button>
+        <div class="flex items-center gap-1.5 bg-studio-bg border border-studio-border rounded-lg px-2.5 py-1.5">
+          <label for="input-seed" class="text-[11px] text-studio-muted">Semilla</label>
+          <input id="input-seed" type="number" min="1" max="999999" value="404" class="w-16 bg-transparent font-mono text-xs text-white text-right focus:outline-none">
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER WORKSPACE: LIVE MOTION PLAYER + TIMELINE SCRUBBER + ZOOM -->
+    <section class="lg:col-span-6 flex flex-col space-y-3">
+      <div class="flex-1 rounded-2xl bg-studio-panel border border-studio-border flex flex-col justify-between overflow-hidden">
+
+        <!-- Stage Viewport -->
+        <div id="canvas-viewport" class="flex-1 min-h-[500px] bg-[#0B0C0E] overflow-auto custom-scroll flex items-center justify-center p-5 relative select-none">
+          <div id="canvas-frame" class="flex-shrink-0 rounded-lg overflow-hidden shadow-2xl border border-white/15 bg-black transition-all" style="width: 560px; height: 420px;">
+            <canvas id="main-motion-canvas" width="960" height="720" class="w-full h-full block cursor-pointer" title="Clic para pausar/reproducir · Arrastra con zoom para inspeccionar"></canvas>
+          </div>
+        </div>
+
+        <!-- Live Timeline Scrubber & Transport -->
+        <div class="px-4 py-3 bg-studio-bg/90 border-t border-studio-border space-y-2">
+          <div class="flex items-center gap-3">
+            <button id="btn-rewind" class="w-8 h-8 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs text-white flex items-center justify-center" title="Ir al inicio">
+              ⏮
+            </button>
+            <button id="btn-play-pause" class="w-9 h-8 rounded-lg bg-studio-accent hover:bg-blue-600 text-xs font-bold text-white flex items-center justify-center" title="Reproducir / Pausar (Espacio)">
+              ⏸
+            </button>
+            <input id="slider-timeline" type="range" min="0" max="1000" step="1" value="0" class="flex-1 timeline-slider">
+            <span id="timeline-readout" class="font-mono text-[11px] text-[#00FF66] min-w-[110px] text-right">
+              0.00s / 5.0s
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
+            <div id="status-bar-text" class="font-mono text-[11px] text-studio-muted">
+              FRAME 001 / 150 · 30 FPS · Semilla #404
+            </div>
+
+            <div class="flex items-center gap-1 bg-studio-panel border border-studio-border rounded-lg p-0.5 font-mono text-xs">
+              <button id="btn-zoom-minus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Alejar">−</button>
+              <button id="btn-zoom-fit" class="px-2.5 h-6 rounded hover:bg-white/10 text-neutral-200 hover:text-white text-[11px]" title="Ajustar">Ajustar</button>
+              <button id="btn-zoom-plus" class="w-7 h-6 rounded hover:bg-white/10 text-neutral-300 hover:text-white flex items-center justify-center" title="Acercar">+</button>
+              <span id="zoom-pct-badge" class="px-2 text-[11px] text-[#00FF66]">100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: 04 DINÁMICA TEMPORAL + 05 VARIACIONES + EXPORTACIÓN MP4 & GIF -->
+    <aside class="lg:col-span-3 flex flex-col justify-between space-y-3">
+
+      <!-- 04 MOTION DYNAMICS -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold tracking-wide uppercase text-white flex items-center gap-2">
+            <span class="font-mono text-studio-muted">04</span>
+            <span>DINÁMICA TEMPORAL</span>
+          </h2>
+          <span class="font-mono text-[10px] text-[#00FF66]">f(seed, t)</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+          <button data-mmode="flow" class="mmode-btn py-1.5 px-2 rounded-lg bg-white text-black font-semibold transition-all text-center">
+            Flujo Continuo
+          </button>
+          <button data-mmode="loop" class="mmode-btn py-1.5 px-2 rounded-lg bg-studio-bg border border-studio-border text-studio-muted hover:text-white transition-all text-center">
+            Loop Perfecto
+          </button>
+          <button data-mmode="stutter" class="mmode-btn py-1.5 px-2 rounded-lg bg-studio-bg border border-studio-border text-studio-muted hover:text-white transition-all text-center">
+            Ráfaga / Pulso
+          </button>
+          <button data-mmode="collapse_prog" class="mmode-btn py-1.5 px-2 rounded-lg bg-studio-bg border border-studio-border text-studio-muted hover:text-white transition-all text-center">
+            Colapso 0→100%
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-0.5">
+          <div>
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="text-neutral-300">Velocidad</span>
+              <span id="val-motion-speed" class="font-mono text-white">1.2×</span>
+            </div>
+            <input id="slider-motion-speed" type="range" min="20" max="300" step="10" value="120" class="w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] mb-1">
+              <span class="text-neutral-300">Pulso / Saltos</span>
+              <span id="val-motion-stutter" class="font-mono text-white">30%</span>
+            </div>
+            <input id="slider-motion-stutter" type="range" min="0" max="100" step="5" value="30" class="w-full">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-neutral-300">Oscilación de Distorsión</span>
+            <span id="val-motion-amp" class="font-mono text-[#6E96FF]">25%</span>
+          </div>
+          <input id="slider-motion-amp" type="range" min="0" max="80" step="5" value="25" class="w-full">
+        </div>
+      </section>
+
+      <!-- 05 VARIACIONES DE CÓDIGO -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2 flex-1 flex flex-col">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold text-white">05 · Variaciones de Código</h2>
+          <button id="btn-refresh-variations" class="text-[11px] text-[#6E96FF] hover:underline font-medium">
+            Nuevas ↻
+          </button>
+        </div>
+        <div id="variations-grid" class="grid grid-cols-2 gap-2 pt-0.5">
+          <!-- 4 variation thumbnails rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- EXPORT MP4 & GIF PANEL -->
+      <section class="p-3.5 rounded-xl bg-studio-panel border border-studio-border space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-white">Exportar Animación</h2>
+          <span class="font-mono text-[10px] text-[#00FF66]">MP4 HQ · GIF</span>
+        </div>
+
+        <!-- Duration Presets + Custom Seconds -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-studio-muted">Duración del Video</span>
+            <span id="val-duration-badge" class="font-mono text-white font-semibold">5 segundos</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1 font-mono text-[11px]">
+            <button data-dur="3" class="dur-btn py-1 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white">3s</button>
+            <button data-dur="5" class="dur-btn py-1 rounded bg-studio-accent border border-studio-accent text-white font-semibold">5s</button>
+            <button data-dur="10" class="dur-btn py-1 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white">10s</button>
+            <button data-dur="15" class="dur-btn py-1 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white">15s</button>
+            <input id="input-duration-sec" type="number" min="1" max="60" value="5" class="bg-studio-bg border border-studio-border rounded px-1.5 py-1 text-center text-white focus:outline-none focus:border-[#00FF66]" title="Duración personalizada (1–60 seg)">
+          </div>
+        </div>
+
+        <!-- FPS & Resolution -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="select-fps" class="block text-[11px] text-studio-muted mb-1">Fluidez (FPS)</label>
+            <select id="select-fps" class="w-full bg-studio-bg border border-studio-border rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-studio-accent">
+              <option value="24">24 fps (Cine)</option>
+              <option value="30" selected>30 fps (Estándar)</option>
+              <option value="60">60 fps (Fluido)</option>
+            </select>
+          </div>
+          <div>
+            <label for="select-video-res" class="block text-[11px] text-studio-muted mb-1">Resolución</label>
+            <select id="select-video-res" class="w-full bg-studio-bg border border-studio-border rounded-lg px-2 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-studio-accent">
+              <option value="720">720p (HD)</option>
+              <option value="1080" selected>1080p (Full HD)</option>
+              <option value="2048">2K (2048 px)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="export-progress-wrap" class="hidden space-y-1 p-2 rounded-lg bg-studio-bg border border-studio-border">
+          <div class="flex justify-between font-mono text-[10px]">
+            <span id="export-progress-text" class="text-[#00FF66]">Renderizando...</span>
+            <span id="export-progress-pct" class="text-white">0%</span>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-neutral-800 overflow-hidden">
+            <div id="export-progress-bar" class="h-full bg-[#00FF66] transition-all" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="btn-panel-export" class="flex-1 py-2.5 px-3 rounded-lg bg-[#00FF66] text-black hover:bg-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow">
+            <span>▶</span>
+            <span id="btn-export-label">Exportar MP4</span>
+          </button>
+          <button id="btn-export-gif" class="px-3 py-2.5 rounded-lg bg-studio-accent hover:bg-blue-600 text-white text-xs font-bold font-mono transition-colors shadow" title="Exportar animación como GIF de alta calidad">
+            GIF
+          </button>
+          <button id="btn-cancel-export" class="hidden px-3 py-2.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white text-xs font-semibold transition-colors">
+            Cancelar
+          </button>
+          <button id="btn-snap-png" class="px-2.5 py-2.5 rounded-lg bg-studio-card hover:bg-white/10 border border-studio-border text-xs text-white font-mono" title="Guardar fotograma actual como PNG">
+            PNG
+          </button>
+        </div>
+      </section>
+    </aside>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DETERMINISTIC PRNG & HELPERS
+    // =========================================================================
+    function createPRNG(seed) {
+      let a = (seed >>> 0) || 1;
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__toastTimeout);
+      window.__toastTimeout = setTimeout(() => el.classList.add('hidden'), 3200);
+    }
+
+    function triggerBlobDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 2000);
+    }
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      workflowMode: 'from_scratch', // 'from_scratch' | 'import_glitch'
+      seed: 404,
+      masterGlitch: 0.50,
+      effectScale: 1.00,
+      sourceMix: 0.35,
+      byteCorrupt: 0.52,
+      hexInject: 0.40,
+      blockTear: 0.45,
+      scanShift: 0.50,
+      bitFlip: 0.36,
+      rgbDesync: 0.44,
+      gridFusion: 0.44,
+      glitchMode: 'jpeg_stream',
+      protectHeader: true,
+      neonEntropy: false,
+
+      motionMode: 'flow', // 'flow' | 'loop' | 'stutter' | 'collapse_prog'
+      motionSpeed: 1.2,
+      motionStutter: 0.30,
+      motionAmp: 0.25,
+      durationSec: 5,
+      fps: 30,
+      videoRes: 1080,
+      isPlaying: true,
+      currentTimeSec: 0,
+      isExporting: false,
+      cancelExportFlag: false,
+
+      zoom: 1.0,
+      baseFitW: 560,
+      baseFitH: 420,
+      isPanning: false,
+      dragMoved: false,
+      panStartX: 0,
+      panStartY: 0,
+      panScrollL: 0,
+      panScrollT: 0,
+
+      sourceCanvas: document.createElement('canvas'),
+      workSourceData: null,
+      workDatabentData: null,
+      workW: 960,
+      workH: 720,
+      sourceWidth: 1200,
+      sourceHeight: 900,
+      sourceName: 'Demo · Retrato Claroscuro.jpg',
+      isSvgSource: false,
+      baseJpegBytes: null,
+      sosOffset: 24,
+      variationSeeds: [1024, 2048, 4096, 8192]
+    };
+
+    // =========================================================================
+    // 3. DEMO PORTRAIT & UNIVERSAL FILE LOADER (PNG, JPG, WebP, GIF, SVG)
+    // =========================================================================
+    const DEMO_PORTRAIT_SRC = "user_uploaded_files/ttl=63d/tool_generated/watermarked_img_18281255093137676834.jpg";
+
+    function loadBuiltInDemo() {
+      state.isSvgSource = false;
+      const sc = state.sourceCanvas;
+      const ctx = sc.getContext('2d');
+      sc.width = 1200;
+      sc.height = 900;
+      state.sourceName = 'Demo · Retrato Claroscuro.jpg';
+
+      const bgGrad = ctx.createRadialGradient(540, 420, 60, 600, 450, 760);
+      bgGrad.addColorStop(0, '#2A2F38');
+      bgGrad.addColorStop(0.55, '#17191E');
+      bgGrad.addColorStop(1, '#0E1013');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1200, 900);
+      onSourceChanged();
+
+      const img = new Image();
+      img.onload = () => {
+        sc.width = img.naturalWidth || 1200;
+        sc.height = img.naturalHeight || 900;
+        ctx.clearRect(0, 0, sc.width, sc.height);
+        ctx.drawImage(img, 0, 0, sc.width, sc.height);
+        onSourceChanged();
+      };
+      img.src = DEMO_PORTRAIT_SRC;
+    }
+
+    function encodeSourceToJpegBytes() {
+      const ar = state.sourceWidth / state.sourceHeight;
+      const encMax = Math.min(2048, Math.max(state.sourceWidth, state.sourceHeight));
+      const encW = ar >= 1 ? encMax : Math.max(64, Math.round(encMax * ar));
+      const encH = ar >= 1 ? Math.max(64, Math.round(encMax / ar)) : encMax;
+
+      const encCanvas = document.createElement('canvas');
+      encCanvas.width = encW;
+      encCanvas.height = encH;
+      const ectx = encCanvas.getContext('2d');
+      ectx.imageSmoothingEnabled = true;
+      ectx.imageSmoothingQuality = 'high';
+      ectx.drawImage(state.sourceCanvas, 0, 0, encW, encH);
+
+      const dataUrl = encCanvas.toDataURL('image/jpeg', 0.94);
+      const binStr = atob(dataUrl.split(',')[1]);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+
+      let sos = 32;
+      for (let i = 2; i < bytes.length - 12; i++) {
+        if (bytes[i] === 0xFF && bytes[i + 1] === 0xDA) {
+          const hdrLen = (bytes[i + 2] << 8) | bytes[i + 3];
+          sos = i + 2 + hdrLen;
+          break;
+        }
+      }
+      state.baseJpegBytes = bytes;
+      state.sosOffset = Math.min(bytes.length - 32, Math.max(20, sos));
+    }
+
+    function onSourceChanged() {
+      state.sourceWidth = state.sourceCanvas.width;
+      state.sourceHeight = state.sourceCanvas.height;
+      encodeSourceToJpegBytes();
+
+      const thumb = document.getElementById('thumb-preview-canvas');
+      const tctx = thumb.getContext('2d');
+      tctx.fillStyle = '#000';
+      tctx.fillRect(0, 0, 52, 52);
+      const scale = Math.min(52 / state.sourceWidth, 52 / state.sourceHeight);
+      const dw = state.sourceWidth * scale;
+      const dh = state.sourceHeight * scale;
+      tctx.drawImage(state.sourceCanvas, (52 - dw) * 0.5, (52 - dh) * 0.5, dw, dh);
+
+      const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+      const g = gcd(state.sourceWidth, state.sourceHeight);
+      const rw = Math.round(state.sourceWidth / g);
+      const rh = Math.round(state.sourceHeight / g);
+      document.getElementById('img-ratio-badge').textContent = (rw <= 25 && rh <= 25) ? `${rw}:${rh}` : (state.sourceWidth / state.sourceHeight).toFixed(2);
+      document.getElementById('img-meta-name').textContent = state.sourceName;
+      document.getElementById('img-meta-dims').textContent =
+        `${state.sourceWidth} × ${state.sourceHeight} px · ${state.workflowMode === 'import_glitch' ? 'Importada Glitch-Code' : 'Origen Virgen'}`;
+
+      fitCanvasToViewport();
+      prepareWorkingBuffers().then(() => {
+        renderFrameAtTime(state.currentTimeSec);
+        renderVariationsSidebar();
+      });
+    }
+
+    // =========================================================================
+    // 4. REAL BINARY JPEG CORRUPTOR + PRE-DECODED STREAM CACHE
+    // =========================================================================
+    function corruptJpegByteBuffer(seedVal, masterLvl) {
+      const src = state.baseJpegBytes;
+      if (!src) return new Uint8Array(0);
+      const rand = createPRNG(seedVal);
+      const out = new Uint8Array(src);
+      if (masterLvl <= 0.005) return out;
+
+      const startIdx = state.protectHeader ? state.sosOffset : 4;
+      const endIdx = Math.max(startIdx + 16, out.length - 4);
+      const span = endIdx - startIdx;
+      const intensity = Math.pow(masterLvl, 1.15);
+
+      const byteOps = Math.round(span * 0.0045 * intensity * (0.3 + state.byteCorrupt * 1.4));
+      const injectOps = Math.round(28 * intensity * (0.25 + state.hexInject * 1.4));
+      const blockOps = Math.round(24 * intensity * (0.25 + state.blockTear * 1.4));
+      const flipOps = Math.round(span * 0.003 * intensity * (0.25 + state.bitFlip * 1.5));
+
+      for (let i = 0; i < byteOps; i++) {
+        const idx = startIdx + Math.floor(rand() * span);
+        if (state.protectHeader && out[idx] === 0xFF) continue;
+        let val = Math.floor(rand() * 255);
+        if (state.protectHeader && val === 0xFF) val = 0xFE;
+        out[idx] = val;
+      }
+
+      for (let i = 0; i < injectOps; i++) {
+        const pos = startIdx + Math.floor(rand() * (span - 48));
+        const chunkLen = 4 + Math.floor(rand() * (12 + 28 * intensity));
+        const shift = (rand() < 0.5 ? 1 : -1) * (1 + Math.floor(rand() * 6));
+        for (let k = 0; k < chunkLen && pos + k + Math.abs(shift) < endIdx; k++) {
+          const targetIdx = pos + k;
+          const srcIdx = Math.max(startIdx, Math.min(endIdx - 1, targetIdx + shift));
+          if (state.protectHeader && (out[targetIdx] === 0xFF || out[srcIdx] === 0xFF)) continue;
+          out[targetIdx] = out[srcIdx];
+        }
+      }
+
+      for (let i = 0; i < blockOps; i++) {
+        const a = startIdx + Math.floor(rand() * (span - 64));
+        const b = startIdx + Math.floor(rand() * (span - 64));
+        const len = 8 + Math.floor(rand() * 32);
+        for (let k = 0; k < len; k++) {
+          if (state.protectHeader && (out[a + k] === 0xFF || out[b + k] === 0xFF)) continue;
+          const tmp = out[a + k];
+          out[a + k] = out[b + k];
+          out[b + k] = tmp;
+        }
+      }
+
+      for (let i = 0; i < flipOps; i++) {
+        const idx = startIdx + Math.floor(rand() * span);
+        if (state.protectHeader && out[idx] === 0xFF) continue;
+        const bit = 1 << Math.floor(rand() * 7);
+        const flipped = out[idx] ^ bit;
+        if (state.protectHeader && flipped === 0xFF) continue;
+        out[idx] = flipped;
+      }
+      return out;
+    }
+
+    function decodeCorruptedJpegIntoBuffer(targetW, targetH, seedVal, masterLvl) {
+      const tmpC = document.createElement('canvas');
+      tmpC.width = targetW;
+      tmpC.height = targetH;
+      const tctx = tmpC.getContext('2d');
+      tctx.imageSmoothingEnabled = true;
+      tctx.imageSmoothingQuality = 'high';
+      tctx.drawImage(state.sourceCanvas, 0, 0, targetW, targetH);
+      const cleanData = new Uint8ClampedArray(tctx.getImageData(0, 0, targetW, targetH).data);
+
+      if (masterLvl <= 0.005 || !state.baseJpegBytes || state.workflowMode === 'import_glitch') {
+        return Promise.resolve({ cleanData, decodedData: new Uint8ClampedArray(cleanData), bytes: state.baseJpegBytes });
+      }
+
+      const bytes = corruptJpegByteBuffer(seedVal, masterLvl);
+      return new Promise((resolve) => {
+        const blob = new Blob([bytes], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          tctx.clearRect(0, 0, targetW, targetH);
+          tctx.drawImage(img, 0, 0, targetW, targetH);
+          const decodedData = new Uint8ClampedArray(tctx.getImageData(0, 0, targetW, targetH).data);
+          eliminateUndecodedJpegGray(decodedData, cleanData, targetW, targetH, bytes, seedVal, masterLvl);
+          resolve({ cleanData, decodedData, bytes });
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          const fallback = new Uint8ClampedArray(cleanData.length);
+          for (let i = 0; i < fallback.length; i += 4) {
+            fallback[i] = 128; fallback[i + 1] = 128; fallback[i + 2] = 128; fallback[i + 3] = 255;
+          }
+          eliminateUndecodedJpegGray(fallback, cleanData, targetW, targetH, bytes, seedVal, Math.max(0.75, masterLvl));
+          resolve({ cleanData, decodedData: fallback, bytes });
+        };
+        img.src = url;
+      });
+    }
+
+    async function prepareWorkingBuffers() {
+      const ar = state.sourceWidth / state.sourceHeight;
+      const longest = 960;
+      const wW = ar >= 1 ? longest : Math.max(120, Math.round(longest * ar));
+      const wH = ar >= 1 ? Math.max(120, Math.round(longest / ar)) : longest;
+      state.workW = wW;
+      state.workH = wH;
+
+      const mainCanvas = document.getElementById('main-motion-canvas');
+      if (mainCanvas.width !== wW || mainCanvas.height !== wH) {
+        mainCanvas.width = wW;
+        mainCanvas.height = wH;
+      }
+
+      const res = await decodeCorruptedJpegIntoBuffer(wW, wH, state.seed, state.masterGlitch);
+      state.workSourceData = res.cleanData;
+      state.workDatabentData = res.decodedData;
+    }
+
+    // =========================================================================
+    // 5. RESOLUTION-INVARIANT TEMPORAL GLITCH-CODE SYNTHESIZER f(seed, t)
+    // =========================================================================
+    const BAYER_4X4 = [
+      [ 0,  8,  2, 10],
+      [12,  4, 14,  6],
+      [ 3, 11,  1,  9],
+      [15,  7, 13,  5]
+    ];
+
+    const SEED_ART_PALETTES = [
+      [[8, 10, 14], [248, 250, 252], [0, 255, 136], [255, 20, 147], [36, 92, 255]],
+      [[10, 12, 18], [255, 250, 240], [255, 88, 24], [0, 229, 255], [168, 85, 247]],
+      [[8, 10, 14], [250, 252, 255], [255, 230, 0], [255, 24, 56], [0, 245, 212]],
+      [[10, 12, 18], [245, 248, 252], [132, 255, 0], [255, 0, 110], [58, 134, 255]],
+      [[8, 8, 10], [254, 254, 254], [255, 115, 0], [0, 187, 249], [241, 91, 181]],
+      [[10, 12, 16], [248, 248, 244], [0, 255, 102], [255, 255, 255], [36, 92, 255]]
+    ];
+
+    function eliminateUndecodedJpegGray(corruptedDst, cleanSrc, W, H, mutatedBytes, seedVal, masterLvl) {
+      if (!mutatedBytes || mutatedBytes.length < 32) return;
+      const rand = createPRNG(seedVal ^ 0x51ED270B);
+      const bLen = mutatedBytes.length;
+      const startOff = Math.min(bLen - 16, Math.max(16, state.sosOffset || 32));
+      const span = Math.max(16, bLen - startOff);
+      const eScale = state.effectScale || 1.0;
+
+      const NORM_H = 1000;
+      const normShiftX = new Float32Array(NORM_H);
+      const normShiftY = new Float32Array(NORM_H);
+      const normRgbOff = new Float32Array(NORM_H);
+      let blockShiftX = 0, blockShiftY = 0, blockRgbOff = 0;
+      const rowStep = Math.max(3, Math.round(7 * eScale));
+
+      for (let ny = 0; ny < NORM_H; ny++) {
+        if ((ny % rowStep) === 0 || rand() < 0.14) {
+          const b0 = mutatedBytes[startOff + ((ny * 17 + seedVal) % span)];
+          const b1 = mutatedBytes[startOff + ((ny * 31 + seedVal * 3) % span)];
+          const b2 = mutatedBytes[startOff + ((ny * 53 + seedVal * 7) % span)];
+          const amp = (0.18 + masterLvl * 0.82) * Math.min(2.2, 0.7 + eScale * 0.35);
+          blockShiftX = ((b0 - 128) / 128) * 0.42 * amp;
+          blockShiftY = ((b1 - 128) / 128) * 0.28 * amp;
+          blockRgbOff = ((b2 - 128) / 128) * 0.08 * amp;
+        }
+        normShiftX[ny] = blockShiftX;
+        normShiftY[ny] = blockShiftY;
+        normRgbOff[ny] = blockRgbOff;
+      }
+
+      for (let y = 0; y < H; y++) {
+        const ny = Math.min(NORM_H - 1, Math.floor((y / H) * NORM_H));
+        const sxOff = Math.round(normShiftX[ny] * W);
+        const syOff = Math.round(normShiftY[ny] * H);
+        const rgbOff = Math.round(normRgbOff[ny] * W);
+        const sy = ((y + syOff) % H + H) % H;
+
+        for (let x = 0; x < W; x++) {
+          const idx = (y * W + x) * 4;
+          if (Math.abs(corruptedDst[idx] - 128) <= 3 && Math.abs(corruptedDst[idx + 1] - 128) <= 3 && Math.abs(corruptedDst[idx + 2] - 128) <= 3) {
+            if (Math.abs(cleanSrc[idx] - 128) > 8 || Math.abs(cleanSrc[idx + 1] - 128) > 8 || Math.abs(cleanSrc[idx + 2] - 128) > 8) {
+              const sx = ((x + sxOff) % W + W) % W;
+              const rx = ((sx + rgbOff) % W + W) % W;
+              const bx = ((sx - rgbOff) % W + W) % W;
+              corruptedDst[idx]     = cleanSrc[(sy * W + rx) * 4];
+              corruptedDst[idx + 1] = cleanSrc[(sy * W + sx) * 4 + 1];
+              corruptedDst[idx + 2] = cleanSrc[(sy * W + bx) * 4 + 2];
+            }
+          }
+        }
+      }
+    }
+
+    function computeTemporalState(tNorm, baseSeed, baseMasterLvl) {
+      const speed = state.motionSpeed;
+      const mode = state.motionMode;
+
+      const stutterSteps = Math.max(4, Math.round(48 - state.motionStutter * 38));
+      const quantT = state.motionStutter > 0.05
+        ? Math.floor(tNorm * stutterSteps) / stutterSteps
+        : tNorm;
+      const blendedT = tNorm * (1 - state.motionStutter * 0.75) + quantT * (state.motionStutter * 0.75);
+
+      let wavePhaseOffset = 0;
+      let scanScrollY = 0;
+      let burstSeedStep = 0;
+      let effMasterLvl = baseMasterLvl;
+
+      if (mode === 'loop') {
+        const cyc = blendedT * Math.PI * 2;
+        wavePhaseOffset = Math.sin(cyc * Math.max(1, Math.round(speed))) * 3.2;
+        scanScrollY = 0.5 * (1 - Math.cos(cyc * Math.max(1, Math.round(speed))));
+        const loopStep = Math.floor(Math.abs(Math.sin(cyc * 2)) * (2 + state.motionStutter * 5));
+        burstSeedStep = loopStep;
+        effMasterLvl = Math.min(1, Math.max(0.05, baseMasterLvl + Math.sin(cyc) * state.motionAmp * 0.45));
+      } else if (mode === 'stutter') {
+        const beat = Math.floor(tNorm * (6 + speed * 10));
+        wavePhaseOffset = beat * 1.37;
+        scanScrollY = (beat * 0.19) % 1;
+        burstSeedStep = beat;
+        const beatRand = createPRNG((baseSeed ^ Math.imul(beat + 1, 2654435761)) >>> 0)();
+        effMasterLvl = Math.min(1, Math.max(0.05, baseMasterLvl + (beatRand - 0.5) * state.motionAmp * 0.7));
+      } else if (mode === 'collapse_prog') {
+        wavePhaseOffset = blendedT * speed * Math.PI * 3.5;
+        scanScrollY = (blendedT * speed * 0.55) % 1;
+        burstSeedStep = Math.floor(tNorm * (4 + state.motionStutter * 14));
+        effMasterLvl = Math.min(1, Math.max(0.02, 0.08 + blendedT * 0.92));
+      } else {
+        wavePhaseOffset = blendedT * speed * Math.PI * 3.0;
+        scanScrollY = (blendedT * speed * 0.45) % 1;
+        burstSeedStep = Math.floor(tNorm * (2 + state.motionStutter * 12));
+        effMasterLvl = Math.min(1, Math.max(0.05, baseMasterLvl + Math.sin(blendedT * Math.PI * 2 * speed) * state.motionAmp * 0.35));
+      }
+
+      return { wavePhaseOffset, scanScrollY, burstSeedStep, effMasterLvl };
+    }
+
+    function synthesizeGlitchMotionFrame(ctx, W, H, cleanSrcData, decodedSrcData, seedVal, baseMasterLvl, tNorm) {
+      const tState = computeTemporalState(tNorm, seedVal, baseMasterLvl);
+      const masterLvl = tState.effMasterLvl;
+
+      if (masterLvl <= 0.005) {
+        const id = ctx.createImageData(W, H);
+        id.data.set(cleanSrcData);
+        ctx.putImageData(id, 0, 0);
+        return;
+      }
+
+      const rand = createPRNG(seedVal ^ 0x9E3779B9);
+      const eScale = state.effectScale || 1.0;
+      const resScale = Math.max(0.15, W / 1200);
+      const isImportMode = state.workflowMode === 'import_glitch';
+
+      const pal = SEED_ART_PALETTES[Math.floor(rand() * SEED_ART_PALETTES.length)];
+      const sortAngleMode = Math.floor(rand() * 4);
+      const waveFreqBase = (16 + rand() * 58) / Math.max(0.5, eScale);
+      const waveFreqCross = (10 + rand() * 42) / Math.max(0.5, eScale);
+      const waveIsZigzag = rand() < 0.58;
+      const xorMaskR = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const xorMaskG = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const xorMaskB = (Math.floor(rand() * 254) + 1) & 0xFF;
+      const phaseGlobalA = rand() * Math.PI * 2 + tState.wavePhaseOffset;
+      const phaseGlobalB = rand() * Math.PI * 2 - tState.wavePhaseOffset * 0.7;
+      const baseWeaveRand = rand();
+
+      const allKernels = ['SINE_ZIGZAG', 'BAYER_DITHER', 'HALFTONE_LOOM', 'CHANNEL_FOLD', 'LOOM_WEAVE'];
+      const kernelWeights = allKernels.map((k) => {
+        let w = 0.35 + rand() * 1.45;
+        if (state.glitchMode === 'hex_splice' && k === 'SINE_ZIGZAG') w += 2.0;
+        if (state.glitchMode === 'collapse' && (k === 'BAYER_DITHER' || k === 'HALFTONE_LOOM' || k === 'LOOM_WEAVE')) w += 2.0;
+        if (k === 'SINE_ZIGZAG') w *= (0.4 + state.hexInject * 1.4);
+        if (k === 'BAYER_DITHER' || k === 'HALFTONE_LOOM') w *= (0.4 + state.bitFlip * 1.4);
+        if (k === 'CHANNEL_FOLD') w *= (0.4 + state.rgbDesync * 1.4);
+        return w;
+      });
+      const weightSum = kernelWeights.reduce((a, b) => a + b, 0) || 1;
+      function pickWeightedKernel(localRand) {
+        let r = localRand() * weightSum;
+        for (let i = 0; i < allKernels.length; i++) {
+          r -= kernelWeights[i];
+          if (r <= 0) return allKernels[i];
+        }
+        return allKernels[0];
+      }
+
+      const src = decodedSrcData;
+      const outImg = ctx.createImageData(W, H);
+      const dst = outImg.data;
+      dst.set(src);
+
+      const getProceduralSignal = (nx, ny, phase) => {
+        const w1 = Math.sin(nx * waveFreqBase + ny * waveFreqCross * 0.6 + phase);
+        const w2 = Math.cos(ny * waveFreqBase * 0.85 - nx * waveFreqCross + phase * 1.7);
+        const w3 = Math.sin((nx + ny) * (waveFreqBase + waveFreqCross) * 0.5 + seedVal * 0.01);
+        return 0.5 + 0.5 * ((w1 * 0.45 + w2 * 0.35 + w3 * 0.20));
+      };
+
+      const TONAL_BANDS = 8;
+      const tonalKernels = new Array(TONAL_BANDS);
+      const tonalActive = new Uint8Array(TONAL_BANDS);
+      const tonalSubMode = new Uint8Array(TONAL_BANDS);
+      const tonalPalIdxA = new Uint8Array(TONAL_BANDS);
+      const tonalPalIdxB = new Uint8Array(TONAL_BANDS);
+      const tonalBitPlane = new Uint8Array(TONAL_BANDS);
+
+      const interventionRatio = masterLvl < 0.70
+        ? Math.pow(masterLvl / 0.70, 0.90) * (isImportMode ? 0.46 : 0.78)
+        : (isImportMode ? 0.46 : 0.78) + ((masterLvl - 0.70) / 0.30) * (isImportMode ? 0.54 : 0.22);
+
+      for (let t = 0; t < TONAL_BANDS; t++) {
+        tonalKernels[t] = pickWeightedKernel(rand);
+        tonalActive[t] = (rand() < interventionRatio || (!isImportMode && masterLvl >= 0.95)) ? 1 : 0;
+        tonalSubMode[t] = Math.floor(rand() * 3);
+        tonalPalIdxA[t] = Math.floor(rand() * pal.length);
+        tonalPalIdxB[t] = 1 + Math.floor(rand() * (pal.length - 1));
+        tonalBitPlane[t] = 1 + Math.floor(rand() * 6);
+      }
+
+      const NORM_ROWS = 1000;
+      const normShiftX = new Float32Array(NORM_ROWS);
+      const normShiftR = new Float32Array(NORM_ROWS);
+      const normShiftB = new Float32Array(NORM_ROWS);
+      const normBurstKernel = new Int8Array(NORM_ROWS);
+      const normSourceKeep = new Uint8Array(NORM_ROWS);
+
+      const normMaxScanShift = (0.04 + masterLvl * 0.34) * (0.3 + state.scanShift * 1.2) * Math.min(2.2, eScale);
+      const normMaxRgbShift = (0.01 + masterLvl * 0.06) * (0.3 + state.rgbDesync * 1.4) * eScale;
+      const normBandBaseH = Math.max(2, Math.round((2 + state.blockTear * 14) * eScale));
+
+      const scanRand = createPRNG((seedVal ^ Math.imul(tState.burstSeedStep + 1, 0x45D9F3B)) >>> 0);
+      let nyCur = 0;
+      while (nyCur < NORM_ROWS) {
+        const stripH = Math.max(2, Math.round(2 + scanRand() * normBandBaseH * 2.2));
+        const doShift = scanRand() < (0.22 + masterLvl * 0.62);
+        const sX = doShift ? (scanRand() - 0.5) * normMaxScanShift * 2 : 0;
+        const doChroma = scanRand() < (0.28 + state.rgbDesync * 0.65);
+        const sR = doChroma ? (scanRand() - 0.5) * normMaxRgbShift * 2.2 : 0;
+        const sB = doChroma ? (scanRand() - 0.5) * normMaxRgbShift * 2.2 : 0;
+
+        let burstK = -1;
+        if (scanRand() < (isImportMode ? 0.08 + masterLvl * 0.24 : 0.14 + masterLvl * 0.38)) {
+          burstK = allKernels.indexOf(pickWeightedKernel(scanRand));
+        }
+
+        const effectiveSourceMix = isImportMode ? Math.max(0.45, state.sourceMix) : state.sourceMix;
+        const keepRow = (effectiveSourceMix > 0.005 && scanRand() < effectiveSourceMix * 0.85) ? 1 : 0;
+
+        for (let ny = nyCur; ny < Math.min(NORM_ROWS, nyCur + stripH); ny++) {
+          normShiftX[ny] = sX;
+          normShiftR[ny] = sR;
+          normShiftB[ny] = sB;
+          normBurstKernel[ny] = burstK;
+          normSourceKeep[ny] = keepRow;
+        }
+        nyCur += stripH;
+      }
+
+      const ditherStep = Math.max(1, Math.round((1.5 + (1 - state.bitFlip) * 2.2) * eScale * resScale));
+      const halftoneStep = Math.max(2, Math.round((6 + (1 - state.bitFlip) * 7) * eScale * resScale));
+      const weaveTile = Math.max(2, Math.round((6 + baseWeaveRand * 6) * eScale * resScale));
+      const bitStep = Math.max(1, Math.round(1.5 * eScale * resScale));
+      const totalCollapseMix = Math.max(0, (masterLvl - 0.55) / 0.45);
+      const subtleDatabend = Math.min(0.26, masterLvl * 0.30);
+
+      const waveFn = (t) => {
+        if (!waveIsZigzag) return Math.sin(t);
+        const norm = ((t / (Math.PI * 2)) % 1 + 1) % 1;
+        return norm < 0.5 ? (norm * 4 - 1) : (3 - norm * 4);
+      };
+      const zigAmpX = W * (0.08 + masterLvl * 0.28) * (0.45 + state.hexInject) * Math.min(2.2, eScale);
+      const zigAmpY = H * (0.05 + masterLvl * 0.18) * (0.45 + state.scanShift) * Math.min(2.2, eScale);
+      const scrollRowOffset = Math.floor(tState.scanScrollY * NORM_ROWS);
+
+      for (let y = 0; y < H; y++) {
+        const nyIdx = (Math.floor((y / H) * NORM_ROWS) + scrollRowOffset) % NORM_ROWS;
+        const nyNorm = y / H;
+        const sX = Math.round(normShiftX[nyIdx] * W);
+        const sR = Math.round(normShiftR[nyIdx] * W);
+        const sB = Math.round(normShiftB[nyIdx] * W);
+        const burstK = normBurstKernel[nyIdx];
+        const keepRow = normSourceKeep[nyIdx];
+        const wy = waveFn(nyNorm * waveFreqBase * Math.PI * 2 + phaseGlobalA);
+
+        const rowOff = y * W;
+        for (let x = 0; x < W; x++) {
+          const nxNorm = x / W;
+          const dIdx = (rowOff + x) * 4;
+          const bx = ((x + sX) % W + W) % W;
+          const rx = ((bx + sR) % W + W) % W;
+          const bxx = ((bx + sB) % W + W) % W;
+
+          const rIdx = (rowOff + rx) * 4;
+          const gIdx = (rowOff + bx) * 4 + 1;
+          const bIdx = (rowOff + bxx) * 4 + 2;
+
+          const r = src[Math.max(0, Math.min(src.length - 1, rIdx))];
+          const g = src[Math.max(0, Math.min(src.length - 1, gIdx))];
+          const b = src[Math.max(0, Math.min(src.length - 1, bIdx))];
+
+          const sr = cleanSrcData[dIdx];
+          const sg = cleanSrcData[dIdx + 1];
+          const sb = cleanSrcData[dIdx + 2];
+          const sLum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
+          const chromaBias = ((sr - sb) > 28) ? 1 : 0;
+          const tBand = Math.min(TONAL_BANDS - 1, Math.max(0, ((sLum * 4) | 0) * 2 + chromaBias));
+
+          const effectiveSourceMix = isImportMode ? Math.max(0.45, state.sourceMix) : state.sourceMix;
+          const tonalKeep = effectiveSourceMix > 0.005 && (((tBand * 37 + (seedVal % 19)) % 100) < effectiveSourceMix * 88);
+          if ((keepRow && tonalKeep) || (effectiveSourceMix > 0.72 && (keepRow || tonalKeep))) {
+            dst[dIdx]     = Math.round(sr * (1 - subtleDatabend) + r * subtleDatabend);
+            dst[dIdx + 1] = Math.round(sg * (1 - subtleDatabend) + g * subtleDatabend);
+            dst[dIdx + 2] = Math.round(sb * (1 - subtleDatabend) + b * subtleDatabend);
+            dst[dIdx + 3] = 255;
+            continue;
+          }
+
+          let activeK = null;
+          if (burstK >= 0) {
+            activeK = allKernels[burstK];
+          } else if (tonalActive[tBand]) {
+            activeK = tonalKernels[tBand];
+          }
+
+          if (!activeK) {
+            dst[dIdx] = r;
+            dst[dIdx + 1] = g;
+            dst[dIdx + 2] = b;
+            dst[dIdx + 3] = 255;
+            continue;
+          }
+
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          const palA = pal[tonalPalIdxA[tBand]];
+          const palB = pal[tonalPalIdxB[tBand]];
+
+          if (activeK === 'SINE_ZIGZAG') {
+            const wx = waveFn(nxNorm * waveFreqCross * Math.PI * 2 + phaseGlobalB);
+            const sx = ((Math.round(bx + wy * zigAmpX) % W) + W) % W;
+            const sy = ((Math.round(y + wx * zigAmpY) % H) + H) % H;
+            const zIdx = Math.max(0, Math.min(src.length - 4, (sy * W + sx) * 4));
+            dst[dIdx] = src[zIdx];
+            dst[dIdx + 1] = src[zIdx + 1];
+            dst[dIdx + 2] = src[zIdx + 2];
+          } else if (activeK === 'BAYER_DITHER') {
+            const isMono = ((tBand + seedVal) % 3 === 0) || state.neonEntropy;
+            const darkCol = pal[0];
+            const lightCol = isMono ? pal[1] : palB;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalA + tBand);
+            const waveWeight = 0.25 + totalCollapseMix * 0.45;
+            const effLum = lum * (1 - waveWeight) + procLum * waveWeight;
+            const thresh = (BAYER_4X4[(y / ditherStep | 0) & 3][(x / ditherStep | 0) & 3] + 0.5) / 16;
+            const col = effLum > thresh ? lightCol : darkCol;
+            dst[dIdx] = col[0];
+            dst[dIdx + 1] = col[1];
+            dst[dIdx + 2] = col[2];
+          } else if (activeK === 'HALFTONE_LOOM') {
+            const subMode = tonalSubMode[tBand];
+            const bgCol = (tBand % 3 === 0) ? pal[1] : pal[0];
+            const fgCol = palB;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalB + tBand);
+            const effLum = lum * (1 - totalCollapseMix * 0.5) + procLum * (totalCollapseMix * 0.5);
+            const gx = Math.floor(x / halftoneStep) * halftoneStep + halftoneStep * 0.5;
+            const gy = Math.floor(y / halftoneStep) * halftoneStep + halftoneStep * 0.5;
+            const radius = halftoneStep * 0.50 * Math.max(0.16, effLum);
+            let hit = false;
+            if (subMode === 0) {
+              hit = Math.hypot(x - gx, y - gy) <= radius;
+            } else if (subMode === 1) {
+              hit = ((x + y) % halftoneStep) <= Math.max(1, Math.round(halftoneStep * effLum * 0.85));
+            } else {
+              const cheb = Math.max(Math.abs(x - gx), Math.abs(y - gy));
+              hit = Math.abs(cheb - radius) <= Math.max(1, 1.25 * eScale * resScale);
+            }
+            const col = hit ? fgCol : bgCol;
+            dst[dIdx] = col[0];
+            dst[dIdx + 1] = col[1];
+            dst[dIdx + 2] = col[2];
+          } else if (activeK === 'CHANNEL_FOLD') {
+            const mR = (xorMaskR ^ (tBand * 37)) & 0xFF;
+            const mG = (xorMaskG ^ (tBand * 73)) & 0xFF;
+            const mB = (xorMaskB ^ (tBand * 19)) & 0xFF;
+            let xr = (r ^ mR) & 0xFF;
+            let xg = (g ^ mG) & 0xFF;
+            let xb = (b ^ mB) & 0xFF;
+            if ((((x / bitStep | 0) ^ (y / bitStep | 0)) >> tonalBitPlane[tBand]) & 1) {
+              xr = 255 - xr;
+              xb = (xb ^ 0xA5) & 0xFF;
+            }
+            dst[dIdx] = xr;
+            dst[dIdx + 1] = xg;
+            dst[dIdx + 2] = xb;
+          } else {
+            const tx = (x / weaveTile) | 0;
+            const ty = (y / weaveTile) | 0;
+            const px = x % weaveTile;
+            const py = y % weaveTile;
+            const procLum = getProceduralSignal(nxNorm, nyNorm, phaseGlobalA);
+            const effLum = lum * 0.65 + procLum * 0.35;
+            const bitHash = ((tx * 7 + ty * 13 + ((effLum * 12) | 0) + seedVal) & 7);
+            const pick = (px === 0 || py === 0) ? pal[0]
+              : (bitHash < 3 ? palA : (bitHash < 6 ? palB : pal[1]));
+            dst[dIdx] = pick[0];
+            dst[dIdx + 1] = pick[1];
+            dst[dIdx + 2] = pick[2];
+          }
+          dst[dIdx + 3] = 255;
+        }
+      }
+
+      const sortRand = createPRNG((seedVal ^ 0x3C6EF372) >>> 0);
+      const sortDensity = (state.glitchMode === 'hex_splice' ? 1.55 : 1.0) * (0.25 + state.scanShift * 1.15) * masterLvl;
+      const reverseSort = ((seedVal >> 2) & 1) === 1;
+      const streakThick = Math.max(1, Math.round(1.6 * eScale * resScale));
+      const maxSpanLen = Math.max(8, Math.round(Math.min(W, H) * (0.14 + masterLvl * 0.38) * Math.min(2.2, 0.7 + eScale * 0.4)));
+      const cascadeCount = Math.round((95 + sortDensity * 480) / Math.max(0.7, eScale * 0.65));
+
+      for (let c = 0; c < cascadeCount; c++) {
+        const baseSx = sortRand();
+        const baseSy = sortRand();
+        const driftPhase = (c % 2 === 0 ? 1 : -1) * tState.scanScrollY * 0.55;
+        const sx = Math.floor(((baseSx + driftPhase + 1) % 1) * W);
+        const sy = Math.floor(((baseSy + driftPhase * 0.6 + 1) % 1) * H);
+
+        const spanLen = Math.max(4, Math.round(14 * resScale) + Math.floor(sortRand() * maxSpanLen));
+        const axis = sortRand() < 0.72 ? sortAngleMode : Math.floor(sortRand() * 4);
+        const dx = axis === 1 ? 1 : (axis === 2 ? 1 : (axis === 3 ? -1 : 0));
+        const dy = axis === 0 ? 1 : (axis === 2 || axis === 3 ? 1 : 0);
+
+        for (let wOff = 0; wOff < streakThick; wOff++) {
+          const ox = sx + (dx === 0 ? wOff : 0);
+          const oy = sy + (dy === 0 ? wOff : 0);
+          if (ox < 0 || ox >= W || oy < 0 || oy >= H) continue;
+
+          const pixels = [];
+          const idxs = [];
+          for (let s = 0; s < spanLen; s++) {
+            const px = ox + dx * s;
+            const py = oy + dy * s;
+            if (px < 0 || px >= W || py < 0 || py >= H) break;
+            const dIdx = (py * W + px) * 4;
+            const r = dst[dIdx], g = dst[dIdx + 1], b = dst[dIdx + 2];
+            pixels.push({ r, g, b, lum: r * 0.3 + g * 0.59 + b * 0.11 });
+            idxs.push(dIdx);
+          }
+
+          if (pixels.length > 3) {
+            pixels.sort((a, b) => reverseSort ? (b.lum - a.lum) : (a.lum - b.lum));
+            for (let i = 0; i < pixels.length; i++) {
+              const dIdx = idxs[i];
+              dst[dIdx] = pixels[i].r;
+              dst[dIdx + 1] = pixels[i].g;
+              dst[dIdx + 2] = pixels[i].b;
+            }
+          }
+        }
+      }
+
+      const crossAmt = state.gridFusion;
+      if (crossAmt > 0.01) {
+        const jumpRand = createPRNG((seedVal ^ Math.imul(tState.burstSeedStep + 7, 0xA53C9E17)) >>> 0);
+        const dirs8 = [
+          [-1, 0], [1, 0], [0, -1], [0, 1],
+          [-1, -1], [1, -1], [-1, 1], [1, 1]
+        ];
+        const rayCount = Math.round(280 + crossAmt * 2800);
+        const maxRayLen = Math.max(4, Math.round(Math.min(W, H) * (0.022 + crossAmt * 0.10) * Math.min(2.4, eScale)));
+
+        for (let r = 0; r < rayCount; r++) {
+          const sx = Math.floor(jumpRand() * W);
+          const sy = Math.floor(jumpRand() * H);
+          const [dx, dy] = dirs8[Math.floor(jumpRand() * 8)];
+          const len = Math.max(3, Math.round(5 * resScale) + Math.floor(jumpRand() * maxRayLen));
+          const rev = jumpRand() < 0.5;
+
+          const rayPixels = [];
+          const coords = [];
+          for (let step = 0; step < len; step++) {
+            const px = sx + dx * step;
+            const py = sy + dy * step;
+            if (px < 0 || px >= W || py < 0 || py >= H) break;
+            const idx = (py * W + px) * 4;
+            const pr = dst[idx], pg = dst[idx + 1], pb = dst[idx + 2];
+            rayPixels.push({ r: pr, g: pg, b: pb, key: pr * 0.3 + pg * 0.59 + pb * 0.11 });
+            coords.push(idx);
+          }
+
+          if (rayPixels.length > 3) {
+            rayPixels.sort((a, b) => rev ? (b.key - a.key) : (a.key - b.key));
+            for (let i = 0; i < rayPixels.length; i++) {
+              const dIdx = coords[i];
+              dst[dIdx] = rayPixels[i].r;
+              dst[dIdx + 1] = rayPixels[i].g;
+              dst[dIdx + 2] = rayPixels[i].b;
+            }
+          }
+        }
+      }
+
+      const tearRand = createPRNG((seedVal ^ Math.imul(tState.burstSeedStep + 13, 0x7F4A7C15)) >>> 0);
+      const tearCount = Math.round((8 + masterLvl * 26 + state.blockTear * 20) / Math.max(0.7, eScale * 0.55));
+      const tearSnap = new Uint8ClampedArray(dst);
+
+      for (let t = 0; t < tearCount; t++) {
+        const baseW = Math.max(4, Math.round(W * (0.04 + tearRand() * 0.28) * Math.min(2.0, 0.65 + eScale * 0.45)));
+        const baseH = Math.max(3, Math.round(H * (0.02 + tearRand() * 0.14) * Math.min(2.0, 0.65 + eScale * 0.45)));
+        const centerX = Math.floor(((tearRand() + tState.scanScrollY * (t % 2 === 0 ? 0.35 : -0.35) + 1) % 1) * W);
+        const centerY = Math.floor(tearRand() * H);
+        const y0 = Math.max(0, centerY - (baseH >> 1));
+        const y1 = Math.min(H, y0 + baseH);
+
+        const obliqueSlope = (tearRand() - 0.5) * 2.2 * (W / Math.max(1, H));
+        const jumpDX = Math.round((tearRand() - 0.5) * W * (0.14 + masterLvl * 0.45));
+        const jumpDY = Math.round((tearRand() - 0.5) * H * (0.12 + masterLvl * 0.38));
+        const splitR = Math.round((tearRand() - 0.5) * normMaxRgbShift * W * 2.8);
+        const splitB = Math.round((tearRand() - 0.5) * normMaxRgbShift * W * 2.8);
+        const tearMode = Math.floor(tearRand() * 4);
+        const tPalCol = pal[1 + Math.floor(tearRand() * (pal.length - 1))];
+        const tXorR = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+        const tXorG = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+        const tXorB = (Math.floor(tearRand() * 254) + 1) & 0xFF;
+
+        let curLeft = centerX - (baseW >> 1);
+        let curRight = centerX + (baseW >> 1);
+        const stepH = Math.max(1, Math.round(2.5 * eScale * resScale));
+
+        for (let y = y0; y < y1; y++) {
+          if ((y - y0) % stepH === 0) {
+            const jagL = Math.round((tearRand() - 0.5) * baseW * 0.42 + obliqueSlope * stepH);
+            const jagR = Math.round((tearRand() - 0.5) * baseW * 0.42 + obliqueSlope * stepH);
+            curLeft += jagL;
+            curRight += jagR;
+            const minSpan = Math.max(2, Math.round(8 * resScale));
+            if (curRight - curLeft < minSpan) curRight = curLeft + minSpan;
+          }
+
+          const xStart = Math.max(0, Math.min(W - 1, curLeft));
+          const xEnd = Math.max(xStart + 1, Math.min(W, curRight));
+          const sy = ((y + jumpDY) % H + H) % H;
+
+          for (let x = xStart; x < xEnd; x++) {
+            const dIdx = (y * W + x) * 4;
+            const sx = ((x + jumpDX) % W + W) % W;
+            const rx = ((sx + splitR) % W + W) % W;
+            const bx = ((sx + splitB) % W + W) % W;
+
+            const sr = tearSnap[(sy * W + rx) * 4];
+            const sg = tearSnap[(sy * W + sx) * 4 + 1];
+            const sb = tearSnap[(sy * W + bx) * 4 + 2];
+
+            if (tearMode === 0) {
+              dst[dIdx] = sr; dst[dIdx + 1] = sg; dst[dIdx + 2] = sb;
+            } else if (tearMode === 1) {
+              dst[dIdx] = (sr ^ tXorR) & 0xFF; dst[dIdx + 1] = (sg ^ tXorG) & 0xFF; dst[dIdx + 2] = (sb ^ tXorB) & 0xFF;
+            } else if (tearMode === 2) {
+              const lum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
+              const thresh = (BAYER_4X4[(y / ditherStep | 0) & 3][(x / ditherStep | 0) & 3] + 0.5) / 16;
+              const col = lum > thresh ? tPalCol : pal[0];
+              dst[dIdx] = col[0]; dst[dIdx + 1] = col[1]; dst[dIdx + 2] = col[2];
+            } else {
+              const normYInTear = (y - y0) / Math.max(1, H);
+              const zig = Math.round(Math.sin(normYInTear * 450 / Math.max(0.5, eScale) + tState.wavePhaseOffset) * baseW * 0.35);
+              const zx = ((sx + zig) % W + W) % W;
+              const zIdx = (sy * W + zx) * 4;
+              dst[dIdx] = tearSnap[zIdx]; dst[dIdx + 1] = tearSnap[zIdx + 1]; dst[dIdx + 2] = tearSnap[zIdx + 2];
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(outImg, 0, 0);
+    }
+
+    // =========================================================================
+    // 6. REAL-TIME ANIMATION LOOP & TIMELINE CONTROLLER
+    // =========================================================================
+    function renderFrameAtTime(sec) {
+      if (!state.workSourceData || !state.workDatabentData) return;
+      const tNorm = state.durationSec > 0 ? (sec % state.durationSec) / state.durationSec : 0;
+      const mainCanvas = document.getElementById('main-motion-canvas');
+      const ctx = mainCanvas.getContext('2d');
+      synthesizeGlitchMotionFrame(ctx, state.workW, state.workH, state.workSourceData, state.workDatabentData, state.seed, state.masterGlitch, tNorm);
+
+      const totalFrames = Math.max(1, Math.round(state.durationSec * state.fps));
+      const curFrame = Math.min(totalFrames, Math.max(1, Math.floor(tNorm * totalFrames) + 1));
+      document.getElementById('slider-timeline').value = Math.round(tNorm * 1000);
+      document.getElementById('timeline-readout').textContent = `${sec.toFixed(2)}s / ${state.durationSec.toFixed(1)}s`;
+      document.getElementById('status-bar-text').textContent =
+        `FRAME ${String(curFrame).padStart(3, '0')} / ${totalFrames} · ${state.fps} FPS · Semilla #${state.seed}`;
+    }
+
+    let lastRafTime = 0;
+    let rafAcc = 0;
+    function animationLoop(ts) {
+      if (!lastRafTime) lastRafTime = ts;
+      const dt = Math.min(0.1, (ts - lastRafTime) / 1000);
+      lastRafTime = ts;
+
+      if (state.isPlaying && !state.isExporting) {
+        rafAcc += dt;
+        const frameInterval = 1 / Math.min(30, state.fps);
+        if (rafAcc >= frameInterval) {
+          state.currentTimeSec = (state.currentTimeSec + rafAcc) % state.durationSec;
+          rafAcc = 0;
+          renderFrameAtTime(state.currentTimeSec);
+        }
+      }
+      requestAnimationFrame(animationLoop);
+    }
+
+    function updatePlayUi() {
+      const playing = state.isPlaying;
+      document.getElementById('btn-play-pause').textContent = playing ? '⏸' : '▶';
+      document.getElementById('header-play-icon').textContent = playing ? '⏸' : '▶';
+      document.getElementById('header-play-label').textContent = playing ? 'Pausa' : 'Reproducir';
+    }
+
+    // =========================================================================
+    // 7. VARIATIONS GALLERY (SYNCHRONIZED 1:1) & ZOOM CONTROLLER
+    // =========================================================================
+    let varSeq = 0;
+    async function renderVariationsSidebar() {
+      const seq = ++varSeq;
+      const grid = document.getElementById('variations-grid');
+      grid.innerHTML = '';
+      const ar = state.sourceWidth / state.sourceHeight;
+      const vW = ar >= 1 ? 260 : Math.max(140, Math.round(260 * ar));
+      const vH = ar >= 1 ? Math.max(140, Math.round(260 / ar)) : 260;
+
+      const items = state.variationSeeds.map((vSeed, idx) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'group rounded-xl overflow-hidden border border-studio-border hover:border-[#00FF66] bg-black p-1 flex flex-col items-center transition-all text-left';
+
+        const c = document.createElement('canvas');
+        c.width = vW;
+        c.height = vH;
+        c.className = 'w-full rounded-md object-contain bg-black';
+        const varLevel = Number(Math.min(1, Math.max(0.15, state.masterGlitch + (idx - 1.5) * 0.14)).toFixed(2));
+
+        const footer = document.createElement('div');
+        footer.className = 'w-full flex items-center justify-between pt-1 px-1 font-mono text-[10px] text-neutral-400';
+        footer.innerHTML = `<span>Var ${idx + 1} (${Math.round(varLevel * 100)}%)</span><span class="text-[#00FF66]">#${vSeed}</span>`;
+
+        card.appendChild(c);
+        card.appendChild(footer);
+        grid.appendChild(card);
+
+        card.addEventListener('click', async () => {
+          state.seed = vSeed;
+          state.masterGlitch = varLevel;
+          syncControlsFromState();
+          await prepareWorkingBuffers();
+          renderFrameAtTime(state.currentTimeSec);
+        });
+        return { vSeed, varLevel, thumbCanvas: c };
+      });
+
+      for (let i = 0; i < items.length; i++) {
+        if (seq !== varSeq) return;
+        const item = items[i];
+        const res = await decodeCorruptedJpegIntoBuffer(vW, vH, item.vSeed, item.varLevel);
+        if (seq !== varSeq) return;
+        const tctx = item.thumbCanvas.getContext('2d');
+        synthesizeGlitchMotionFrame(tctx, vW, vH, res.cleanData, res.decodedData, item.vSeed, item.varLevel, 0);
+      }
+    }
+
+    function fitCanvasToViewport() {
+      const vp = document.getElementById('canvas-viewport');
+      const availW = Math.max(280, (vp.clientWidth || 680) - 44);
+      const availH = Math.max(280, (vp.clientHeight || 500) - 44);
+      const ar = state.sourceWidth / state.sourceHeight;
+      let w = availW;
+      let h = w / ar;
+      if (h > availH) {
+        h = availH;
+        w = h * ar;
+      }
+      state.baseFitW = Math.round(w);
+      state.baseFitH = Math.round(h);
+      applyViewportZoom();
+    }
+
+    function applyViewportZoom() {
+      const vp = document.getElementById('canvas-viewport');
+      const frame = document.getElementById('canvas-frame');
+      const canvas = document.getElementById('main-motion-canvas');
+      const targetW = Math.round(state.baseFitW * state.zoom);
+      const targetH = Math.round(state.baseFitH * state.zoom);
+      frame.style.width = `${targetW}px`;
+      frame.style.height = `${targetH}px`;
+
+      if (targetW > vp.clientWidth - 36 || targetH > vp.clientHeight - 36) {
+        vp.classList.remove('items-center', 'justify-center');
+        vp.classList.add('items-start', 'justify-start');
+        canvas.style.cursor = state.isPanning ? 'grabbing' : 'grab';
+      } else {
+        vp.classList.remove('items-start', 'justify-start');
+        vp.classList.add('items-center', 'justify-center');
+        canvas.style.cursor = 'pointer';
+      }
+      document.getElementById('zoom-pct-badge').textContent = `${Math.round(state.zoom * 100)}%`;
+    }
+
+    // =========================================================================
+    // 8. HIGH-BITRATE MP4 (H.264), FALLBACK VIDEO & ANIMATED GIF EXPORTERS
+    // =========================================================================
+    function getHighQualityVideoBitrate(outW, outH) {
+      const pixels = outW * outH;
+      if (pixels >= 2048 * 1152) return 52_000_000;
+      if (pixels >= 1280 * 720) return 34_000_000;
+      return 22_000_000;
+    }
+
+    async function encodeWithWebCodecsMp4(expCanvas, ectx, outW, outH, totalFrames, baseBuffers, progressBar, progressPct, progressText) {
+      if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined' || typeof Mp4Muxer === 'undefined') {
+        return null;
+      }
+
+      const codecs = ['avc1.640032', 'avc1.64002a', 'avc1.4d0032', 'avc1.4d002a', 'avc1.42002a', 'avc1.42001f'];
+      const accels = ['no-preference', 'prefer-software'];
+      const targetBitrate = getHighQualityVideoBitrate(outW, outH);
+      let validConfig = null;
+
+      for (const accel of accels) {
+        for (const codec of codecs) {
+          const cfg = {
+            codec,
+            width: outW,
+            height: outH,
+            bitrate: targetBitrate,
+            bitrateMode: 'variable',
+            framerate: state.fps,
+            hardwareAcceleration: accel,
+            avc: { format: 'avc' }
+          };
+          try {
+            const res = await VideoEncoder.isConfigSupported(cfg);
+            if (res && res.supported) {
+              validConfig = cfg;
+              break;
+            }
+          } catch (_) {}
+        }
+        if (validConfig) break;
+      }
+
+      if (!validConfig) return null;
+
+      let encoder = null;
+      try {
+        const muxer = new Mp4Muxer.Muxer({
+          target: new Mp4Muxer.ArrayBufferTarget(),
+          video: { codec: 'avc', width: outW, height: outH },
+          fastStart: 'in-memory',
+          firstTimestampBehavior: 'offset'
+        });
+
+        let fatalErr = null;
+        encoder = new VideoEncoder({
+          output: (chunk, meta) => {
+            try {
+              muxer.addVideoChunk(chunk, meta);
+            } catch (err) {
+              fatalErr = err;
+            }
+          },
+          error: (err) => {
+            fatalErr = err;
+          }
+        });
+
+        encoder.configure(validConfig);
+
+        const frameDurUs = Math.round(1_000_000 / state.fps);
+        const keyInterval = Math.max(8, Math.round(state.fps * 0.5));
+
+        for (let f = 0; f < totalFrames; f++) {
+          if (state.cancelExportFlag || fatalErr || encoder.state !== 'configured') break;
+
+          const tNorm = totalFrames > 1 ? f / totalFrames : 0;
+          synthesizeGlitchMotionFrame(ectx, outW, outH, baseBuffers.cleanData, baseBuffers.decodedData, state.seed, state.masterGlitch, tNorm);
+
+          while (encoder.encodeQueueSize > 6 && !state.cancelExportFlag && !fatalErr && encoder.state === 'configured') {
+            await new Promise((r) => setTimeout(r, 10));
+          }
+          if (state.cancelExportFlag || fatalErr || encoder.state !== 'configured') break;
+
+          const frame = new VideoFrame(expCanvas, {
+            timestamp: f * frameDurUs,
+            duration: frameDurUs
+          });
+          try {
+            encoder.encode(frame, { keyFrame: f % keyInterval === 0 });
+          } finally {
+            frame.close();
+          }
+
+          const pct = Math.round(((f + 1) / totalFrames) * 100);
+          progressBar.style.width = `${pct}%`;
+          progressPct.textContent = `${pct}%`;
+          progressText.textContent = `Codificando MP4 HQ (${f + 1}/${totalFrames})`;
+
+          if (f % 2 === 0) await new Promise((r) => setTimeout(r, 0));
+        }
+
+        if (state.cancelExportFlag) {
+          try { if (encoder.state !== 'closed') encoder.close(); } catch (_) {}
+          return { cancelled: true };
+        }
+
+        if (fatalErr || encoder.state !== 'configured') {
+          try { if (encoder.state !== 'closed') encoder.close(); } catch (_) {}
+          return null;
+        }
+
+        progressText.textContent = 'Finalizando archivo MP4...';
+        await encoder.flush();
+        encoder.close();
+        muxer.finalize();
+
+        const buffer = muxer.target.buffer;
+        if (!buffer || buffer.byteLength === 0) return null;
+
+        return {
+          blob: new Blob([buffer], { type: 'video/mp4' }),
+          ext: 'mp4'
+        };
+      } catch (_) {
+        try { if (encoder && encoder.state !== 'closed') encoder.close(); } catch (_) {}
+        return null;
+      }
+    }
+
+    async function encodeWithMediaRecorderFallback(expCanvas, ectx, outW, outH, totalFrames, baseBuffers, progressBar, progressPct, progressText) {
+      if (typeof MediaRecorder === 'undefined' || typeof expCanvas.captureStream !== 'function') {
+        return null;
+      }
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      let chosenMime = '';
+      for (const m of mimeCandidates) {
+        try {
+          if (MediaRecorder.isTypeSupported(m)) {
+            chosenMime = m;
+            break;
+          }
+        } catch (_) {}
+      }
+
+      const stream = expCanvas.captureStream(0);
+      const track = stream.getVideoTracks()[0];
+      const opts = { videoBitsPerSecond: getHighQualityVideoBitrate(outW, outH) };
+      if (chosenMime) opts.mimeType = chosenMime;
+
+      const recorder = new MediaRecorder(stream, opts);
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      const stopped = new Promise((resolve) => {
+        recorder.onstop = resolve;
+      });
+
+      recorder.start();
+      const delayMs = Math.max(16, Math.round(1000 / state.fps));
+
+      for (let f = 0; f < totalFrames; f++) {
+        if (state.cancelExportFlag) break;
+
+        const tNorm = totalFrames > 1 ? f / totalFrames : 0;
+        synthesizeGlitchMotionFrame(ectx, outW, outH, baseBuffers.cleanData, baseBuffers.decodedData, state.seed, state.masterGlitch, tNorm);
+
+        if (track && typeof track.requestFrame === 'function') {
+          track.requestFrame();
+        }
+
+        const pct = Math.round(((f + 1) / totalFrames) * 100);
+        progressBar.style.width = `${pct}%`;
+        progressPct.textContent = `${pct}%`;
+        progressText.textContent = `Renderizando video (${f + 1}/${totalFrames})`;
+
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+      await stopped;
+
+      if (state.cancelExportFlag) return { cancelled: true };
+      const finalMime = recorder.mimeType || chosenMime || 'video/webm';
+      const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
+      return {
+        blob: new Blob(chunks, { type: finalMime }),
+        ext
+      };
+    }
+
+    async function exportAnimationMp4() {
+      if (state.isExporting) return;
+      if (!state.sourceCanvas.width) return;
+
+      state.isExporting = true;
+      state.cancelExportFlag = false;
+      const wasPlaying = state.isPlaying;
+      state.isPlaying = false;
+      updatePlayUi();
+
+      const progressWrap = document.getElementById('export-progress-wrap');
+      const progressBar = document.getElementById('export-progress-bar');
+      const progressText = document.getElementById('export-progress-text');
+      const progressPct = document.getElementById('export-progress-pct');
+      const btnCancel = document.getElementById('btn-cancel-export');
+      const btnExport = document.getElementById('btn-panel-export');
+      const btnGif = document.getElementById('btn-export-gif');
+
+      progressWrap.classList.remove('hidden');
+      btnCancel.classList.remove('hidden');
+      btnExport.disabled = true;
+      if (btnGif) btnGif.disabled = true;
+
+      const ar = state.sourceWidth / state.sourceHeight;
+      const targetLongest = state.videoRes;
+      let outW = ar >= 1 ? targetLongest : Math.round(targetLongest * ar);
+      let outH = ar >= 1 ? Math.round(targetLongest / ar) : targetLongest;
+      outW = Math.max(128, outW - (outW % 2));
+      outH = Math.max(128, outH - (outH % 2));
+
+      const totalFrames = Math.max(1, Math.round(state.durationSec * state.fps));
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = outW;
+      expCanvas.height = outH;
+      const ectx = expCanvas.getContext('2d', { willReadFrequently: true });
+
+      try {
+        progressText.textContent = `Preparando buffer ${outW}×${outH}...`;
+        const baseBuffers = await decodeCorruptedJpegIntoBuffer(outW, outH, state.seed, state.masterGlitch);
+
+        let result = await encodeWithWebCodecsMp4(
+          expCanvas, ectx, outW, outH, totalFrames, baseBuffers,
+          progressBar, progressPct, progressText
+        );
+
+        if (!result && !state.cancelExportFlag) {
+          result = await encodeWithMediaRecorderFallback(
+            expCanvas, ectx, outW, outH, totalFrames, baseBuffers,
+            progressBar, progressPct, progressText
+          );
+        }
+
+        if (result && result.cancelled) {
+          showToast('Exportación cancelada');
+        } else if (result && result.blob) {
+          const filename = `aisuni-glitch-motion-${outW}x${outH}-${state.durationSec}s-seed-${state.seed}.${result.ext}`;
+          triggerBlobDownload(result.blob, filename);
+          showToast(`Video ${result.ext.toUpperCase()} descargado (${outW}×${outH} · ${state.durationSec}s)`);
+        } else {
+          showToast('No fue posible codificar el video en este entorno; prueba con 720p.');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('No fue posible generar el video; prueba con 720p.');
+      } finally {
+        state.isExporting = false;
+        btnExport.disabled = false;
+        if (btnGif) btnGif.disabled = false;
+        btnCancel.classList.add('hidden');
+        progressWrap.classList.add('hidden');
+        progressBar.style.width = '0%';
+        state.isPlaying = wasPlaying;
+        updatePlayUi();
+      }
+    }
+
+    async function createGifWorkerBlobUrl() {
+      const fallbackWorker = () => {
+        const inlineCode = `
+          importScripts('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
+        `;
+        return URL.createObjectURL(new Blob([inlineCode], { type: 'application/javascript' }));
+      };
+      try {
+        const resp = await fetch('https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');
+        if (!resp.ok) return fallbackWorker();
+        const scriptText = await resp.text();
+        return URL.createObjectURL(new Blob([scriptText], { type: 'application/javascript' }));
+      } catch (_) {
+        return fallbackWorker();
+      }
+    }
+
+    async function exportAnimationGif() {
+      if (state.isExporting) return;
+      if (!state.sourceCanvas.width) return;
+
+      if (typeof GIF === 'undefined') {
+        showToast('El codificador GIF no pudo cargarse; verifica tu conexión.');
+        return;
+      }
+
+      state.isExporting = true;
+      state.cancelExportFlag = false;
+      const wasPlaying = state.isPlaying;
+      state.isPlaying = false;
+      updatePlayUi();
+
+      const progressWrap = document.getElementById('export-progress-wrap');
+      const progressBar = document.getElementById('export-progress-bar');
+      const progressText = document.getElementById('export-progress-text');
+      const progressPct = document.getElementById('export-progress-pct');
+      const btnCancel = document.getElementById('btn-cancel-export');
+      const btnExport = document.getElementById('btn-panel-export');
+      const btnGif = document.getElementById('btn-export-gif');
+
+      progressWrap.classList.remove('hidden');
+      btnCancel.classList.remove('hidden');
+      btnExport.disabled = true;
+      btnGif.disabled = true;
+
+      const ar = state.sourceWidth / state.sourceHeight;
+      const maxGifSide = state.videoRes >= 2048 ? 1080 : (state.videoRes >= 1080 ? 840 : 640);
+      const gifW = ar >= 1 ? maxGifSide : Math.max(120, Math.round(maxGifSide * ar));
+      const gifH = ar >= 1 ? Math.max(120, Math.round(maxGifSide / ar)) : maxGifSide;
+
+      const gifFps = Math.min(25, Math.max(12, state.fps));
+      const totalFrames = Math.max(2, Math.min(180, Math.round(state.durationSec * gifFps)));
+      const frameDelayMs = Math.round(1000 / gifFps);
+
+      const expCanvas = document.createElement('canvas');
+      expCanvas.width = gifW;
+      expCanvas.height = gifH;
+      const ectx = expCanvas.getContext('2d', { willReadFrequently: true });
+
+      let workerUrl = null;
+      let gifEncoder = null;
+
+      try {
+        progressText.textContent = `Preparando GIF ${gifW}×${gifH}...`;
+        const baseBuffers = await decodeCorruptedJpegIntoBuffer(gifW, gifH, state.seed, state.masterGlitch);
+        workerUrl = await createGifWorkerBlobUrl();
+
+        gifEncoder = new GIF({
+          workers: Math.min(4, navigator.hardwareConcurrency || 2),
+          quality: 3,
+          width: gifW,
+          height: gifH,
+          workerScript: workerUrl,
+          dither: 'FloydSteinberg'
+        });
+
+        for (let f = 0; f < totalFrames; f++) {
+          if (state.cancelExportFlag) break;
+
+          const tNorm = totalFrames > 1 ? f / totalFrames : 0;
+          synthesizeGlitchMotionFrame(ectx, gifW, gifH, baseBuffers.cleanData, baseBuffers.decodedData, state.seed, state.masterGlitch, tNorm);
+          gifEncoder.addFrame(ectx, { copy: true, delay: frameDelayMs });
+
+          const pct = Math.round(((f + 1) / totalFrames) * 55);
+          progressBar.style.width = `${pct}%`;
+          progressPct.textContent = `${pct}%`;
+          progressText.textContent = `Capturando cuadros GIF (${f + 1}/${totalFrames})`;
+
+          if (f % 2 === 0) await new Promise((r) => setTimeout(r, 0));
+        }
+
+        if (state.cancelExportFlag) {
+          try { gifEncoder.abort(); } catch (_) {}
+          showToast('Exportación GIF cancelada');
+          return;
+        }
+
+        progressText.textContent = 'Optimizando paleta de color GIF...';
+        const gifBlob = await new Promise((resolve, reject) => {
+          gifEncoder.on('progress', (p) => {
+            if (state.cancelExportFlag) {
+              try { gifEncoder.abort(); } catch (_) {}
+              reject(new Error('cancelled'));
+              return;
+            }
+            const pct = 55 + Math.round(p * 45);
+            progressBar.style.width = `${pct}%`;
+            progressPct.textContent = `${pct}%`;
+            progressText.textContent = `Compilando GIF (${Math.round(p * 100)}%)...`;
+          });
+          gifEncoder.on('finished', (blob) => resolve(blob));
+          gifEncoder.render();
+        });
+
+        if (!state.cancelExportFlag && gifBlob) {
+          const filename = `aisuni-glitch-motion-${gifW}x${gifH}-${state.durationSec}s-seed-${state.seed}.gif`;
+          triggerBlobDownload(gifBlob, filename);
+          showToast(`GIF animado descargado (${gifW}×${gifH} · ${totalFrames} frames)`);
+        }
+      } catch (err) {
+        if (err && err.message === 'cancelled') {
+          showToast('Exportación GIF cancelada');
+        } else {
+          console.error(err);
+          showToast('No fue posible generar el GIF animado; prueba con una duración menor.');
+        }
+      } finally {
+        if (workerUrl) URL.revokeObjectURL(workerUrl);
+        state.isExporting = false;
+        btnExport.disabled = false;
+        btnGif.disabled = false;
+        btnCancel.classList.add('hidden');
+        progressWrap.classList.add('hidden');
+        progressBar.style.width = '0%';
+        state.isPlaying = wasPlaying;
+        updatePlayUi();
+      }
+    }
+
+    // =========================================================================
+    // 9. UI BINDINGS & WORKFLOW SWITCHING
+    // =========================================================================
+    function syncControlsFromState() {
+      document.getElementById('input-seed').value = state.seed;
+      const pct = Math.round(state.masterGlitch * 100);
+      document.getElementById('slider-master-glitch').value = pct;
+      document.getElementById('val-master-glitch').textContent = `${pct}%`;
+
+      const badge = document.getElementById('stage-tier-badge');
+      badge.textContent = pct === 0 ? '0% · INTACTO' : pct <= 30 ? 'BAJO · SUTIL' : pct <= 70 ? 'MEDIO · FRAGMENTOS' : 'TOTAL · COLAPSO';
+
+      document.getElementById('slider-effect-scale').value = Math.round(state.effectScale * 100);
+      document.getElementById('val-effect-scale').textContent = `${Math.round(state.effectScale * 100)}%`;
+      document.getElementById('slider-source-mix').value = Math.round(state.sourceMix * 100);
+      document.getElementById('val-source-mix').textContent = `${Math.round(state.sourceMix * 100)}%`;
+      document.getElementById('slider-byte-corrupt').value = Math.round(state.byteCorrupt * 100);
+      document.getElementById('val-byte-corrupt').textContent = `${Math.round(state.byteCorrupt * 100)}%`;
+      document.getElementById('slider-hex-inject').value = Math.round(state.hexInject * 100);
+      document.getElementById('val-hex-inject').textContent = `${Math.round(state.hexInject * 100)}%`;
+      document.getElementById('slider-block-tear').value = Math.round(state.blockTear * 100);
+      document.getElementById('val-block-tear').textContent = `${Math.round(state.blockTear * 100)}%`;
+      document.getElementById('slider-scan-shift').value = Math.round(state.scanShift * 100);
+      document.getElementById('val-scan-shift').textContent = `${Math.round(state.scanShift * 100)}%`;
+      document.getElementById('slider-bit-flip').value = Math.round(state.bitFlip * 100);
+      document.getElementById('val-bit-flip').textContent = `${Math.round(state.bitFlip * 100)}%`;
+      document.getElementById('slider-rgb-desync').value = Math.round(state.rgbDesync * 100);
+      document.getElementById('val-rgb-desync').textContent = `${Math.round(state.rgbDesync * 100)}%`;
+      document.getElementById('slider-grid-fusion').value = Math.round(state.gridFusion * 100);
+      document.getElementById('val-grid-fusion').textContent = `${Math.round(state.gridFusion * 100)}%`;
+
+      document.getElementById('chk-protect-header').checked = state.protectHeader;
+      document.getElementById('chk-neon-entropy').checked = state.neonEntropy;
+    }
+
+    document.querySelectorAll('.workflow-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wf = btn.getAttribute('data-workflow');
+        state.workflowMode = wf;
+        document.querySelectorAll('.workflow-btn').forEach(b => {
+          const active = b.getAttribute('data-workflow') === wf;
+          b.className = active
+            ? 'workflow-btn py-1.5 px-2 rounded-md bg-studio-accent text-white font-semibold transition-all leading-tight text-center'
+            : 'workflow-btn py-1.5 px-2 rounded-md text-studio-muted hover:text-white transition-all leading-tight text-center';
+        });
+
+        if (wf === 'import_glitch') {
+          document.getElementById('workflow-hint').innerHTML =
+            'Modo <strong class="text-[#00FF66]">Importar Glitch-Code</strong>: anima tu imagen ya exportada respetando su composición base.';
+          document.getElementById('upload-btn-label').textContent = 'Importar imagen de GLITCH-CODE';
+          state.sourceMix = 0.65;
+          state.masterGlitch = 0.36;
+        } else {
+          document.getElementById('workflow-hint').innerHTML =
+            'Modo <strong class="text-white">Crear de Cero</strong>: carga cualquier foto o SVG y genera distorsión + animación en vivo.';
+          document.getElementById('upload-btn-label').textContent = 'Cargar imagen (PNG / JPG / SVG)';
+          state.sourceMix = 0.35;
+          state.masterGlitch = 0.50;
+        }
+        syncControlsFromState();
+        prepareWorkingBuffers().then(() => {
+          renderFrameAtTime(state.currentTimeSec);
+          renderVariationsSidebar();
+        });
+      });
+    });
+
+    function handleUploadedFile(file) {
+      if (!file) return;
+      const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+      if (isSvg) {
+        const tr = new FileReader();
+        tr.onload = (ev) => {
+          const blob = new Blob([ev.target.result], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(url);
+            state.sourceCanvas.width = img.naturalWidth || 1200;
+            state.sourceCanvas.height = img.naturalHeight || 900;
+            state.sourceCanvas.getContext('2d').drawImage(img, 0, 0, state.sourceCanvas.width, state.sourceCanvas.height);
+            state.sourceName = file.name;
+            state.isSvgSource = true;
+            onSourceChanged();
+            showToast(`SVG cargado (${state.sourceWidth}×${state.sourceHeight})`);
+          };
+          img.src = url;
+        };
+        tr.readAsText(file);
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        showToast('Sube una imagen PNG, JPG, WebP o SVG.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          state.isSvgSource = false;
+          state.sourceCanvas.width = img.naturalWidth || img.width;
+          state.sourceCanvas.height = img.naturalHeight || img.height;
+          state.sourceCanvas.getContext('2d').drawImage(img, 0, 0);
+          state.sourceName = file.name;
+          onSourceChanged();
+          showToast(state.workflowMode === 'import_glitch'
+            ? `Obra GLITCH-CODE importada (${state.sourceWidth}×${state.sourceHeight})`
+            : `Imagen cargada (${state.sourceWidth}×${state.sourceHeight})`);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('file-upload-input').addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleUploadedFile(e.target.files[0]);
+    });
+
+    const dropPanel = document.getElementById('dropzone-panel');
+    ['dragenter', 'dragover'].forEach(ev => dropPanel.addEventListener(ev, (e) => { e.preventDefault(); dropPanel.classList.add('drop-highlight'); }));
+    ['dragleave', 'drop'].forEach(ev => dropPanel.addEventListener(ev, (e) => { e.preventDefault(); dropPanel.classList.remove('drop-highlight'); }));
+    dropPanel.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) handleUploadedFile(e.dataTransfer.files[0]);
+    });
+    document.getElementById('btn-load-demo').addEventListener('click', loadBuiltInDemo);
+
+    function bindSlider(id, stateKey, valId, suffix = '%', isDiv100 = true, needsDecode = false) {
+      const el = document.getElementById(id);
+      el.addEventListener('input', (e) => {
+        const raw = parseFloat(e.target.value);
+        state[stateKey] = isDiv100 ? raw / 100 : raw;
+        document.getElementById(valId).textContent = `${Math.round(raw)}${suffix}`;
+        if (!needsDecode) renderFrameAtTime(state.currentTimeSec);
+      });
+      el.addEventListener('change', () => {
+        if (needsDecode) {
+          prepareWorkingBuffers().then(() => {
+            renderFrameAtTime(state.currentTimeSec);
+            renderVariationsSidebar();
+          });
+        } else {
+          renderVariationsSidebar();
+        }
+      });
+    }
+
+    bindSlider('slider-master-glitch', 'masterGlitch', 'val-master-glitch', '%', true, true);
+    bindSlider('slider-effect-scale', 'effectScale', 'val-effect-scale', '%', true, false);
+    bindSlider('slider-source-mix', 'sourceMix', 'val-source-mix', '%', true, false);
+    bindSlider('slider-byte-corrupt', 'byteCorrupt', 'val-byte-corrupt', '%', true, true);
+    bindSlider('slider-hex-inject', 'hexInject', 'val-hex-inject', '%', true, true);
+    bindSlider('slider-block-tear', 'blockTear', 'val-block-tear', '%', true, false);
+    bindSlider('slider-scan-shift', 'scanShift', 'val-scan-shift', '%', true, false);
+    bindSlider('slider-bit-flip', 'bitFlip', 'val-bit-flip', '%', true, false);
+    bindSlider('slider-rgb-desync', 'rgbDesync', 'val-rgb-desync', '%', true, false);
+    bindSlider('slider-grid-fusion', 'gridFusion', 'val-grid-fusion', '%', true, false);
+
+    document.getElementById('slider-master-glitch').addEventListener('input', (e) => {
+      const pct = parseInt(e.target.value, 10);
+      const badge = document.getElementById('stage-tier-badge');
+      badge.textContent = pct === 0 ? '0% · INTACTO' : pct <= 30 ? 'BAJO · SUTIL' : pct <= 70 ? 'MEDIO · FRAGMENTOS' : 'TOTAL · COLAPSO';
+    });
+
+    document.querySelectorAll('.quick-lvl-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.quick-lvl-btn').forEach(b => b.className = 'quick-lvl-btn px-2.5 py-1 rounded text-studio-muted hover:text-white transition-colors');
+        btn.className = 'quick-lvl-btn px-2.5 py-1 rounded bg-studio-accent text-white font-semibold transition-colors';
+        state.masterGlitch = parseInt(btn.getAttribute('data-level'), 10) / 100;
+        syncControlsFromState();
+        prepareWorkingBuffers().then(() => {
+          renderFrameAtTime(state.currentTimeSec);
+          renderVariationsSidebar();
+        });
+      });
+    });
+
+    document.querySelectorAll('.gmode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.glitchMode = btn.getAttribute('data-gmode');
+        document.querySelectorAll('.gmode-btn').forEach(b => {
+          const active = b.getAttribute('data-gmode') === state.glitchMode;
+          b.className = active
+            ? 'gmode-btn py-1 rounded-md bg-white text-black font-semibold transition-all'
+            : 'gmode-btn py-1 rounded-md text-studio-muted hover:text-white transition-all';
+        });
+        renderFrameAtTime(state.currentTimeSec);
+        renderVariationsSidebar();
+      });
+    });
+
+    document.getElementById('chk-protect-header').addEventListener('change', (e) => {
+      state.protectHeader = e.target.checked;
+      prepareWorkingBuffers().then(() => renderFrameAtTime(state.currentTimeSec));
+    });
+    document.getElementById('chk-neon-entropy').addEventListener('change', (e) => {
+      state.neonEntropy = e.target.checked;
+      renderFrameAtTime(state.currentTimeSec);
+    });
+
+    document.querySelectorAll('.mmode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.motionMode = btn.getAttribute('data-mmode');
+        document.querySelectorAll('.mmode-btn').forEach(b => {
+          const active = b.getAttribute('data-mmode') === state.motionMode;
+          b.className = active
+            ? 'mmode-btn py-1.5 px-2 rounded-lg bg-white text-black font-semibold transition-all text-center'
+            : 'mmode-btn py-1.5 px-2 rounded-lg bg-studio-bg border border-studio-border text-studio-muted hover:text-white transition-all text-center';
+        });
+        renderFrameAtTime(state.currentTimeSec);
+      });
+    });
+
+    document.getElementById('slider-motion-speed').addEventListener('input', (e) => {
+      state.motionSpeed = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-motion-speed').textContent = `${state.motionSpeed.toFixed(1)}×`;
+    });
+    document.getElementById('slider-motion-stutter').addEventListener('input', (e) => {
+      state.motionStutter = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-motion-stutter').textContent = `${e.target.value}%`;
+    });
+    document.getElementById('slider-motion-amp').addEventListener('input', (e) => {
+      state.motionAmp = parseInt(e.target.value, 10) / 100;
+      document.getElementById('val-motion-amp').textContent = `${e.target.value}%`;
+    });
+
+    function setDurationSeconds(sec) {
+      state.durationSec = Math.max(1, Math.min(60, sec));
+      state.currentTimeSec = state.currentTimeSec % state.durationSec;
+      document.getElementById('input-duration-sec').value = state.durationSec;
+      document.getElementById('val-duration-badge').textContent = `${state.durationSec} segundo${state.durationSec === 1 ? '' : 's'}`;
+      document.querySelectorAll('.dur-btn').forEach(b => {
+        const active = parseInt(b.getAttribute('data-dur'), 10) === state.durationSec;
+        b.className = active
+          ? 'dur-btn py-1 rounded bg-studio-accent border border-studio-accent text-white font-semibold'
+          : 'dur-btn py-1 rounded bg-studio-bg border border-studio-border text-studio-muted hover:text-white';
+      });
+      renderFrameAtTime(state.currentTimeSec);
+    }
+
+    document.querySelectorAll('.dur-btn').forEach(b => {
+      b.addEventListener('click', () => setDurationSeconds(parseInt(b.getAttribute('data-dur'), 10)));
+    });
+    document.getElementById('input-duration-sec').addEventListener('change', (e) => {
+      setDurationSeconds(parseInt(e.target.value, 10) || 5);
+    });
+    document.getElementById('select-fps').addEventListener('change', (e) => {
+      state.fps = parseInt(e.target.value, 10) || 30;
+      renderFrameAtTime(state.currentTimeSec);
+    });
+    document.getElementById('select-video-res').addEventListener('change', (e) => {
+      state.videoRes = parseInt(e.target.value, 10) || 1080;
+    });
+
+    function togglePlay() {
+      state.isPlaying = !state.isPlaying;
+      updatePlayUi();
+    }
+    document.getElementById('btn-play-pause').addEventListener('click', togglePlay);
+    document.getElementById('btn-header-play').addEventListener('click', togglePlay);
+    document.getElementById('btn-rewind').addEventListener('click', () => {
+      state.currentTimeSec = 0;
+      renderFrameAtTime(0);
+    });
+    document.getElementById('slider-timeline').addEventListener('input', (e) => {
+      state.isPlaying = false;
+      updatePlayUi();
+      const norm = parseInt(e.target.value, 10) / 1000;
+      state.currentTimeSec = norm * state.durationSec;
+      renderFrameAtTime(state.currentTimeSec);
+    });
+
+    function mutateSeed() {
+      state.seed = Math.floor(10 + Math.random() * 99980);
+      document.getElementById('input-seed').value = state.seed;
+      prepareWorkingBuffers().then(() => {
+        renderFrameAtTime(state.currentTimeSec);
+        renderVariationsSidebar();
+      });
+    }
+    document.getElementById('btn-random-seed').addEventListener('click', mutateSeed);
+    document.getElementById('input-seed').addEventListener('change', (e) => {
+      state.seed = Math.max(1, parseInt(e.target.value, 10) || 404);
+      prepareWorkingBuffers().then(() => renderFrameAtTime(state.currentTimeSec));
+    });
+    document.getElementById('btn-refresh-variations').addEventListener('click', () => {
+      state.variationSeeds = Array.from({ length: 4 }, () => Math.floor(100 + Math.random() * 98000));
+      renderVariationsSidebar();
+    });
+
+    document.getElementById('btn-zoom-plus').addEventListener('click', () => { state.zoom = Math.min(5.0, state.zoom + 0.25); applyViewportZoom(); });
+    document.getElementById('btn-zoom-minus').addEventListener('click', () => { state.zoom = Math.max(1.0, state.zoom - 0.25); applyViewportZoom(); });
+    document.getElementById('btn-zoom-fit').addEventListener('click', () => { state.zoom = 1.0; applyViewportZoom(); });
+
+    const viewport = document.getElementById('canvas-viewport');
+    const mainCanvasEl = document.getElementById('main-motion-canvas');
+    mainCanvasEl.addEventListener('mousedown', (e) => {
+      state.isPanning = true;
+      state.dragMoved = false;
+      state.panStartX = e.clientX;
+      state.panStartY = e.clientY;
+      state.panScrollL = viewport.scrollLeft;
+      state.panScrollT = viewport.scrollTop;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!state.isPanning) return;
+      const dx = e.clientX - state.panStartX;
+      const dy = e.clientY - state.panStartY;
+      if (Math.hypot(dx, dy) > 4) state.dragMoved = true;
+      if (state.zoom > 1.01) {
+        viewport.scrollLeft = state.panScrollL - dx;
+        viewport.scrollTop = state.panScrollT - dy;
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (!state.isPanning) return;
+      const wasClick = !state.dragMoved;
+      state.isPanning = false;
+      if (wasClick) togglePlay();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        togglePlay();
+      }
+    });
+    window.addEventListener('resize', fitCanvasToViewport);
+
+    document.getElementById('btn-panel-export').addEventListener('click', exportAnimationMp4);
+    document.getElementById('btn-header-export').addEventListener('click', exportAnimationMp4);
+    document.getElementById('btn-export-gif').addEventListener('click', exportAnimationGif);
+    document.getElementById('btn-cancel-export').addEventListener('click', () => { state.cancelExportFlag = true; });
+    document.getElementById('btn-snap-png').addEventListener('click', () => {
+      document.getElementById('main-motion-canvas').toBlob((blob) => {
+        if (blob) {
+          triggerBlobDownload(blob, `aisuni-glitch-motion-frame-seed-${state.seed}.png`);
+          showToast('Fotograma actual guardado en PNG');
+        }
+      }, 'image/png');
+    });
+
+    loadBuiltInDemo();
+    requestAnimationFrame(animationLoop);
+  </script>
+</body>
+</html>
